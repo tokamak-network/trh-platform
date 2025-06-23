@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    env_file:
+      - ./config/.env.backend
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: tokamaknetwork/trh-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./config/.env.backend
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    image: tokamaknetwork/trh-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./config/.env.frontend
+
+volumes:
+  postgres_data:
