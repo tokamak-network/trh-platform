@@ -55,7 +55,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 Run the following command to start all services:
 
 ```bash
-docker-compose up -d
+docker-compose up --build
 ```
 
 - The backend will be available at [http://localhost:8000](http://localhost:8000)
