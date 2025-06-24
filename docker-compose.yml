@@ -19,7 +19,7 @@ services:
         chmod +x setup.sh &&
         ./setup.sh &&
         echo 'Dependency installation completed.'
-    "
+      "
     ports:
       - "8000:8000"
     env_file:
