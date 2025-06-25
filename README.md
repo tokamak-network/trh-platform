@@ -84,6 +84,15 @@ POSTGRES_PORT=5432
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
+**Important**: Replace `http://localhost:8000` with the actual backend URL where your service is running:
+
+- **Local development**: `http://localhost:8000`
+- **EC2 instance**: `http://your-ec2-ip:8000` or `http://your-ec2-domain:8000`
+- **Production domain**: `https://your-backend-domain.com`
+- **Docker on remote server**: `http://remote-server-ip:8000`
+
+Make sure the frontend can reach the backend at the specified URL.
+
 ## Available Make Commands
 
 The Makefile provides several convenient commands for managing the application:
