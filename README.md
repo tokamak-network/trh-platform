@@ -32,6 +32,12 @@ cd trh-app
 make setup
 ```
 
+**Note**: If you encounter permission issues when running `make setup`, you may need to use `sudo`:
+
+```bash
+sudo make setup
+```
+
 This single command will:
 1. Start all services with `docker-compose up -d`
 2. Run the setup script to configure the backend container
