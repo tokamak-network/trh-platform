@@ -10,19 +10,39 @@
 
 set -e
 
+# Retry configuration
+MAX_RETRIES=5
+RETRY_DELAY=3
+
 echo "🔍 Finding running trh-backend container..."
 
-# Find the running trh-backend container
-CONTAINER_ID=$(docker ps --filter "ancestor=tokamaknetwork/trh-backend" --format "table {{.ID}}" | tail -n +2 | head -n 1)
+# Function to find the running trh-backend container
+find_container() {
+    docker ps --filter "ancestor=tokamaknetwork/trh-backend" --format "table {{.ID}}" | tail -n +2 | head -n 1
+}
 
-if [ -z "$CONTAINER_ID" ]; then
-    echo "❌ No running trh-backend container found!"
-    echo "Please make sure the container is running with:"
-    echo "  docker-compose up -d"
-    exit 1
-fi
-
-echo "✅ Found container: $CONTAINER_ID"
+# Retry mechanism to find the container
+CONTAINER_ID=""
+for attempt in $(seq 1 $MAX_RETRIES); do
+    echo "Attempt $attempt/$MAX_RETRIES to find container..."
+    
+    CONTAINER_ID=$(find_container)
+    
+    if [ -n "$CONTAINER_ID" ]; then
+        echo "✅ Found container: $CONTAINER_ID"
+        break
+    fi
+    
+    if [ $attempt -lt $MAX_RETRIES ]; then
+        echo "❌ No running trh-backend container found. Retrying in ${RETRY_DELAY} seconds..."
+        sleep $RETRY_DELAY
+    else
+        echo "❌ No running trh-backend container found after $MAX_RETRIES attempts!"
+        echo "Please make sure the container is running with:"
+        echo "  docker-compose up -d"
+        exit 1
+    fi
+done
 
 echo "🚀 Executing into container and running setup..."
 
