@@ -16,6 +16,9 @@ RETRY_DELAY=3
 
 echo "🔍 Finding running trh-backend container..."
 
+# Sleep for 10 seconds to ensure the container is running
+sleep 10
+
 # Function to find the running trh-backend container
 find_container() {
     docker ps --filter "ancestor=tokamaknetwork/trh-backend" --format "table {{.ID}}" | tail -n +2 | head -n 1
