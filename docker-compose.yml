@@ -19,6 +19,8 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    volumes:
+      - backend_storage:/app/storage
 
   frontend:
     image: tokamaknetwork/trh-frontend
@@ -29,3 +31,4 @@ services:
 
 volumes:
   postgres_data:
+  backend_storage:
