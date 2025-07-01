@@ -58,11 +58,13 @@ wget https://raw.githubusercontent.com/tokamak-network/trh-backend/refs/heads/ma
 chmod +x docker_install_dependencies_script.sh
 DEBIAN_FRONTEND=noninteractive TZ=UTC ./docker_install_dependencies_script.sh
 
-# Add this line to ensure pnpm is available in PATH for all processes
+# Ensure necessary binaries are available in the PATH
 ln -sf /root/.local/share/pnpm/pnpm /usr/local/bin/pnpm
+ln -sf /root/.nvm/versions/node/v20.16.0/bin/npx /usr/local/bin/npx
 ln -sf /root/.foundry/bin/forge /usr/local/bin/forge
 ln -sf /root/.foundry/bin/cast /usr/local/bin/cast
 ln -sf /root/.foundry/bin/anvil /usr/local/bin/anvil
+ln -sf /root/.nvm/versions/node/v20.16.0/bin/node /usr/local/bin/node
 
 
 echo '🔄 Sourcing bashrc...'
