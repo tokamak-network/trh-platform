@@ -22,16 +22,6 @@ services:
     volumes:
       - backend_storage:/app/storage
 
-  ui-mvp:
-    image: tokamaknetwork/trh-frontend
-    ports:
-      - "3001:3000"
-    env_file:
-      - ./config/.env.frontend
-    depends_on:
-      - backend
-    restart: unless-stopped
-
   ui:
     image: tokamaknetwork/trh-platform-ui
     ports:
