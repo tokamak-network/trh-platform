@@ -65,6 +65,7 @@ ln -sf /root/.foundry/bin/forge /usr/local/bin/forge
 ln -sf /root/.foundry/bin/cast /usr/local/bin/cast
 ln -sf /root/.foundry/bin/anvil /usr/local/bin/anvil
 ln -sf /root/.nvm/versions/node/v20.16.0/bin/node /usr/local/bin/node
+ln -sf /root/.nvm/versions/node/v20.16.0/bin/npm /usr/local/bin/npm
 
 
 echo '🔄 Sourcing bashrc...'
