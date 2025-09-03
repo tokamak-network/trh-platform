@@ -1,6 +1,6 @@
-# TRH App
+# TRH Platform
 
-This repository contains the TRH App, which uses Docker Compose to orchestrate a backend, frontend, and a PostgreSQL database.
+This repository contains the TRH Platform, which uses Docker Compose to orchestrate a backend, frontend, and a PostgreSQL database.
 
 ## Project Structure
 
@@ -25,7 +25,7 @@ The easiest way to get started is using the provided Makefile:
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd trh-app
+cd trh-platform
 
 # Configure environment variables (see Configuration section below)
 # Then run the complete setup
@@ -135,4 +135,3 @@ docker-compose down
 
 ## License
 
-Add your license information here.
