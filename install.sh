@@ -146,6 +146,12 @@ if [[ "$OS_TYPE" == "Darwin" ]]; then
     SUCCESS="true"
 
 elif [[ "$OS_TYPE" == "Linux" ]]; then
+    # Update package lists and upgrade existing packages
+    echo "Updating package lists and upgrading existing packages..."
+    sudo apt-get update -y
+    sudo apt-get upgrade -y
+    echo
+
     if ! command -v sudo &> /dev/null; then
         echo "sudo not found, installing..."
         apt-get install -y sudo
@@ -155,7 +161,6 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
     echo "[$STEP/$TOTAL_LINUX_STEPS] Installing Git..."
     if ! command -v git &> /dev/null; then
         echo "git not found, installing..."
-        sudo apt-get update -y
         sudo apt-get install -y git
     else
         echo "git is already installed."
