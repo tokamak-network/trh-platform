@@ -42,7 +42,7 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     else
         echo "❌ No running trh-backend container found after $MAX_RETRIES attempts!"
         echo "Please make sure the container is running with:"
-        echo "  docker-compose up -d"
+        echo "  docker compose up -d"
         exit 1
     fi
 done

@@ -4,7 +4,7 @@ This repository contains the TRH Platform, which uses Docker Compose to orchestr
 
 ## Project Structure
 
-- `docker-compose.yml`: Orchestrates the services (frontend, backend, database)
+- `docker compose.yml`: Orchestrates the services (frontend, backend, database)
 - `Makefile`: Provides convenient commands for managing the application
 - `setup.sh`: Script to configure the backend container
 - `config/`: Contains environment variable templates for backend and frontend
@@ -39,7 +39,7 @@ sudo make setup
 ```
 
 This single command will:
-1. Start all services with `docker-compose up -d`
+1. Start all services with `docker compose up -d`
 2. Run the setup script to configure the backend container
 
 ### Option 2: Manual Setup
@@ -48,7 +48,7 @@ If you prefer to run commands manually:
 
 ```bash
 # Start services
-docker-compose up -d
+docker compose up -d
 
 # Run setup script
 ./setup.sh
@@ -100,8 +100,8 @@ The Makefile provides several convenient commands for managing the application:
 ```bash
 make help      # Show all available commands
 make setup     # Start services and run setup script (recommended)
-make up        # Start all services with docker-compose up -d
-make down      # Stop all services with docker-compose down
+make up        # Start all services with docker compose up -d
+make down      # Stop all services with docker compose down
 make logs      # Show logs from all services
 make status    # Show status of running containers
 make clean     # Stop services and remove volumes
@@ -124,7 +124,7 @@ make down
 
 ### Manual:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## Notes
