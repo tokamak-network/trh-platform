@@ -194,13 +194,17 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
         echo "Docker is already installed."
     fi
 
+    # Configure Docker to work without sudo
+    echo "Configuring Docker to work without sudo..."
+    sudo usermod -aG docker ${USER}
+    sudo chmod 666 /var/run/docker.sock
+    
     # Start Docker Daemon
     echo "Starting Docker Daemon..."
     if ! docker ps > /dev/null 2>&1; then
         echo "Docker is not running. Starting Docker service..."
         sudo systemctl start docker
         sudo systemctl enable docker
-        sudo usermod -aG docker $USER
         
         # Wait for Docker to initialize
         while ! docker ps > /dev/null 2>&1; do
