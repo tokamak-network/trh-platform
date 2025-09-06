@@ -97,6 +97,8 @@ Make sure the frontend can reach the backend at the specified URL.
 
 The Makefile provides several convenient commands for managing the application:
 
+### Local Development Commands
+
 ```bash
 make help      # Show all available commands
 make setup     # Start services and run setup script (recommended)
@@ -105,6 +107,74 @@ make down      # Stop all services with docker compose down
 make logs      # Show logs from all services
 make status    # Show status of running containers
 make clean     # Stop services and remove volumes
+```
+
+### EC2 Deployment Commands
+
+```bash
+make ec2-deploy  # Deploy to AWS EC2 (includes automatic setup if needed)
+make ec2-destroy # Destroy EC2 infrastructure
+make ec2-status  # Show current EC2 infrastructure status
+make ec2-setup   # Manual setup (optional - called automatically by ec2-deploy)
+make ec2-clean   # Clean up Terraform state and files
+```
+
+## EC2 Deployment
+
+### Quick EC2 Deployment
+
+The simplest way to deploy to AWS EC2 is using the integrated workflow:
+
+```bash
+# Single command deployment - handles everything automatically
+make ec2-deploy
+```
+
+This command will:
+1. **Automatically detect** if AWS credentials are configured
+2. **Run EC2 setup** if needed (prompts for AWS credentials and SSH key configuration)
+3. **Deploy infrastructure** using Terraform
+4. **Show deployment details** including IP address and connection info
+
+### What You'll Need
+
+- AWS Account with appropriate permissions
+- AWS Access Key ID and Secret Access Key
+- Preferred AWS region (defaults to `ap-northeast-2`)
+
+### First Time Setup
+
+When you run `make ec2-deploy` for the first time, you'll be prompted for:
+
+1. **AWS Credentials**:
+   - AWS Access Key ID
+   - AWS Secret Access Key (input hidden)
+   - AWS Region (default: ap-northeast-2)
+
+2. **SSH Configuration**:
+   - SSH Key Pair Name (default: trh-platform-key)
+
+3. **Instance Configuration**:
+   - Instance Type (default: t2.large)
+   - Instance Name (default: trh-platform-ec2)
+
+### Subsequent Deployments
+
+After the first setup, `make ec2-deploy` will:
+- Use your saved AWS credentials
+- Skip setup if already configured
+- Only prompt for instance configuration
+
+### Manual Setup (Optional)
+
+If you prefer to configure AWS credentials separately:
+
+```bash
+# Run setup manually first
+make ec2-setup
+
+# Then deploy
+make ec2-deploy
 ```
 
 ## Accessing the Application
