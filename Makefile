@@ -211,6 +211,9 @@ ec2-destroy:
 		terraform destroy -auto-approve; \
 		echo "✅ EC2 infrastructure destroyed successfully!"; \
 	fi
+	@echo "Deleting .env file..."; \
+	rm -f ec2/.env; \
+	echo "✅ .env file deleted successfully!"; \
 
 # Show current EC2 infrastructure status
 ec2-status:
