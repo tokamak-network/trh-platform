@@ -150,6 +150,11 @@ ec2-deploy:
 	export TF_VAR_instance_name=$$instance_name; \
 	export TF_VAR_key_pair_name=$$KEY_PAIR_NAME; \
 	export TF_VAR_public_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME.pub; \
+	echo "📝 Writing environment variables to .env file..."; \
+	echo "TF_VAR_instance_type=$$instance_type" > ec2/.env; \
+	echo "TF_VAR_instance_name=$$instance_name" >> ec2/.env; \
+	echo "TF_VAR_key_pair_name=$$KEY_PAIR_NAME" >> ec2/.env; \
+	echo "TF_VAR_public_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME.pub" >> ec2/.env; \
 	echo "🔑 Using SSH key pair: $$KEY_PAIR_NAME"; \
 	echo "🔑 Using public key path: $$HOME/.ssh/$$KEY_PAIR_NAME.pub"; \
 	echo "🏗️  Initializing Terraform..."; \
@@ -177,25 +182,84 @@ ec2-destroy:
 	@AWS_USER=$$(aws sts get-caller-identity --query Arn --output text); \
 	echo "✅ Using AWS credentials for: $$AWS_USER"; \
 	echo ""
-	@echo "📋 Planning destruction..."; \
-	cd ec2 && terraform plan -destroy; \
-	echo "💥 Destroying infrastructure..."; \
-	terraform destroy -auto-approve; \
-	echo "✅ EC2 infrastructure destroyed successfully!"
+	@echo "📋 Loading environment variables from .env file..."; \
+	if [ -f ec2/.env ]; then \
+		. ec2/.env; \
+		echo "✅ Environment variables loaded from .env file"; \
+		echo "🔧 Exported variables:"; \
+		echo "   - TF_VAR_instance_type: $$TF_VAR_instance_type"; \
+		echo "   - TF_VAR_instance_name: $$TF_VAR_instance_name"; \
+		echo "   - TF_VAR_key_pair_name: $$TF_VAR_key_pair_name"; \
+		echo "   - TF_VAR_public_key_path: $$TF_VAR_public_key_path"; \
+		echo ""; \
+		echo "📋 Planning destruction..."; \
+		cd ec2 && \
+		export TF_VAR_instance_type="$$TF_VAR_instance_type" && \
+		export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
+		export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
+		export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
+		terraform plan -destroy; \
+		echo "💥 Destroying infrastructure..."; \
+		terraform destroy -auto-approve; \
+		echo "✅ EC2 infrastructure destroyed successfully!"; \
+	else \
+		echo "⚠️  No .env file found. Using default values."; \
+		echo ""; \
+		echo "📋 Planning destruction..."; \
+		cd ec2 && terraform plan -destroy; \
+		echo "💥 Destroying infrastructure..."; \
+		terraform destroy -auto-approve; \
+		echo "✅ EC2 infrastructure destroyed successfully!"; \
+	fi
 
 # Show current EC2 infrastructure status
 ec2-status:
 	@echo "📊 Checking EC2 infrastructure status..."
-	@if [ -f ec2/terraform.tfstate ]; then \
-		echo "📁 Terraform state file found"; \
+	@echo "📋 Loading environment variables from .env file..."; \
+	if [ -f ec2/.env ]; then \
+		. ec2/.env; \
+		echo "✅ Environment variables loaded from .env file"; \
+		echo "🔧 Exported variables:"; \
+		echo "   - TF_VAR_instance_type: $$TF_VAR_instance_type"; \
+		echo "   - TF_VAR_instance_name: $$TF_VAR_instance_name"; \
+		echo "   - TF_VAR_key_pair_name: $$TF_VAR_key_pair_name"; \
+		echo "   - TF_VAR_public_key_path: $$TF_VAR_public_key_path"; \
 		echo ""; \
-		echo "🏗️  Current Infrastructure:"; \
-		(cd ec2 && terraform show -json | jq -r '.values.root_module.resources[]? | select(.type=="aws_instance") | "Instance: \(.values.tags.Name // "unnamed") (\(.values.instance_type)) - \(.values.instance_state)"' 2>/dev/null) || echo "No instances found or jq not available"; \
-		echo ""; \
-		echo "📋 Terraform Outputs:"; \
-		(cd ec2 && terraform output 2>/dev/null) || echo "No outputs available"; \
+		if [ -f ec2/terraform.tfstate ]; then \
+			echo "📁 Terraform state file found"; \
+			echo ""; \
+			echo "🏗️  Current Infrastructure:"; \
+			(cd ec2 && \
+			export TF_VAR_instance_type="$$TF_VAR_instance_type" && \
+			export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
+			export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
+			export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
+			terraform show -json | jq -r '.values.root_module.resources[]? | select(.type=="aws_instance") | "Instance: \(.values.tags.Name // "unnamed") (\(.values.instance_type)) - \(.values.instance_state)"' 2>/dev/null) || echo "No instances found or jq not available"; \
+			echo ""; \
+			echo "📋 Terraform Outputs:"; \
+			(cd ec2 && \
+			export TF_VAR_instance_type="$$TF_VAR_instance_type" && \
+			export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
+			export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
+			export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
+			terraform output 2>/dev/null) || echo "No outputs available"; \
+		else \
+			echo "❌ No Terraform state found. Infrastructure may not be deployed."; \
+		fi; \
 	else \
-		echo "❌ No Terraform state found. Infrastructure may not be deployed."; \
+		echo "⚠️  No .env file found. Using default values."; \
+		echo ""; \
+		if [ -f ec2/terraform.tfstate ]; then \
+			echo "📁 Terraform state file found"; \
+			echo ""; \
+			echo "🏗️  Current Infrastructure:"; \
+			(cd ec2 && terraform show -json | jq -r '.values.root_module.resources[]? | select(.type=="aws_instance") | "Instance: \(.values.tags.Name // "unnamed") (\(.values.instance_type)) - \(.values.instance_state)"' 2>/dev/null) || echo "No instances found or jq not available"; \
+			echo ""; \
+			echo "📋 Terraform Outputs:"; \
+			(cd ec2 && terraform output 2>/dev/null) || echo "No outputs available"; \
+		else \
+			echo "❌ No Terraform state found. Infrastructure may not be deployed."; \
+		fi; \
 	fi
 
 # Clean up Terraform state and temporary files
