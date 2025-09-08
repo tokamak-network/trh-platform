@@ -152,7 +152,7 @@ When you run `make ec2-deploy` for the first time, you'll be prompted for:
    - AWS Region (default: ap-northeast-2)
 
 2. **SSH Configuration**:
-   - SSH Key Pair Name (default: trh-platform-key)
+   - SSH Key Pair Name (required - no default to avoid AWS conflicts)
 
 3. **Instance Configuration**:
    - Instance Type (default: t2.large)

@@ -19,11 +19,9 @@ variable "instance_name" {
 variable "key_pair_name" {
   description = "The name of the AWS key pair to use for SSH access"
   type        = string
-  default     = "trh-platform-key"
 }
 
 variable "public_key_path" {
   description = "Path to the public key file"
   type        = string
-  default     = "~/.ssh/trh-platform-key.pub"
 }

@@ -100,8 +100,12 @@ ec2-setup:
 	echo ""; \
 	read -p "AWS Region [ap-northeast-2]: " aws_region; \
 	aws_region=$${aws_region:-ap-northeast-2}; \
-	read -p "SSH Key Pair Name [trh-platform-key]: " key_pair_name; \
-	key_pair_name=$${key_pair_name:-trh-platform-key}; \
+	while [ -z "$$key_pair_name" ]; do \
+		read -p "SSH Key Pair Name (required): " key_pair_name; \
+		if [ -z "$$key_pair_name" ]; then \
+			echo "❌ SSH Key Pair Name is required. Please try again."; \
+		fi; \
+	done; \
 	echo "🔐 Configuring AWS credentials..."; \
 	aws configure set aws_access_key_id "$$aws_access_key"; \
 	aws configure set aws_secret_access_key "$$aws_secret_key"; \
@@ -114,6 +118,16 @@ ec2-setup:
 		AWS_USER=$$(aws sts get-caller-identity --query Arn --output text); \
 		echo "📊 Connected as: $$AWS_USER"; \
 		echo "🏢 Account ID: $$AWS_ACCOUNT"; \
+		echo "🔍 Validating SSH key pair name in AWS..."; \
+		while aws ec2 describe-key-pairs --key-names "$$key_pair_name" >/dev/null 2>&1; do \
+			echo "⚠️  AWS key pair '\''$$key_pair_name'\'' already exists in your AWS account."; \
+			read -p "Please enter a different key pair name: " key_pair_name; \
+			if [ -z "$$key_pair_name" ]; then \
+				echo "❌ Key pair name cannot be empty. Please try again."; \
+				key_pair_name="trh-platform-key"; \
+			fi; \
+		done; \
+		echo "✅ Key pair name '\''$$key_pair_name'\'' is available in AWS"; \
 		echo "🔑 Setting up SSH keys and environment..."; \
 		cd ec2 && chmod +x setup.sh && ./setup.sh "$$aws_access_key" "$$aws_secret_key" "$$aws_region" "$$key_pair_name"; \
 		echo "✅ EC2 setup completed!"; \

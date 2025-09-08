@@ -35,6 +35,34 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to check if AWS key pair exists
+check_aws_key_pair_exists() {
+    local key_name="$1"
+    if aws ec2 describe-key-pairs --key-names "$key_name" >/dev/null 2>&1; then
+        return 0  # Key pair exists
+    else
+        return 1  # Key pair does not exist
+    fi
+}
+
+# Function to prompt for a new key pair name if it already exists
+get_valid_key_pair_name() {
+    local suggested_name="$1"
+    local key_name="$suggested_name"
+    
+    while check_aws_key_pair_exists "$key_name"; do
+        print_warning "AWS key pair '$key_name' already exists in your AWS account."
+        echo -n "Please enter a different key pair name: "
+        read -r key_name
+        if [[ -z "$key_name" ]]; then
+            print_error "Key pair name cannot be empty."
+            key_name="$suggested_name"
+        fi
+    done
+    
+    echo "$key_name"
+}
+
 # Parse command line arguments
 AWS_ACCESS_KEY_ID_PARAM="$1"
 AWS_SECRET_ACCESS_KEY_PARAM="$2"
@@ -201,6 +229,39 @@ if aws sts get-caller-identity >/dev/null 2>&1; then
 else
     print_error "AWS configuration test failed. Please check your credentials."
     exit 1
+fi
+
+# Step 4: Validate AWS key pair name
+print_status "Step 4: Validating AWS key pair name..."
+VALIDATED_KEY_NAME=$(get_valid_key_pair_name "$KEY_PAIR_NAME_PARAM")
+
+if [[ "$VALIDATED_KEY_NAME" != "$KEY_PAIR_NAME_PARAM" ]]; then
+    print_status "Using validated key pair name: $VALIDATED_KEY_NAME"
+    SSH_KEY_NAME="$VALIDATED_KEY_NAME"
+    SSH_KEY_PATH="$HOME/.ssh/$SSH_KEY_NAME"
+    SSH_PUB_KEY_PATH="$HOME/.ssh/$SSH_KEY_NAME.pub"
+    
+    # Generate new SSH key with the validated name if it doesn't exist
+    if [[ ! -f "$SSH_KEY_PATH" ]]; then
+        print_status "Generating SSH key pair with validated name: $VALIDATED_KEY_NAME"
+        ssh-keygen -t rsa -b 4096 -f "$SSH_KEY_PATH" -N "" -C "trh-platform-$(date +%Y%m%d)"
+        chmod 600 "$SSH_KEY_PATH"
+        chmod 644 "$SSH_PUB_KEY_PATH"
+        print_success "SSH key pair generated at $SSH_KEY_PATH"
+    fi
+    
+    # Update .env file with the validated key pair name
+    if [[ -f "$ENV_FILE" ]]; then
+        if grep -q "^KEY_PAIR_NAME=" "$ENV_FILE"; then
+            sed -i "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$VALIDATED_KEY_NAME/" "$ENV_FILE"
+        else
+            echo "" >> "$ENV_FILE"
+            echo "KEY_PAIR_NAME=$VALIDATED_KEY_NAME" >> "$ENV_FILE"
+        fi
+        print_success "Updated $ENV_FILE with validated key pair name: $VALIDATED_KEY_NAME"
+    fi
+else
+    print_success "Key pair name '$KEY_PAIR_NAME_PARAM' is available in AWS"
 fi
 
 # Summary
