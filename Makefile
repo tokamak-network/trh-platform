@@ -214,6 +214,13 @@ ec2-destroy:
 	@echo "Deleting .env file..."; \
 	rm -f ec2/.env; \
 	echo "✅ .env file deleted successfully!"; \
+	echo "Deleting Terraform state files..."; \
+	
+	rm -f ec2/terraform.tfstate; \
+	rm -f ec2/terraform.tfstate.backup; \
+	rm -f ec2/.terraform.lock.hcl; \
+	rm -rf ec2/.terraform; \
+	echo "✅ Terraform state files deleted successfully!"; \
 
 # Show current EC2 infrastructure status
 ec2-status:
