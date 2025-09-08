@@ -19,8 +19,8 @@ fi
 
 OS_TYPE=$(uname)
 
-TOTAL_MACOS_STEPS=3
-TOTAL_LINUX_STEPS=3
+TOTAL_MACOS_STEPS=4
+TOTAL_LINUX_STEPS=4
 STEP=1
 SUCCESS="false"
 
@@ -143,6 +143,23 @@ if [[ "$OS_TYPE" == "Darwin" ]]; then
     STEP=$((STEP + 1))
     echo
 
+    # 4. Install Terraform
+    echo "[$STEP/$TOTAL_MACOS_STEPS] Installing Terraform..."
+    if ! command -v terraform &> /dev/null; then
+        echo "Terraform not found, installing..."
+        if ! command -v brew &> /dev/null; then
+            echo "Homebrew not found, installing..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            export PATH="/opt/homebrew/bin:$PATH"
+        fi
+        brew tap hashicorp/tap
+        brew install hashicorp/tap/terraform
+    else
+        echo "Terraform is already installed."
+    fi
+    STEP=$((STEP + 1))
+    echo
+
     SUCCESS="true"
 
 elif [[ "$OS_TYPE" == "Linux" ]]; then
@@ -220,6 +237,21 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
     STEP=$((STEP + 1))
     echo
 
+    # 4. Install Terraform
+    echo "[$STEP/$TOTAL_LINUX_STEPS] Installing Terraform..."
+    if ! command -v terraform &> /dev/null; then
+        echo "Terraform not found, installing..."
+        sudo apt-get install -y gnupg software-properties-common
+        wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+        sudo apt-get update -y
+        sudo apt-get install -y terraform
+    else
+        echo "Terraform is already installed."
+    fi
+    STEP=$((STEP + 1))
+    echo
+
     SUCCESS="true"
 else
     echo "Unsupported OS: $OS_TYPE"
@@ -249,6 +281,7 @@ if [[ "$SUCCESS" == "true" ]]; then
     check_command_version git "git --version"
     check_command_version make "make --version"
     check_command_version docker "docker --version"
+    check_command_version terraform "terraform --version"
 else
     echo "Some tools failed to install. Please check the output above for details."
     exit 1
