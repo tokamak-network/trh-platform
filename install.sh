@@ -19,8 +19,8 @@ fi
 
 OS_TYPE=$(uname)
 
-TOTAL_MACOS_STEPS=4
-TOTAL_LINUX_STEPS=4
+TOTAL_MACOS_STEPS=5
+TOTAL_LINUX_STEPS=5
 STEP=1
 SUCCESS="false"
 
@@ -143,7 +143,34 @@ if [[ "$OS_TYPE" == "Darwin" ]]; then
     STEP=$((STEP + 1))
     echo
 
-    # 4. Install Terraform
+    # 4. Install AWS CLI
+    echo "[$STEP/$TOTAL_MACOS_STEPS] Installing AWS CLI..."
+    if command -v aws &> /dev/null; then
+        current_version=$(aws --version | cut -d/ -f2 | cut -d' ' -f1)
+        if [[ $current_version == 2* ]]; then
+            echo "AWS CLI v$current_version is already installed and meets the version requirement."
+        else
+            echo "AWS CLI v$current_version is installed but does not meet the version requirement. Updating..."
+            if ! command -v brew &> /dev/null; then
+                echo "Homebrew not found, installing..."
+                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+                export PATH="/opt/homebrew/bin:$PATH"
+            fi
+            brew upgrade awscli
+        fi
+    else
+        echo "AWS CLI not found, installing..."
+        if ! command -v brew &> /dev/null; then
+            echo "Homebrew not found, installing..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            export PATH="/opt/homebrew/bin:$PATH"
+        fi
+        brew install awscli
+    fi
+    STEP=$((STEP + 1))
+    echo
+
+    # 5. Install Terraform
     echo "[$STEP/$TOTAL_MACOS_STEPS] Installing Terraform..."
     if ! command -v terraform &> /dev/null; then
         echo "Terraform not found, installing..."
@@ -237,7 +264,28 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
     STEP=$((STEP + 1))
     echo
 
-    # 4. Install Terraform
+    # 4. Install AWS CLI
+    echo "[$STEP/$TOTAL_LINUX_STEPS] Installing AWS CLI..."
+    if command -v aws &> /dev/null && version=$(aws --version | cut -d/ -f2 | cut -d' ' -f1) && [[ $version == 2* ]]; then
+        echo "AWS CLI v2 is already installed (version $version)"
+    else
+        echo "Installing AWS CLI v2..."
+        if ! command -v unzip &> /dev/null; then
+            sudo apt-get install -y unzip
+        fi
+        if [ "$ARCH" = "arm64" ]; then
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+        else
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        fi
+        unzip awscliv2.zip
+        sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+        rm -rf aws awscliv2.zip
+    fi
+    STEP=$((STEP + 1))
+    echo
+
+    # 5. Install Terraform
     echo "[$STEP/$TOTAL_LINUX_STEPS] Installing Terraform..."
     if ! command -v terraform &> /dev/null; then
         echo "Terraform not found, installing..."
@@ -281,6 +329,7 @@ if [[ "$SUCCESS" == "true" ]]; then
     check_command_version git "git --version"
     check_command_version make "make --version"
     check_command_version docker "docker --version"
+    check_command_version aws "aws --version"
     check_command_version terraform "terraform --version"
 else
     echo "Some tools failed to install. Please check the output above for details."
