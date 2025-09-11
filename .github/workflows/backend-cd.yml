@@ -3,8 +3,8 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main]
-  path:
-    - 'backend/**'
+    paths:
+      - 'backend/**'
 
 env:
   REGISTRY: docker.io
