@@ -1,0 +1,13 @@
+*.env
+main
+trh-backend
+path/**
+storage/**
+
+tokamak-thanos
+tokamak-thanos-stack
+
+logs
+
+.idea
+.vscode

@@ -1,0 +1,1691 @@
+basePath: /api/v1
+definitions:
+  dtos.AWSCredentialsListResponse:
+    properties:
+      credentials:
+        items:
+          $ref: '#/definitions/dtos.AWSCredentialsResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dtos.AWSCredentialsResponse:
+    properties:
+      accessKeyId:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      secretAccessKey:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dtos.AlertManagerConfig:
+    properties:
+      email:
+        $ref: '#/definitions/dtos.EmailConfig'
+      telegram:
+        $ref: '#/definitions/dtos.TelegramConfig'
+    type: object
+  dtos.ApiKeyListResponse:
+    properties:
+      apiKeys:
+        items:
+          $ref: '#/definitions/dtos.ApiKeyResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dtos.ApiKeyResponse:
+    properties:
+      apiKey:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dtos.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dtos.UserResponse'
+    type: object
+  dtos.CreateAWSCredentialsRequest:
+    properties:
+      accessKeyId:
+        type: string
+      name:
+        type: string
+      secretAccessKey:
+        type: string
+    required:
+    - accessKeyId
+    - name
+    - secretAccessKey
+    type: object
+  dtos.CreateApiKeyRequest:
+    properties:
+      apiKey:
+        type: string
+      type:
+        type: string
+    required:
+    - apiKey
+    - type
+    type: object
+  dtos.CreateRPCUrlRequest:
+    properties:
+      name:
+        type: string
+      network:
+        $ref: '#/definitions/entities.NetworkType'
+      rpcUrl:
+        type: string
+      type:
+        $ref: '#/definitions/entities.RPCType'
+    required:
+    - name
+    - network
+    - rpcUrl
+    - type
+    type: object
+  dtos.DeployThanosRequest:
+    properties:
+      adminAccount:
+        type: string
+      awsAccessKey:
+        type: string
+      awsRegion:
+        type: string
+      awsSecretAccessKey:
+        type: string
+      batchSubmissionFrequency:
+        description: seconds
+        minimum: 1
+        type: integer
+      batcherAccount:
+        type: string
+      chainName:
+        type: string
+      challengePeriod:
+        description: seconds
+        minimum: 1
+        type: integer
+      deploymentPath:
+        type: string
+      l1BeaconUrl:
+        type: string
+      l1RpcUrl:
+        type: string
+      l2BlockTime:
+        description: seconds
+        minimum: 1
+        type: integer
+      network:
+        allOf:
+        - $ref: '#/definitions/entities.DeploymentNetwork'
+        enum:
+        - Mainnet
+        - Testnet
+        - LocalDevnet
+      outputRootFrequency:
+        description: seconds
+        minimum: 1
+        type: integer
+      proposerAccount:
+        type: string
+      registerCandidate:
+        type: boolean
+      registerCandidateParams:
+        $ref: '#/definitions/dtos.RegisterCandidateRequest'
+      sequencerAccount:
+        type: string
+    required:
+    - adminAccount
+    - awsAccessKey
+    - awsRegion
+    - awsSecretAccessKey
+    - batchSubmissionFrequency
+    - batcherAccount
+    - chainName
+    - challengePeriod
+    - l1BeaconUrl
+    - l1RpcUrl
+    - l2BlockTime
+    - network
+    - outputRootFrequency
+    - proposerAccount
+    - sequencerAccount
+    type: object
+  dtos.EmailConfig:
+    properties:
+      criticalReceivers:
+        items:
+          type: string
+        type: array
+      defaultReceivers:
+        items:
+          type: string
+        type: array
+      enabled:
+        type: boolean
+      smtpAuthPassword:
+        type: string
+      smtpAuthUsername:
+        type: string
+      smtpFrom:
+        type: string
+      smtpSmarthost:
+        type: string
+    type: object
+  dtos.InstallBlockExplorerRequest:
+    properties:
+      coinmarketcapKey:
+        type: string
+      databasePassword:
+        type: string
+      databaseUsername:
+        type: string
+      walletConnectId:
+        type: string
+    required:
+    - coinmarketcapKey
+    - databasePassword
+    - databaseUsername
+    - walletConnectId
+    type: object
+  dtos.InstallMonitoringRequest:
+    properties:
+      alertManager:
+        $ref: '#/definitions/dtos.AlertManagerConfig'
+      grafanaPassword:
+        type: string
+      loggingEnabled:
+        type: boolean
+    required:
+    - grafanaPassword
+    type: object
+  dtos.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dtos.RPCUrlListResponse:
+    properties:
+      rpcUrls:
+        items:
+          $ref: '#/definitions/dtos.RPCUrlResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dtos.RPCUrlResponse:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      network:
+        $ref: '#/definitions/entities.NetworkType'
+      rpcUrl:
+        type: string
+      type:
+        $ref: '#/definitions/entities.RPCType'
+      updatedAt:
+        type: string
+    type: object
+  dtos.RegisterCandidateRequest:
+    properties:
+      amount:
+        minimum: 0
+        type: number
+      memo:
+        type: string
+      nameInfo:
+        type: string
+    required:
+    - amount
+    - memo
+    type: object
+  dtos.TelegramConfig:
+    properties:
+      apiToken:
+        type: string
+      criticalReceivers:
+        items:
+          $ref: '#/definitions/dtos.TelegramReceiver'
+        type: array
+      enabled:
+        type: boolean
+    type: object
+  dtos.TelegramReceiver:
+    properties:
+      chatId:
+        type: string
+    type: object
+  dtos.UpdateAWSCredentialsRequest:
+    properties:
+      accessKeyId:
+        type: string
+      name:
+        type: string
+      secretAccessKey:
+        type: string
+    type: object
+  dtos.UpdateApiKeyRequest:
+    properties:
+      apiKey:
+        type: string
+      type:
+        type: string
+    type: object
+  dtos.UpdateNetworkRequest:
+    properties:
+      l1BeaconUrl:
+        type: string
+      l1RpcUrl:
+        type: string
+    type: object
+  dtos.UpdateRPCUrlRequest:
+    properties:
+      name:
+        type: string
+      network:
+        $ref: '#/definitions/entities.NetworkType'
+      rpcUrl:
+        type: string
+      type:
+        $ref: '#/definitions/entities.RPCType'
+    type: object
+  dtos.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      role:
+        $ref: '#/definitions/entities.UserRole'
+    type: object
+  entities.DeploymentNetwork:
+    enum:
+    - Mainnet
+    - Testnet
+    - LocalDevnet
+    type: string
+    x-enum-varnames:
+    - DeploymentNetworkMainnet
+    - DeploymentNetworkTestnet
+    - DeploymentNetworkLocalDevnet
+  entities.NetworkType:
+    enum:
+    - Testnet
+    - Mainnet
+    type: string
+    x-enum-varnames:
+    - NetworkTypeTestnet
+    - NetworkTypeMainnet
+  entities.RPCType:
+    enum:
+    - BeaconChain
+    - ExecutionLayer
+    type: string
+    x-enum-varnames:
+    - RPCTypeBeaconChain
+    - RPCTypeExecutionLayer
+  entities.Response:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  entities.UserRole:
+    enum:
+    - Admin
+    - User
+    type: string
+    x-enum-varnames:
+    - UserRoleAdmin
+    - UserRoleUser
+host: localhost:${PORT}
+info:
+  contact: {}
+  description: TRH Backend API
+  title: TRH Backend
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login user with email and password
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /auth/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - auth
+  /auth/users:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of all users
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all users (Admin only)
+      tags:
+      - auth
+  /configuration/api-key:
+    get:
+      consumes:
+      - application/json
+      description: Get all API key configurations (excluding soft deleted ones)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.ApiKeyListResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all API Keys
+      tags:
+      - api-key
+    post:
+      consumes:
+      - application/json
+      description: Create new API key configuration with key and type
+      parameters:
+      - description: Create API Key request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateApiKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.ApiKeyResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create API Key
+      tags:
+      - api-key
+  /configuration/api-key/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete API key configuration by ID
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete API Key
+      tags:
+      - api-key
+    get:
+      consumes:
+      - application/json
+      description: Get API key configuration by its unique ID
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.ApiKeyResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get API Key by ID
+      tags:
+      - api-key
+    patch:
+      consumes:
+      - application/json
+      description: Update existing API key configuration by ID (partial update)
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update API Key request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateApiKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.ApiKeyResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update API Key
+      tags:
+      - api-key
+  /configuration/aws-credentials:
+    get:
+      consumes:
+      - application/json
+      description: Get all AWS credentials (excluding soft deleted ones)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.AWSCredentialsListResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all AWS credentials
+      tags:
+      - aws-credentials
+    post:
+      consumes:
+      - application/json
+      description: Create new AWS credentials with name, access key ID, and secret
+        access key
+      parameters:
+      - description: Create AWS credentials request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateAWSCredentialsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.AWSCredentialsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create AWS credentials
+      tags:
+      - aws-credentials
+  /configuration/aws-credentials/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete AWS credentials by ID
+      parameters:
+      - description: AWS credentials ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete AWS credentials
+      tags:
+      - aws-credentials
+    get:
+      consumes:
+      - application/json
+      description: Get AWS credentials by their unique ID
+      parameters:
+      - description: AWS credentials ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.AWSCredentialsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get AWS credentials by ID
+      tags:
+      - aws-credentials
+    patch:
+      consumes:
+      - application/json
+      description: Update existing AWS credentials by ID (partial update)
+      parameters:
+      - description: AWS credentials ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update AWS credentials request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateAWSCredentialsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.AWSCredentialsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update AWS credentials
+      tags:
+      - aws-credentials
+  /configuration/rpc-url:
+    get:
+      consumes:
+      - application/json
+      description: Get all RPC URL configurations (excluding soft deleted ones)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.RPCUrlListResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all RPC URLs
+      tags:
+      - rpc-url
+    post:
+      consumes:
+      - application/json
+      description: Create new RPC URL configuration with name, URL, type, and network
+      parameters:
+      - description: Create RPC URL request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateRPCUrlRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.RPCUrlResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Create RPC URL
+      tags:
+      - rpc-url
+  /configuration/rpc-url/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete RPC URL configuration by ID
+      parameters:
+      - description: RPC URL ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete RPC URL
+      tags:
+      - rpc-url
+    get:
+      consumes:
+      - application/json
+      description: Get RPC URL configuration by its unique ID
+      parameters:
+      - description: RPC URL ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.RPCUrlResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Get RPC URL by ID
+      tags:
+      - rpc-url
+    patch:
+      consumes:
+      - application/json
+      description: Update existing RPC URL configuration by ID (partial update)
+      parameters:
+      - description: RPC URL ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update RPC URL request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateRPCUrlRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/entities.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.RPCUrlResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      security:
+      - BearerAuth: []
+      summary: Update RPC URL
+      tags:
+      - rpc-url
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Get health
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get health
+      tags:
+      - health
+  /stacks/thanos:
+    get:
+      consumes:
+      - application/json
+      description: Get All Stacks (Authenticated users)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get All Stacks
+      tags:
+      - Thanos Stack
+    post:
+      consumes:
+      - application/json
+      description: Deploy Thanos Stack (Admin only)
+      parameters:
+      - description: Deploy Thanos Stack Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.DeployThanosRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Deploy Thanos Stack
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Terminate Thanos Stack
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Terminate Thanos Stack
+      tags:
+      - Thanos Stack
+    get:
+      consumes:
+      - application/json
+      description: Get Stack By ID
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Stack By ID
+      tags:
+      - Thanos Stack
+    put:
+      consumes:
+      - application/json
+      description: Update Network
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Network Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateNetworkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Update Network
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/deployments:
+    get:
+      consumes:
+      - application/json
+      description: Get Deployments
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Deployments
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/deployments/{deploymentId}:
+    get:
+      consumes:
+      - application/json
+      description: Get Stack Deployment
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Stack Deployment
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/deployments/{deploymentId}/logs:
+    get:
+      consumes:
+      - application/json
+      description: Get logs for a deployment (paginated)
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      - default: 200
+        description: Max logs to return
+        in: query
+        name: limit
+        type: integer
+      - description: Return logs after this log id (exclusive)
+        in: query
+        name: afterId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Deployment Logs
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/deployments/{deploymentId}/logs/download:
+    get:
+      consumes:
+      - application/json
+      description: Download the deployment log file
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Log file content
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Download Deployment Log File
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/deployments/{deploymentId}/status:
+    get:
+      consumes:
+      - application/json
+      description: Get Stack Deployment Status
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Stack Deployment Status
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/integrations:
+    get:
+      consumes:
+      - application/json
+      description: Get Integrations
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Integrations
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/integrations/{integrationId}:
+    get:
+      consumes:
+      - application/json
+      description: Get Integration By ID
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Integration ID
+        in: path
+        name: integrationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Integration By ID
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/integrations/block-explorer:
+    delete:
+      consumes:
+      - application/json
+      description: Uninstall Block Explorer
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Uninstall Block Explorer
+      tags:
+      - Thanos Stack
+    post:
+      consumes:
+      - application/json
+      description: Install Block Explorer
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Install Block Explorer Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.InstallBlockExplorerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Install Block Explorer
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/integrations/bridge:
+    delete:
+      consumes:
+      - application/json
+      description: Uninstall Bridge
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Uninstall Bridge
+      tags:
+      - Thanos Stack
+    post:
+      consumes:
+      - application/json
+      description: Install Bridge
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Install Bridge
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/integrations/monitoring:
+    delete:
+      consumes:
+      - application/json
+      description: Uninstall Monitoring
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Uninstall Monitoring
+      tags:
+      - Thanos Stack
+    post:
+      consumes:
+      - application/json
+      description: Install Monitoring
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Install Monitoring Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.InstallMonitoringRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Install Monitoring
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/logs:
+    get:
+      consumes:
+      - application/json
+      description: Get logs across all deployments for a stack (paginated)
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 200
+        description: Max logs to return
+        in: query
+        name: limit
+        type: integer
+      - description: Return logs after this log id (exclusive)
+        in: query
+        name: afterId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Stack Logs
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/register-candidates:
+    post:
+      consumes:
+      - application/json
+      description: Register Candidates
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Register Candidates
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/register-metadata-dao:
+    post:
+      consumes:
+      - application/json
+      description: Register Metadata DAO
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Register Metadata DAO
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/resume:
+    post:
+      consumes:
+      - application/json
+      description: Resume Thanos Stack
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Resume Thanos Stack
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/rollupconfig:
+    get:
+      consumes:
+      - application/json
+      description: Download the rollup config file for a stack
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rollup config file content
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Download Rollup Config File
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/status:
+    get:
+      consumes:
+      - application/json
+      description: Get Stack Status
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Get Stack Status
+      tags:
+      - Thanos Stack
+  /stacks/thanos/{id}/stop:
+    post:
+      consumes:
+      - application/json
+      description: Stop Thanos Stack
+      parameters:
+      - description: Thanos Stack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Response'
+      summary: Stop Thanos Stack
+      tags:
+      - Thanos Stack
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
