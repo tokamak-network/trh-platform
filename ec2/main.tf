@@ -79,7 +79,7 @@ resource "aws_instance" "trh_platform_ec2" {
   instance_type          = var.instance_type
   key_name               = aws_key_pair.trh_platform_key.key_name
   vpc_security_group_ids = [aws_security_group.trh_platform_security_group.id]
-
+  user_data = file("../install.sh")
   tags = {
     Name = var.instance_name
   }
