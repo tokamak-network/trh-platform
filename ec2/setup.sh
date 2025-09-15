@@ -147,14 +147,14 @@ if [[ -f "$ENV_FILE" ]]; then
         cp "$TEMPLATE_FILE" "$ENV_FILE"
         # Add KEY_PAIR_NAME to .env file
         echo "" >> "$ENV_FILE"
-        echo "KEY_PAIR_NAME=$KEY_PAIR_NAME_PARAM" >> "$ENV_FILE"
+        echo "KEY_PAIR_NAME=$SSH_KEY_NAME" >> "$ENV_FILE"
         print_success "Environment file created from template"
     fi
 else
     cp "$TEMPLATE_FILE" "$ENV_FILE"
     # Add KEY_PAIR_NAME to .env file
     echo "" >> "$ENV_FILE"
-    echo "KEY_PAIR_NAME=$KEY_PAIR_NAME_PARAM" >> "$ENV_FILE"
+    echo "KEY_PAIR_NAME=$SSH_KEY_NAME" >> "$ENV_FILE"
     print_success "Environment file $ENV_FILE created from template"
 fi
 
@@ -172,10 +172,10 @@ if [[ "$USE_PARAMS" == true ]]; then
         sed -i "s/^AWS_REGION=.*/AWS_REGION=$AWS_REGION_PARAM/" "$ENV_FILE"
         # Add or update KEY_PAIR_NAME in .env file
         if grep -q "^KEY_PAIR_NAME=" "$ENV_FILE"; then
-            sed -i "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$KEY_PAIR_NAME_PARAM/" "$ENV_FILE"
+            sed -i "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$SSH_KEY_NAME/" "$ENV_FILE"
         else
             echo "" >> "$ENV_FILE"
-            echo "KEY_PAIR_NAME=$KEY_PAIR_NAME_PARAM" >> "$ENV_FILE"
+            echo "KEY_PAIR_NAME=$SSH_KEY_NAME" >> "$ENV_FILE"
         fi
         print_success "Updated $ENV_FILE with provided credentials and key pair name"
     fi
@@ -231,15 +231,23 @@ else
     exit 1
 fi
 
-# Step 4: Validate AWS key pair name
+# Step 4: Validate AWS key pair name and update if needed
 print_status "Step 4: Validating AWS key pair name..."
 VALIDATED_KEY_NAME=$(get_valid_key_pair_name "$KEY_PAIR_NAME_PARAM")
 
 if [[ "$VALIDATED_KEY_NAME" != "$KEY_PAIR_NAME_PARAM" ]]; then
     print_status "Using validated key pair name: $VALIDATED_KEY_NAME"
+    OLD_SSH_KEY_NAME="$SSH_KEY_NAME"
     SSH_KEY_NAME="$VALIDATED_KEY_NAME"
     SSH_KEY_PATH="$HOME/.ssh/$SSH_KEY_NAME"
     SSH_PUB_KEY_PATH="$HOME/.ssh/$SSH_KEY_NAME.pub"
+    
+    # If we generated a key with the old name, rename it to the new name
+    if [[ -f "$HOME/.ssh/$OLD_SSH_KEY_NAME" && "$OLD_SSH_KEY_NAME" != "$SSH_KEY_NAME" ]]; then
+        print_status "Renaming SSH key from $OLD_SSH_KEY_NAME to $SSH_KEY_NAME"
+        mv "$HOME/.ssh/$OLD_SSH_KEY_NAME" "$SSH_KEY_PATH"
+        mv "$HOME/.ssh/$OLD_SSH_KEY_NAME.pub" "$SSH_PUB_KEY_PATH"
+    fi
     
     # Generate new SSH key with the validated name if it doesn't exist
     if [[ ! -f "$SSH_KEY_PATH" ]]; then

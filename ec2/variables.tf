@@ -25,3 +25,15 @@ variable "public_key_path" {
   description = "Path to the public key file"
   type        = string
 }
+
+variable "admin_email" {
+  description = "Default admin email for the platform"
+  type        = string
+  default     = "admin@gmail.com"
+}
+
+variable "admin_password" {
+  description = "Default admin password for the platform"
+  type        = string
+  default     = "admin"
+}

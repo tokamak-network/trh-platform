@@ -14,7 +14,8 @@ help:
 	@echo "  make config  - Configure environment variables interactively"
 	@echo ""
 	@echo "☁️  EC2 Commands:"
-	@echo "  make ec2-deploy  - Deploy EC2 infrastructure (includes automatic setup if needed)"
+	@echo "  make ec2-deploy  - Deploy EC2 infrastructure with automatic TRH Platform setup"
+	@echo "                     (includes SSH keys, AWS config, admin credentials, repository cloning, and platform setup)"
 	@echo "  make ec2-setup   - Setup SSH keys and AWS configuration manually (optional - called automatically by ec2-deploy)"
 	@echo "  make ec2-destroy - Destroy EC2 infrastructure (uses configured credentials, no confirmations)"
 	@echo "  make ec2-status  - Show current EC2 infrastructure status"
@@ -136,9 +137,14 @@ ec2-setup:
 		exit 1; \
 	fi'
 
-# Deploy EC2 infrastructure (includes setup if needed)
+# Deploy EC2 infrastructure with automatic TRH Platform setup
 ec2-deploy:
-	@echo "☁️  Deploying EC2 infrastructure..."
+	@echo "☁️  Deploying EC2 infrastructure with automatic TRH Platform setup..."
+	@echo "This will:"
+	@echo "  1. Provision EC2 instance with required tools (git, make, docker, AWS CLI, terraform)"
+	@echo "  2. Clone https://github.com/tokamak-network/trh-platform repository"
+	@echo "  3. Run 'make config' and 'make setup' automatically"
+	@echo ""
 	@echo "🧪 Checking AWS configuration..."
 	@# Check if AWS credentials are configured and environment file exists
 	@if ! aws sts get-caller-identity >/dev/null 2>&1 || [ ! -f ec2/.env ]; then \
@@ -159,16 +165,26 @@ ec2-deploy:
 	read -p "Instance Name [trh-platform-ec2]: " instance_name; \
 	instance_name=$${instance_name:-trh-platform-ec2}; \
 	echo ""; \
+	echo "=== Platform Admin Configuration ==="; \
+	read -p "Admin Email [admin@gmail.com]: " admin_email; \
+	admin_email=$${admin_email:-admin@gmail.com}; \
+	read -p "Admin Password [admin]: " admin_password; \
+	admin_password=$${admin_password:-admin}; \
+	echo ""; \
 	. ec2/.env; \
 	export TF_VAR_instance_type=$$instance_type; \
 	export TF_VAR_instance_name=$$instance_name; \
 	export TF_VAR_key_pair_name=$$KEY_PAIR_NAME; \
 	export TF_VAR_public_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME.pub; \
+	export TF_VAR_admin_email=$$admin_email; \
+	export TF_VAR_admin_password=$$admin_password; \
 	echo "📝 Writing environment variables to .env file..."; \
 	echo "TF_VAR_instance_type=$$instance_type" > ec2/.env; \
 	echo "TF_VAR_instance_name=$$instance_name" >> ec2/.env; \
 	echo "TF_VAR_key_pair_name=$$KEY_PAIR_NAME" >> ec2/.env; \
 	echo "TF_VAR_public_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME.pub" >> ec2/.env; \
+	echo "TF_VAR_admin_email=$$admin_email" >> ec2/.env; \
+	echo "TF_VAR_admin_password=$$admin_password" >> ec2/.env; \
 	echo "🔑 Using SSH key pair: $$KEY_PAIR_NAME"; \
 	echo "🔑 Using public key path: $$HOME/.ssh/$$KEY_PAIR_NAME.pub"; \
 	echo "🏗️  Initializing Terraform..."; \
@@ -180,7 +196,21 @@ ec2-deploy:
 	echo "✅ EC2 infrastructure deployed successfully!"; \
 	echo ""; \
 	echo "📊 Infrastructure Details:"; \
-	terraform output'
+	terraform output; \
+	echo ""; \
+	INSTANCE_IP=$$(terraform output -raw instance_public_ip); \
+	echo "🚀 TRH Platform Setup:"; \
+	echo "  ✓ Repository cloned to: /home/ubuntu/trh-platform"; \
+	echo "  ✓ Platform configured and set up automatically"; \
+	echo "  ✓ Admin Email: $$admin_email"; \
+	echo "  ✓ Admin Password: $$admin_password"; \
+	echo "  ✓ Services should be running on the instance"; \
+	echo ""; \
+	echo "📝 Next Steps:"; \
+	echo "  1. SSH into the instance: ssh -i ~/.ssh/$$KEY_PAIR_NAME ubuntu@$$INSTANCE_IP"; \
+	echo "  2. Check platform status: cd trh-platform && make status"; \
+	echo "  3. View platform logs: cd trh-platform && make logs"; \
+	echo "  4. Access platform dashboard at: http://$$INSTANCE_IP:3000"'
 
 # Destroy EC2 infrastructure using configured AWS credentials
 ec2-destroy:
