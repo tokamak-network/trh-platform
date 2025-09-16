@@ -81,6 +81,18 @@ resource "aws_instance" "trh_platform_ec2" {
   vpc_security_group_ids = [aws_security_group.trh_platform_security_group.id]
   user_data              = file("../install.sh")
   
+  # Root volume configuration with 50GB storage
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 50
+    encrypted   = true
+    delete_on_termination = true
+    
+    tags = {
+      Name = "${var.instance_name}-root-volume"
+    }
+  }
+  
   tags = {
     Name = var.instance_name
   }
