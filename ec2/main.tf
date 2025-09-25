@@ -51,15 +51,6 @@ resource "aws_security_group" "trh_platform_security_group" {
     description = "Backend port 8000"
   }
 
-  # PostgreSQL port 5432
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "PostgreSQL"
-  }
-
   # All outbound traffic
   egress {
     from_port   = 0
