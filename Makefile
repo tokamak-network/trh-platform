@@ -24,7 +24,7 @@ help:
 # Start all services in detached mode
 up:
 	@echo "🚀 Starting TRH services..."
-	docker compose pull
+	docker compose pull --parallel
 	docker compose up -d
 	@echo "✅ Services started successfully!"
 
