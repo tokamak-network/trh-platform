@@ -167,12 +167,12 @@ if [[ "$USE_PARAMS" == true ]]; then
     
     # Update .env file with provided credentials
     if [[ -f "$ENV_FILE" ]]; then
-        sed -i "s/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_PARAM/" "$ENV_FILE"
-        sed -i "s/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_PARAM/" "$ENV_FILE"
-        sed -i "s/^AWS_REGION=.*/AWS_REGION=$AWS_REGION_PARAM/" "$ENV_FILE"
+        sed -i '' "s/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_PARAM/" "$ENV_FILE"
+        sed -i '' "s/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_PARAM/" "$ENV_FILE"
+        sed -i '' "s/^AWS_REGION=.*/AWS_REGION=$AWS_REGION_PARAM/" "$ENV_FILE"
         # Add or update KEY_PAIR_NAME in .env file
         if grep -q "^KEY_PAIR_NAME=" "$ENV_FILE"; then
-            sed -i "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$SSH_KEY_NAME/" "$ENV_FILE"
+            sed -i '' "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$SSH_KEY_NAME/" "$ENV_FILE"
         else
             echo "" >> "$ENV_FILE"
             echo "KEY_PAIR_NAME=$SSH_KEY_NAME" >> "$ENV_FILE"
@@ -261,7 +261,7 @@ if [[ "$VALIDATED_KEY_NAME" != "$KEY_PAIR_NAME_PARAM" ]]; then
     # Update .env file with the validated key pair name
     if [[ -f "$ENV_FILE" ]]; then
         if grep -q "^KEY_PAIR_NAME=" "$ENV_FILE"; then
-            sed -i "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$VALIDATED_KEY_NAME/" "$ENV_FILE"
+            sed -i '' "s/^KEY_PAIR_NAME=.*/KEY_PAIR_NAME=$VALIDATED_KEY_NAME/" "$ENV_FILE"
         else
             echo "" >> "$ENV_FILE"
             echo "KEY_PAIR_NAME=$VALIDATED_KEY_NAME" >> "$ENV_FILE"
