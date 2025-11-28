@@ -11,8 +11,8 @@
 set -e
 
 # Retry configuration
-MAX_RETRIES=5
-RETRY_DELAY=3
+MAX_RETRIES=30
+RETRY_DELAY=10
 
 echo "🔍 Finding running trh-backend container..."
 
@@ -21,7 +21,7 @@ sleep 10
 
 # Function to find the running trh-backend container
 find_container() {
-    docker ps --filter "ancestor=tokamaknetwork/trh-backend" --format "table {{.ID}}" | tail -n +2 | head -n 1
+    docker compose ps -q backend --status running
 }
 
 # Retry mechanism to find the container
