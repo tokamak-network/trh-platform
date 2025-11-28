@@ -250,20 +250,22 @@ ec2-update:
 			git pull origin $$TARGET_BRANCH && \
 			echo '🔄 Pulling latest Docker images...' && \
 			PULL_OUTPUT=\$$(docker compose pull 2>&1) && \
+			PULL_EXIT=\$$? && \
 			echo \"\$$PULL_OUTPUT\" && \
-			if ! echo \"\$$PULL_OUTPUT\" | grep -qE 'Downloaded newer image|Pulling.*[0-9]+/[0-9]+'; then \
+			if [ \$$PULL_EXIT -ne 0 ]; then \
+				echo '❌ Failed to pull Docker images. Exiting.' && \
+				exit 1; \
+			fi && \
+			if ! echo \"\$$PULL_OUTPUT\" | grep -qE 'Pulling|Downloaded newer image|Downloading'; then \
 				echo 'ℹ️  All images are already up to date. No update needed.' && \
-				echo '📊 Current running Docker images:' && \
-				docker compose ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}' 2>/dev/null || \
-				docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' && \
+				(docker compose ps --format '{{.Image}}' 2>/dev/null || docker ps --format '{{.Image}}') | \
+				sed 's/^/  /' && \
 				exit 0; \
 			fi && \
+			echo '✅ Image pulling completed successfully.' && \
 			echo '🚀 Starting updated services...' && \
 			docker compose up -d && \
-			./setup.sh && \
-			echo '📊 Updated Docker images (after update):' && \
-			docker compose ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}' 2>/dev/null || \
-			docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' \
+			./setup.sh \
 		"; \
 		echo "✅ Update completed successfully!"; \
 	else \
