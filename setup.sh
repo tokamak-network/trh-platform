@@ -50,7 +50,7 @@ done
 echo "🚀 Executing into container and running setup..."
 
 # Execute into the container and run the commands
-docker exec -it "$CONTAINER_ID" bash -c "
+docker exec -i "$CONTAINER_ID" bash -c "
 echo '📦 Running install-all-packages.sh...'
 
 # Install TRH SDK packages (equivalent to what setup.sh does at the end)

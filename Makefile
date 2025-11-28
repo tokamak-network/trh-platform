@@ -17,6 +17,7 @@ help:
 	@echo "  make ec2-deploy  - Deploy EC2 infrastructure with automatic TRH Platform setup"
 	@echo "                     (includes SSH keys, AWS config, admin credentials, repository cloning, and platform setup)"
 	@echo "  make ec2-setup   - Setup SSH keys and AWS configuration manually (optional - called automatically by ec2-deploy)"
+	@echo "  make ec2-update  - Update TRH Platform on running EC2 instance (supports BRANCH=name)"
 	@echo "  make ec2-destroy - Destroy EC2 infrastructure (uses configured credentials, no confirmations)"
 	@echo "  make ec2-status  - Show current EC2 infrastructure status"
 	@echo "  make ec2-clean   - Clean up Terraform state and files"
@@ -24,9 +25,15 @@ help:
 # Start all services in detached mode
 up:
 	@echo "🚀 Starting TRH services..."
-	docker compose pull --parallel
 	docker compose up -d
 	@echo "✅ Services started successfully!"
+
+# Update services with latest images
+update:
+	@echo "🔄 Checking for image updates..."
+	docker compose pull
+	docker compose up -d
+	@echo "✅ Services updated successfully!"
 
 # Stop all services
 down:
@@ -211,6 +218,35 @@ ec2-deploy:
 	echo "  2. Check platform status: cd trh-platform && make status"; \
 	echo "  3. View platform logs: cd trh-platform && make logs"; \
 	echo "  4. Access platform dashboard at: http://$$INSTANCE_IP:3000"'
+
+# Update TRH Platform on EC2 instance
+ec2-update:
+	@echo "🔄 Updating TRH Platform on EC2..."
+	@echo "🧪 Checking AWS configuration..."
+	@if ! aws sts get-caller-identity >/dev/null 2>&1; then \
+		echo "❌ AWS credentials not configured or invalid."; \
+		exit 1; \
+	fi
+	@echo "📋 Loading environment variables from .env file..."; \
+	if [ -f ec2/.env ]; then \
+		. ec2/.env; \
+		echo "✅ Environment variables loaded"; \
+		echo "🔍 Getting instance IP..."; \
+		INSTANCE_IP=$$(cd ec2 && terraform output -raw instance_public_ip 2>/dev/null); \
+		if [ -z "$$INSTANCE_IP" ]; then \
+			echo "❌ Could not get instance IP. Is the infrastructure deployed?"; \
+			exit 1; \
+		fi; \
+		echo "✅ Instance IP: $$INSTANCE_IP"; \
+		echo "🚀 Connecting to instance to update..."; \
+		TARGET_BRANCH=$${BRANCH:-feat/update-platform}; \
+		echo "🌿 Target Branch: $$TARGET_BRANCH"; \
+		ssh -o StrictHostKeyChecking=no -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP "cd trh-platform && echo '📥 Fetching latest code...' && git fetch --all && echo '🌿 Checking out $$TARGET_BRANCH...' && git checkout $$TARGET_BRANCH && git pull origin $$TARGET_BRANCH && echo '🔄 Updating services...' && docker compose pull && docker compose up -d && ./setup.sh"; \
+		echo "✅ Update completed successfully!"; \
+	else \
+		echo "❌ ec2/.env file not found. Cannot determine configuration."; \
+		exit 1; \
+	fi
 
 # Destroy EC2 infrastructure using configured AWS credentials
 ec2-destroy:
