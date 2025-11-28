@@ -250,10 +250,26 @@ ec2-update:
 			exit 1; \
 		fi; \
 		echo "✅ Instance IP: $$INSTANCE_IP"; \
+		echo "🔐 Verifying SSH host key..."; \
+		if ssh-keygen -F "$$INSTANCE_IP" -f ~/.ssh/known_hosts >/dev/null 2>&1; then \
+			echo "⚠️  Host key already exists for $$INSTANCE_IP"; \
+			echo "🔄 Testing connection with existing host key..."; \
+			if ! ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=5 -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP "echo 'test'" >/dev/null 2>&1; then \
+				echo "❌ Host key verification failed. Removing old key..."; \
+				ssh-keygen -R "$$INSTANCE_IP" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true; \
+				echo "📝 Adding new host key to known_hosts..."; \
+				ssh-keyscan -H "$$INSTANCE_IP" >> ~/.ssh/known_hosts 2>/dev/null || true; \
+			else \
+				echo "✅ Existing host key is valid"; \
+			fi; \
+		else \
+			echo "📝 Adding host key to known_hosts..."; \
+			ssh-keyscan -H "$$INSTANCE_IP" >> ~/.ssh/known_hosts 2>/dev/null || true; \
+		fi; \
 		echo "🚀 Connecting to instance to update..."; \
 		TARGET_BRANCH=$${BRANCH:-feat/update-platform}; \
 		echo "🌿 Target Branch: $$TARGET_BRANCH"; \
-		ssh -o StrictHostKeyChecking=no -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP " \
+		ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP " \
 			cd trh-platform && \
 			echo '📥 Fetching latest code...' && \
 			git fetch --all && \
