@@ -1,4 +1,4 @@
-.PHONY: help up down setup clean logs status config ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
+.PHONY: help up update down setup clean logs status config ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
 
 # Default target
 help:
@@ -6,6 +6,7 @@ help:
 	@echo ""
 	@echo "🐳 Docker Commands:"
 	@echo "  make up      - Start all services with docker compose up -d"
+	@echo "  make update  - Pull latest Docker images and restart services"
 	@echo "  make down    - Stop all services with docker compose down"
 	@echo "  make setup   - Run docker compose up -d and then ./setup.sh"
 	@echo "  make logs    - Show logs from all services"
@@ -17,7 +18,7 @@ help:
 	@echo "  make ec2-deploy  - Deploy EC2 infrastructure with automatic TRH Platform setup"
 	@echo "                     (includes SSH keys, AWS config, admin credentials, repository cloning, and platform setup)"
 	@echo "  make ec2-setup   - Setup SSH keys and AWS configuration manually (optional - called automatically by ec2-deploy)"
-	@echo "  make ec2-update  - Update TRH Platform on running EC2 instance (supports BRANCH=name)"
+	@echo "  make ec2-update  - Update TRH Platform on running EC2 instance"
 	@echo "  make ec2-destroy - Destroy EC2 infrastructure (uses configured credentials, no confirmations)"
 	@echo "  make ec2-status  - Show current EC2 infrastructure status"
 	@echo "  make ec2-clean   - Clean up Terraform state and files"
@@ -168,19 +169,13 @@ ec2-deploy:
 	echo ""
 	@echo "🔍 Checking for existing EC2 instance..."
 	@if [ -f ec2/terraform.tfstate ]; then \
-		cd ec2 && \
-		INSTANCE_ID=$$(terraform output -raw instance_id 2>/dev/null || echo ''); \
+		INSTANCE_ID=$$(cd ec2 && terraform output -raw instance_id 2>/dev/null || echo ''); \
 		if [ -z "$$INSTANCE_ID" ]; then \
-			echo "❌ No instance_id found in Terraform state."; \
-			echo "⚠️  Cannot proceed with deployment without existing instance."; \
-			echo "💡 Please ensure Terraform state contains a valid instance_id."; \
+			echo "❌ No instance_id found in existing Terraform state. The state file might be corrupted."; \
+			echo "⚠️  Cannot proceed with deployment."; \
+			echo "💡 If this is a new deployment, consider removing the 'ec2/terraform.tfstate' file and trying again."; \
 			exit 1; \
 		fi; \
-	else \
-		echo "❌ No Terraform state file found."; \
-		echo "⚠️  Cannot proceed with deployment without existing Terraform state."; \
-		echo "💡 Please ensure Terraform state file exists."; \
-		exit 1; \
 	fi
 	@echo ""
 	@echo "📋 Infrastructure Configuration:"
