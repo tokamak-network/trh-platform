@@ -241,7 +241,30 @@ ec2-update:
 		echo "🚀 Connecting to instance to update..."; \
 		TARGET_BRANCH=$${BRANCH:-feat/update-platform}; \
 		echo "🌿 Target Branch: $$TARGET_BRANCH"; \
-		ssh -o StrictHostKeyChecking=no -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP "cd trh-platform && echo '📥 Fetching latest code...' && git fetch --all && echo '🌿 Checking out $$TARGET_BRANCH...' && git checkout $$TARGET_BRANCH && git pull origin $$TARGET_BRANCH && echo '🔄 Updating services...' && docker compose pull && docker compose up -d && ./setup.sh"; \
+		ssh -o StrictHostKeyChecking=no -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP " \
+			cd trh-platform && \
+			echo '📥 Fetching latest code...' && \
+			git fetch --all && \
+			echo '🌿 Checking out $$TARGET_BRANCH...' && \
+			git checkout $$TARGET_BRANCH && \
+			git pull origin $$TARGET_BRANCH && \
+			echo '🔄 Pulling latest Docker images...' && \
+			PULL_OUTPUT=\$$(docker compose pull 2>&1) && \
+			echo \"\$$PULL_OUTPUT\" && \
+			if ! echo \"\$$PULL_OUTPUT\" | grep -qE 'Downloaded newer image|Pulling.*[0-9]+/[0-9]+'; then \
+				echo 'ℹ️  All images are already up to date. No update needed.' && \
+				echo '📊 Current running Docker images:' && \
+				docker compose ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}' 2>/dev/null || \
+				docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' && \
+				exit 0; \
+			fi && \
+			echo '🚀 Starting updated services...' && \
+			docker compose up -d && \
+			./setup.sh && \
+			echo '📊 Updated Docker images (after update):' && \
+			docker compose ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}' 2>/dev/null || \
+			docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' \
+		"; \
 		echo "✅ Update completed successfully!"; \
 	else \
 		echo "❌ ec2/.env file not found. Cannot determine configuration."; \
