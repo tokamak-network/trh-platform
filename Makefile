@@ -284,16 +284,20 @@ ec2-update:
 				echo '❌ Failed to pull Docker images. Exiting.' && \
 				exit 1; \
 			fi && \
-			if ! echo \"\$$PULL_OUTPUT\" | grep -qE 'Pulling|Downloaded newer image|Downloading'; then \
+			if echo \"\$$PULL_OUTPUT\" | grep -qiE 'Image is up to date|Already up to date'; then \
 				echo 'ℹ️  All images are already up to date. No update needed.' && \
 				(docker compose ps --format '{{.Image}}' 2>/dev/null || docker ps --format '{{.Image}}') | \
 				sed 's/^/  /' && \
 				exit 0; \
-			fi && \
-			echo '✅ Image pulling completed successfully.' && \
-			echo '🚀 Starting updated services...' && \
-			docker compose up -d && \
-			./setup.sh \
+			elif echo \"\$$PULL_OUTPUT\" | grep -qE 'Downloaded newer image|Downloading'; then \
+				echo '✅ New images downloaded. Restarting services...' && \
+				docker compose up -d && \
+				./setup.sh; \
+			else \
+				echo '⚠️  Could not determine if images were updated. Proceeding with restart to be safe...' && \
+				docker compose up -d && \
+				./setup.sh; \
+			fi \
 		"; \
 		echo "✅ Update completed successfully!"; \
 	else \
