@@ -166,6 +166,23 @@ ec2-deploy:
 	@AWS_USER=$$(aws sts get-caller-identity --query Arn --output text); \
 	echo "✅ Using AWS credentials for: $$AWS_USER"; \
 	echo ""
+	@echo "🔍 Checking for existing EC2 instance..."
+	@if [ -f ec2/terraform.tfstate ]; then \
+		cd ec2 && \
+		INSTANCE_ID=$$(terraform output -raw instance_id 2>/dev/null || echo ''); \
+		if [ -z "$$INSTANCE_ID" ]; then \
+			echo "❌ No instance_id found in Terraform state."; \
+			echo "⚠️  Cannot proceed with deployment without existing instance."; \
+			echo "💡 Please ensure Terraform state contains a valid instance_id."; \
+			exit 1; \
+		fi; \
+	else \
+		echo "❌ No Terraform state file found."; \
+		echo "⚠️  Cannot proceed with deployment without existing Terraform state."; \
+		echo "💡 Please ensure Terraform state file exists."; \
+		exit 1; \
+	fi
+	@echo ""
 	@echo "📋 Infrastructure Configuration:"
 	@bash -c 'read -p "Instance Type [t2.large]: " instance_type; \
 	instance_type=$${instance_type:-t2.large}; \
