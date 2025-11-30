@@ -12,9 +12,18 @@ This repository contains the TRH Platform, which uses Docker Compose to orchestr
 
 ## Prerequisites
 
+### For Local Development
+
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - [Make](https://www.gnu.org/software/make/) (usually pre-installed on Linux/macOS)
+
+### For EC2 Deployment
+
+- [AWS CLI](https://aws.amazon.com/cli/) (will be automatically installed via `install.sh` on EC2 instance)
+- [Terraform](https://www.terraform.io/) (will be automatically installed via `install.sh` on EC2 instance)
+- AWS Account with appropriate permissions
+- AWS Access Key ID and Secret Access Key
 
 ## Quick Start
 
@@ -103,16 +112,19 @@ The Makefile provides several convenient commands for managing the application:
 make help      # Show all available commands
 make setup     # Start services and run setup script (recommended)
 make up        # Start all services with docker compose up -d
+make update    # Pull latest Docker images and restart services
 make down      # Stop all services with docker compose down
 make logs      # Show logs from all services
 make status    # Show status of running containers
 make clean     # Stop services and remove volumes
+make config    # Configure environment variables interactively
 ```
 
 ### EC2 Deployment Commands
 
 ```bash
 make ec2-deploy  # Deploy to AWS EC2 (includes automatic setup if needed)
+make ec2-update  # Update TRH Platform on running EC2 instance
 make ec2-destroy # Destroy EC2 infrastructure
 make ec2-status  # Show current EC2 infrastructure status
 make ec2-setup   # Manual setup (optional - called automatically by ec2-deploy)
@@ -142,6 +154,8 @@ This command will:
 - AWS Access Key ID and Secret Access Key
 - Preferred AWS region (defaults to `ap-northeast-2`)
 
+**Note**: AWS CLI and Terraform are automatically installed on the EC2 instance during deployment via the `install.sh` script. For local deployment operations, these tools will be automatically installed if missing when running EC2-related commands.
+
 ### First Time Setup
 
 When you run `make ec2-deploy` for the first time, you'll be prompted for:
@@ -164,6 +178,23 @@ After the first setup, `make ec2-deploy` will:
 - Use your saved AWS credentials
 - Skip setup if already configured
 - Only prompt for instance configuration
+
+### Updating EC2 Instance
+
+To update the TRH Platform on a running EC2 instance:
+
+```bash
+make ec2-update
+```
+
+This command will:
+1. Connect to the EC2 instance via SSH
+2. Fetch the latest code from the repository
+3. Pull the latest Docker images
+4. Restart services if new images are available
+5. Skip unnecessary restarts if images are already up-to-date
+
+**Note**: The update command intelligently checks if Docker images need updating. If all images are already up-to-date, it will skip the restart process to minimize downtime.
 
 ### Manual Setup (Optional)
 
