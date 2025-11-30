@@ -1,4 +1,4 @@
-.PHONY: help up down setup clean logs status config ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
+.PHONY: help up update down setup clean logs status config ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
 
 # Default target
 help:
@@ -6,6 +6,7 @@ help:
 	@echo ""
 	@echo "🐳 Docker Commands:"
 	@echo "  make up      - Start all services with docker compose up -d"
+	@echo "  make update  - Pull latest Docker images and restart services"
 	@echo "  make down    - Stop all services with docker compose down"
 	@echo "  make setup   - Run docker compose up -d and then ./setup.sh"
 	@echo "  make logs    - Show logs from all services"
@@ -17,6 +18,7 @@ help:
 	@echo "  make ec2-deploy  - Deploy EC2 infrastructure with automatic TRH Platform setup"
 	@echo "                     (includes SSH keys, AWS config, admin credentials, repository cloning, and platform setup)"
 	@echo "  make ec2-setup   - Setup SSH keys and AWS configuration manually (optional - called automatically by ec2-deploy)"
+	@echo "  make ec2-update  - Update TRH Platform on running EC2 instance"
 	@echo "  make ec2-destroy - Destroy EC2 infrastructure (uses configured credentials, no confirmations)"
 	@echo "  make ec2-status  - Show current EC2 infrastructure status"
 	@echo "  make ec2-clean   - Clean up Terraform state and files"
@@ -24,9 +26,15 @@ help:
 # Start all services in detached mode
 up:
 	@echo "🚀 Starting TRH services..."
-	docker compose pull --parallel
 	docker compose up -d
 	@echo "✅ Services started successfully!"
+
+# Update services with latest images
+update:
+	@echo "🔄 Checking for image updates..."
+	docker compose pull
+	docker compose up -d
+	@echo "✅ Services updated successfully!"
 
 # Stop all services
 down:
@@ -159,6 +167,17 @@ ec2-deploy:
 	@AWS_USER=$$(aws sts get-caller-identity --query Arn --output text); \
 	echo "✅ Using AWS credentials for: $$AWS_USER"; \
 	echo ""
+	@echo "🔍 Checking for existing EC2 instance..."
+	@if [ -f ec2/terraform.tfstate ]; then \
+		INSTANCE_ID=$$(cd ec2 && terraform output -raw instance_id 2>/dev/null || echo ''); \
+		if [ -z "$$INSTANCE_ID" ]; then \
+			echo "❌ No instance_id found in existing Terraform state. The state file might be corrupted."; \
+			echo "⚠️  Cannot proceed with deployment."; \
+			echo "💡 If this is a new deployment, consider removing the 'ec2/terraform.tfstate' file and trying again."; \
+			exit 1; \
+		fi; \
+	fi
+	@echo ""
 	@echo "📋 Infrastructure Configuration:"
 	@bash -c 'read -p "Instance Type [t2.large]: " instance_type; \
 	instance_type=$${instance_type:-t2.large}; \
@@ -211,6 +230,77 @@ ec2-deploy:
 	echo "  2. Check platform status: cd trh-platform && make status"; \
 	echo "  3. View platform logs: cd trh-platform && make logs"; \
 	echo "  4. Access platform dashboard at: http://$$INSTANCE_IP:3000"'
+
+# Update TRH Platform on EC2 instance
+ec2-update:
+	@echo "🔄 Updating TRH Platform on EC2..."
+	@echo "🧪 Checking AWS configuration..."
+	@if ! aws sts get-caller-identity >/dev/null 2>&1; then \
+		echo "❌ AWS credentials not configured or invalid."; \
+		exit 1; \
+	fi
+	@echo "📋 Loading environment variables from .env file..."; \
+	if [ -f ec2/.env ]; then \
+		. ec2/.env; \
+		echo "✅ Environment variables loaded"; \
+		echo "🔍 Getting instance IP..."; \
+		INSTANCE_IP=$$(cd ec2 && terraform output -raw instance_public_ip 2>/dev/null); \
+		if [ -z "$$INSTANCE_IP" ]; then \
+			echo "❌ Could not get instance IP. Is the infrastructure deployed?"; \
+			exit 1; \
+		fi; \
+		echo "✅ Instance IP: $$INSTANCE_IP"; \
+		echo "🔐 Verifying SSH host key..."; \
+		if ssh-keygen -F "$$INSTANCE_IP" -f ~/.ssh/known_hosts >/dev/null 2>&1; then \
+			echo "⚠️  Host key already exists for $$INSTANCE_IP"; \
+			echo "🔄 Testing connection with existing host key..."; \
+			if ! ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=5 -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP "echo 'test'" >/dev/null 2>&1; then \
+				echo "❌ Host key verification failed. Removing old key..."; \
+				ssh-keygen -R "$$INSTANCE_IP" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true; \
+				echo "📝 Adding new host key to known_hosts..."; \
+				ssh-keyscan -H "$$INSTANCE_IP" >> ~/.ssh/known_hosts 2>/dev/null || true; \
+			else \
+				echo "✅ Existing host key is valid"; \
+			fi; \
+		else \
+			echo "📝 Adding host key to known_hosts..."; \
+			ssh-keyscan -H "$$INSTANCE_IP" >> ~/.ssh/known_hosts 2>/dev/null || true; \
+		fi; \
+		echo "🚀 Connecting to instance to update..."; \
+		ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP " \
+			cd trh-platform && \
+			echo '📥 Fetching latest code...' && \
+			git fetch --all && \
+			echo '🔄 Pulling latest changes from current branch...' && \
+			git pull && \
+			echo '🔄 Pulling latest Docker images...' && \
+			PULL_OUTPUT=\$$(docker compose pull 2>&1) && \
+			PULL_EXIT=\$$? && \
+			echo \"\$$PULL_OUTPUT\" && \
+			if [ \$$PULL_EXIT -ne 0 ]; then \
+				echo '❌ Failed to pull Docker images. Exiting.' && \
+				exit 1; \
+			fi && \
+			if echo \"\$$PULL_OUTPUT\" | grep -qiE 'Image is up to date|Already up to date'; then \
+				echo 'ℹ️  All images are already up to date. No update needed.' && \
+				(docker compose ps --format '{{.Image}}' 2>/dev/null || docker ps --format '{{.Image}}') | \
+				sed 's/^/  /' && \
+				exit 0; \
+			elif echo \"\$$PULL_OUTPUT\" | grep -qE 'Downloaded newer image|Downloading'; then \
+				echo '✅ New images downloaded. Restarting services...' && \
+				docker compose up -d && \
+				./setup.sh; \
+			else \
+				echo '⚠️  Could not determine if images were updated. Proceeding with restart to be safe...' && \
+				docker compose up -d && \
+				./setup.sh; \
+			fi \
+		"; \
+		echo "✅ Update completed successfully!"; \
+	else \
+		echo "❌ ec2/.env file not found. Cannot determine configuration."; \
+		exit 1; \
+	fi
 
 # Destroy EC2 infrastructure using configured AWS credentials
 ec2-destroy:
