@@ -267,15 +267,12 @@ ec2-update:
 			ssh-keyscan -H "$$INSTANCE_IP" >> ~/.ssh/known_hosts 2>/dev/null || true; \
 		fi; \
 		echo "🚀 Connecting to instance to update..."; \
-		TARGET_BRANCH=$${BRANCH:-feat/update-platform}; \
-		echo "🌿 Target Branch: $$TARGET_BRANCH"; \
 		ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP " \
 			cd trh-platform && \
 			echo '📥 Fetching latest code...' && \
 			git fetch --all && \
-			echo '🌿 Checking out $$TARGET_BRANCH...' && \
-			git checkout $$TARGET_BRANCH && \
-			git pull origin $$TARGET_BRANCH && \
+			echo '🔄 Pulling latest changes from current branch...' && \
+			git pull && \
 			echo '🔄 Pulling latest Docker images...' && \
 			PULL_OUTPUT=\$$(docker compose pull 2>&1) && \
 			PULL_EXIT=\$$? && \
