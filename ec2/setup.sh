@@ -283,12 +283,6 @@ print_status "  ✓ Environment file created: $ENV_FILE"
 print_status "  ✓ AWS CLI configured for region: $AWS_REGION"
 print_status "  ✓ Key pair name stored: $SSH_KEY_NAME"
 echo
-print_status "Next steps:"
-print_status "  1. Review and update $ENV_FILE if needed"
-print_status "  2. Run 'terraform init' to initialize Terraform"
-print_status "  3. Run 'terraform plan' to review the infrastructure plan"
-print_status "  4. Run 'terraform apply' to create the infrastructure"
-echo
 print_status "Your public key content (for manual key pair creation if needed):"
 echo "----------------------------------------"
 cat "$SSH_PUB_KEY_PATH"

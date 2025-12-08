@@ -94,7 +94,8 @@ resource "aws_instance" "trh_platform_ec2" {
     user        = "ubuntu"
     private_key = file("~/.ssh/${var.key_pair_name}")
     host        = self.public_ip
-    timeout     = "5m"
+    timeout     = "10m"
+    agent       = false
   }
 
   # Wait for the instance to be ready and basic installation to complete
@@ -109,6 +110,7 @@ resource "aws_instance" "trh_platform_ec2" {
   # Clone repository and run setup commands
   provisioner "remote-exec" {
     inline = [
+      "set -e",
       "echo 'Starting TRH Platform setup...'",
       "cd /home/ubuntu",
       "git clone https://github.com/tokamak-network/trh-platform",

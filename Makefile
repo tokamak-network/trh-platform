@@ -171,65 +171,165 @@ ec2-deploy:
 	@if [ -f ec2/terraform.tfstate ]; then \
 		INSTANCE_ID=$$(cd ec2 && terraform output -raw instance_id 2>/dev/null || echo ''); \
 		if [ -z "$$INSTANCE_ID" ]; then \
-			echo "❌ No instance_id found in existing Terraform state. The state file might be corrupted."; \
+			echo "❌ No instance_id found in existing Terraform state."; \
+			echo "   The state file might be corrupted or from a failed deployment."; \
 			echo "⚠️  Cannot proceed with deployment."; \
+			echo ""; \
 			echo "💡 If this is a new deployment, consider removing the 'ec2/terraform.tfstate' file and trying again."; \
+			echo "💡 If this is a retry after a failed deployment, check the state file manually."; \
 			exit 1; \
+		else \
+			echo "✅ Found existing instance in state: $$INSTANCE_ID"; \
 		fi; \
 	fi
 	@echo ""
 	@echo "📋 Infrastructure Configuration:"
 	@bash -c 'read -p "Instance Type [t2.large]: " instance_type; \
 	instance_type=$${instance_type:-t2.large}; \
+	instance_type=$$(echo "$$instance_type" | tr -d "[:space:]"); \
+	if [ -z "$$instance_type" ] || [ "$$instance_type" = "n" ] || [ "$$instance_type" = "N" ]; then \
+		instance_type="t2.large"; \
+		echo "⚠️  Invalid instance type, using default: t2.large"; \
+	fi; \
 	read -p "Instance Name [trh-platform-ec2]: " instance_name; \
 	instance_name=$${instance_name:-trh-platform-ec2}; \
+	instance_name=$$(echo "$$instance_name" | tr -d "[:space:]"); \
+	if [ -z "$$instance_name" ]; then \
+		instance_name="trh-platform-ec2"; \
+	fi; \
 	echo ""; \
 	echo "=== Platform Admin Configuration ==="; \
 	read -p "Admin Email [admin@gmail.com]: " admin_email; \
 	admin_email=$${admin_email:-admin@gmail.com}; \
+	admin_email=$$(echo "$$admin_email" | tr -d "[:space:]"); \
+	if [ -z "$$admin_email" ]; then \
+		admin_email="admin@gmail.com"; \
+	fi; \
 	read -p "Admin Password [admin]: " admin_password; \
 	admin_password=$${admin_password:-admin}; \
+	admin_password=$$(echo "$$admin_password" | tr -d "[:space:]"); \
+	if [ -z "$$admin_password" ]; then \
+		admin_password="admin"; \
+	fi; \
 	echo ""; \
 	. ec2/.env; \
-	export TF_VAR_instance_type=$$instance_type; \
-	export TF_VAR_instance_name=$$instance_name; \
-	export TF_VAR_key_pair_name=$$KEY_PAIR_NAME; \
-	export TF_VAR_public_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME.pub; \
-	export TF_VAR_admin_email=$$admin_email; \
-	export TF_VAR_admin_password=$$admin_password; \
+	if [ -z "$$KEY_PAIR_NAME" ]; then \
+		echo "❌ KEY_PAIR_NAME not found in ec2/.env file."; \
+		echo "💡 Please run '\''make ec2-setup'\'' first."; \
+		exit 1; \
+	fi; \
+	export TF_VAR_instance_type="$$instance_type"; \
+	export TF_VAR_instance_name="$$instance_name"; \
+	export TF_VAR_key_pair_name="$$KEY_PAIR_NAME"; \
+	export TF_VAR_public_key_path="$$HOME/.ssh/$$KEY_PAIR_NAME.pub"; \
+	export TF_VAR_private_key_path="$$HOME/.ssh/$$KEY_PAIR_NAME"; \
+	export TF_VAR_admin_email="$$admin_email"; \
+	export TF_VAR_admin_password="$$admin_password"; \
 	echo "📝 Writing environment variables to .env file..."; \
-	echo "TF_VAR_instance_type=$$instance_type" > ec2/.env; \
+	echo "KEY_PAIR_NAME=$$KEY_PAIR_NAME" > ec2/.env; \
+	echo "TF_VAR_instance_type=$$instance_type" >> ec2/.env; \
 	echo "TF_VAR_instance_name=$$instance_name" >> ec2/.env; \
 	echo "TF_VAR_key_pair_name=$$KEY_PAIR_NAME" >> ec2/.env; \
 	echo "TF_VAR_public_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME.pub" >> ec2/.env; \
+	echo "TF_VAR_private_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME" >> ec2/.env; \
 	echo "TF_VAR_admin_email=$$admin_email" >> ec2/.env; \
 	echo "TF_VAR_admin_password=$$admin_password" >> ec2/.env; \
 	echo "🔑 Using SSH key pair: $$KEY_PAIR_NAME"; \
 	echo "🔑 Using public key path: $$HOME/.ssh/$$KEY_PAIR_NAME.pub"; \
+	echo "🔑 Using private key path: $$HOME/.ssh/$$KEY_PAIR_NAME"; \
+	echo "🔧 Configuration:"; \
+	echo "   - Instance Type: $$instance_type"; \
+	echo "   - Instance Name: $$instance_name"; \
+	echo "   - Admin Email: $$admin_email"; \
 	echo "🏗️  Initializing Terraform..."; \
-	cd ec2 && terraform init; \
+	cd ec2 && \
+	if ! terraform init; then \
+		echo "❌ Terraform initialization failed."; \
+		echo "💡 Try removing .terraform directory and .terraform.lock.hcl, then run again."; \
+		exit 1; \
+	fi; \
 	echo "📋 Planning infrastructure..."; \
-	terraform plan; \
+	PLAN_OUTPUT=$$(terraform plan 2>&1); \
+	PLAN_EXIT=$$?; \
+	echo "$$PLAN_OUTPUT"; \
+	if [ $$PLAN_EXIT -ne 0 ]; then \
+		echo "❌ Terraform plan failed."; \
+		echo "💡 If this is a retry after a failed deployment, you may need to:"; \
+		echo "   1. Check for partially created resources in AWS"; \
+		echo "   2. Remove or fix the terraform.tfstate file"; \
+		echo "   3. Run '\''terraform refresh'\'' to sync state with AWS"; \
+		exit 1; \
+	fi; \
+	if echo "$$PLAN_OUTPUT" | grep -q "Error:"; then \
+		echo "❌ Terraform plan contains errors. Please fix them before proceeding."; \
+		exit 1; \
+	fi; \
 	echo "🚀 Applying infrastructure changes..."; \
-	terraform apply -auto-approve; \
+	echo "⏳ This may take 5-15 minutes. Please be patient..."; \
+	echo "   - Instance creation: ~2-3 minutes"; \
+	echo "   - Instance initialization: ~2-5 minutes"; \
+	echo "   - Platform setup: ~5-10 minutes"; \
+	echo ""; \
+	echo "📋 Terraform output (real-time):"; \
+	echo "────────────────────────────────────────"; \
+	APPLY_EXIT=0; \
+	terraform apply -auto-approve 2>&1 | tee /tmp/terraform_apply_output.log || APPLY_EXIT=$${PIPESTATUS[0]}; \
+	echo "────────────────────────────────────────"; \
+	APPLY_OUTPUT=$$(cat /tmp/terraform_apply_output.log 2>/dev/null || echo ""); \
+	rm -f /tmp/terraform_apply_output.log; \
+	if [ $$APPLY_EXIT -ne 0 ]; then \
+			echo "❌ Terraform apply failed. Infrastructure deployment was not successful."; \
+			echo ""; \
+			if echo "$$APPLY_OUTPUT" | grep -q "remote-exec provisioner error"; then \
+				echo "⚠️  Remote execution error detected. This usually means:"; \
+				echo "   - SSH connection to the instance was interrupted"; \
+				echo "   - Instance setup commands took too long (timeout)"; \
+				echo "   - Network connectivity issues"; \
+				echo ""; \
+				echo "💡 Recovery options:"; \
+				echo "   1. Check if the instance was created successfully:"; \
+				echo "      - Run '\''make ec2-status'\'' to check instance status"; \
+				echo "   2. If instance exists, you can manually complete the setup:"; \
+				echo "      - SSH into the instance: ssh -i ~/.ssh/$$KEY_PAIR_NAME ubuntu@<INSTANCE_IP>"; \
+				echo "      - Run the setup commands manually"; \
+				echo "   3. To retry from scratch:"; \
+				echo "      - Run '\''make ec2-destroy'\'' to clean up"; \
+				echo "      - Then run '\''make ec2-deploy'\'' again"; \
+			else \
+				echo "💡 Recovery options:"; \
+				echo "   1. Check the error messages above"; \
+				echo "   2. Verify AWS resources were partially created:"; \
+				echo "      - Security groups, key pairs, instances"; \
+				echo "   3. To retry:"; \
+				echo "      - If resources were created: Run '\''make ec2-destroy'\'' first, then retry"; \
+				echo "      - If no resources were created: Simply run '\''make ec2-deploy'\'' again"; \
+				echo "      - If state is corrupted: Remove ec2/terraform.tfstate and retry"; \
+			fi; \
+			exit 1; \
+	fi; \
 	echo "✅ EC2 infrastructure deployed successfully!"; \
 	echo ""; \
 	echo "📊 Infrastructure Details:"; \
-	terraform output; \
+	terraform output || echo "⚠️  Could not retrieve outputs (this may be normal if instance is still starting)"; \
 	echo ""; \
-	INSTANCE_IP=$$(terraform output -raw instance_public_ip); \
-	echo "🚀 TRH Platform Setup:"; \
-	echo "  ✓ Repository cloned to: /home/ubuntu/trh-platform"; \
-	echo "  ✓ Platform configured and set up automatically"; \
-	echo "  ✓ Admin Email: $$admin_email"; \
-	echo "  ✓ Admin Password: $$admin_password"; \
-	echo "  ✓ Services should be running on the instance"; \
-	echo ""; \
-	echo "📝 Next Steps:"; \
-	echo "  1. SSH into the instance: ssh -i ~/.ssh/$$KEY_PAIR_NAME ubuntu@$$INSTANCE_IP"; \
-	echo "  2. Check platform status: cd trh-platform && make status"; \
-	echo "  3. View platform logs: cd trh-platform && make logs"; \
-	echo "  4. Access platform dashboard at: http://$$INSTANCE_IP:3000"'
+	INSTANCE_IP=$$(terraform output -raw instance_public_ip 2>/dev/null || echo ""); \
+	if [ -n "$$INSTANCE_IP" ]; then \
+		echo "🚀 TRH Platform Setup:"; \
+		echo "  ✓ Repository cloned to: /home/ubuntu/trh-platform"; \
+		echo "  ✓ Platform configured and set up automatically"; \
+		echo "  ✓ Admin Email: $$admin_email"; \
+		echo "  ✓ Admin Password: $$admin_password"; \
+		echo "  ✓ Services should be running on the instance"; \
+		echo ""; \
+		echo "📝 Next Steps:"; \
+		echo "  1. SSH into the instance: ssh -i ~/.ssh/$$KEY_PAIR_NAME ubuntu@$$INSTANCE_IP"; \
+		echo "  2. Check platform status: cd trh-platform && make status"; \
+		echo "  3. View platform logs: cd trh-platform && make logs"; \
+		echo "  4. Access platform dashboard at: http://$$INSTANCE_IP:3000"; \
+	else \
+		echo "⚠️  Could not retrieve instance IP. Instance may still be starting."; \
+		echo "💡 You can check the instance status with: '\''make ec2-status'\''"; \
+	fi'
 
 # Update TRH Platform on EC2 instance
 ec2-update:
@@ -314,9 +414,32 @@ ec2-destroy:
 		exit 1; \
 	fi
 	@AWS_USER=$$(aws sts get-caller-identity --query Arn --output text); \
+	AWS_ACCOUNT=$$(aws sts get-caller-identity --query Account --output text); \
 	echo "✅ Using AWS credentials for: $$AWS_USER"; \
-	echo ""
-	@echo "📋 Loading environment variables from .env file..."; \
+	echo "🏢 AWS Account ID: $$AWS_ACCOUNT"; \
+	echo ""; \
+	echo "🔍 Checking AWS account in Terraform state..."; \
+	cd ec2 && \
+	if [ -f terraform.tfstate ]; then \
+		STATE_ACCOUNT=$$(terraform state show aws_key_pair.trh_platform_key 2>/dev/null | awk -F: '/arn:aws/ {print $$5; exit}' || echo ""); \
+		if [ -z "$$STATE_ACCOUNT" ]; then \
+			echo "❌ Could not determine AWS account from Terraform state."; \
+			echo "   Please ensure the state contains resource ARNs or import resources before retrying."; \
+			exit 1; \
+		fi; \
+		echo "   Terraform state account (from ARN): $$STATE_ACCOUNT"; \
+		if [ "$$STATE_ACCOUNT" != "$$AWS_ACCOUNT" ]; then \
+			echo "❌ AWS account mismatch detected between current credentials and Terraform state!"; \
+			echo "   Current AWS Account: $$AWS_ACCOUNT"; \
+			echo "   Terraform State Account: $$STATE_ACCOUNT"; \
+			echo "   Please switch to the credentials that created the resources and rerun 'make ec2-destroy'."; \
+			exit 1; \
+		fi; \
+	fi; \
+	cd .. && \
+	echo "✅ AWS account comparison completed."; \
+	echo ""; \
+	echo "📋 Loading environment variables from .env file..."; \
 	if [ -f ec2/.env ]; then \
 		. ec2/.env; \
 		echo "✅ Environment variables loaded from .env file"; \
@@ -326,30 +449,302 @@ ec2-destroy:
 		echo "   - TF_VAR_key_pair_name: $$TF_VAR_key_pair_name"; \
 		echo "   - TF_VAR_public_key_path: $$TF_VAR_public_key_path"; \
 		echo ""; \
-		echo "📋 Planning destruction..."; \
 		cd ec2 && \
 		export TF_VAR_instance_type="$$TF_VAR_instance_type" && \
 		export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
 		export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
 		export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
-		terraform plan -destroy; \
-		echo "💥 Destroying infrastructure..."; \
-		terraform destroy -auto-approve; \
-		echo "✅ EC2 infrastructure destroyed successfully!"; \
+		if [ ! -f terraform.tfstate ]; then \
+			echo "⚠️  No Terraform state file found. Infrastructure may already be destroyed."; \
+			exit 0; \
+		fi && \
+		echo "🔄 Refreshing Terraform state to ensure accuracy..."; \
+		HAS_RESOURCES=$$(terraform state list 2>/dev/null | wc -l | tr -d ' '); \
+		REFRESH_OUTPUT=$$(terraform refresh 2>&1); \
+		REFRESH_EXIT=$$?; \
+		if [ $$REFRESH_EXIT -ne 0 ]; then \
+			if echo "$$REFRESH_OUTPUT" | grep -qE "UnauthorizedOperation|AccessDenied|InvalidInstanceID|InvalidUserID|AuthFailure"; then \
+				echo "❌ CRITICAL: Terraform refresh failed due to AWS credentials issue!"; \
+				echo "   This likely means you are using different AWS credentials than when the resources were created."; \
+				echo ""; \
+				echo "   Current AWS Account: $$AWS_ACCOUNT"; \
+				echo "   Resources may belong to a different AWS account."; \
+				echo ""; \
+				echo "💡 Required Actions:"; \
+				echo "   1. Verify your current AWS credentials:"; \
+				echo "      aws sts get-caller-identity"; \
+				echo ""; \
+				echo "   2. Configure the correct AWS credentials:"; \
+				echo "      Option A: Run 'make ec2-setup' to reconfigure AWS credentials"; \
+				echo "      Option B: Manually configure with 'aws configure'"; \
+				echo "      Option C: Set environment variables:"; \
+				echo "        export AWS_ACCESS_KEY_ID=your-access-key"; \
+				echo "        export AWS_SECRET_ACCESS_KEY=your-secret-key"; \
+				echo ""; \
+				echo "   3. Verify the credentials match the account that created the resources"; \
+				echo "   4. Run 'make ec2-destroy' again"; \
+				echo ""; \
+				echo "Refresh error details:"; \
+				echo "$$REFRESH_OUTPUT" | head -10; \
+				exit 1; \
+			elif [ "$$HAS_RESOURCES" -gt 0 ]; then \
+				echo "❌ CRITICAL: Terraform refresh failed and resources exist in state!"; \
+				echo "   This likely indicates a credentials mismatch or access issue."; \
+				echo ""; \
+				echo "   Current AWS Account: $$AWS_ACCOUNT"; \
+				echo "   Resources in state: $$HAS_RESOURCES"; \
+				echo ""; \
+				echo "💡 Required Actions:"; \
+				echo "   1. Verify your current AWS credentials:"; \
+				echo "      aws sts get-caller-identity"; \
+				echo ""; \
+				echo "   2. Configure the correct AWS credentials:"; \
+				echo "      Option A: Run 'make ec2-setup' to reconfigure AWS credentials"; \
+				echo "      Option B: Manually configure with 'aws configure'"; \
+				echo "      Option C: Set environment variables:"; \
+				echo "        export AWS_ACCESS_KEY_ID=your-access-key"; \
+				echo "        export AWS_SECRET_ACCESS_KEY=your-secret-key"; \
+				echo ""; \
+				echo "   3. Verify the credentials match the account that created the resources"; \
+				echo "   4. Run 'make ec2-destroy' again"; \
+				echo ""; \
+				echo "Refresh error details:"; \
+				echo "$$REFRESH_OUTPUT" | head -10; \
+				exit 1; \
+			else \
+				echo "⚠️  Warning: Terraform refresh failed (this may be normal if resources are already deleted):"; \
+				echo "$$REFRESH_OUTPUT" | head -5; \
+				echo "   Continuing with destroy operation..."; \
+			fi; \
+		fi; \
+		echo "📋 Planning destruction..."; \
+		DESTROY_PLAN=$$(terraform plan -destroy -no-color 2>&1); \
+		DESTROY_PLAN_EXIT=$$?; \
+		echo "$$DESTROY_PLAN"; \
+		if [ $$DESTROY_PLAN_EXIT -ne 0 ]; then \
+			echo "⚠️  Warning: Terraform plan failed. This may indicate resources are already deleted."; \
+			echo "💡 Attempting to proceed with destroy anyway..."; \
+		fi; \
+		if echo "$$DESTROY_PLAN" | grep -q "No changes"; then \
+			echo "⚠️  No resources to destroy. Infrastructure may already be destroyed."; \
+		else \
+			echo "💥 Destroying infrastructure..."; \
+			DESTROY_OUTPUT=$$(terraform destroy -auto-approve 2>&1); \
+			DESTROY_EXIT=$$?; \
+			echo "$$DESTROY_OUTPUT"; \
+			if [ $$DESTROY_EXIT -ne 0 ]; then \
+				echo "❌ Failed to destroy infrastructure. Please check the error messages above."; \
+				echo ""; \
+				echo "💡 Recovery options:"; \
+				echo "   1. Check if resources still exist in AWS manually"; \
+				echo "   2. If this is a retry, some resources may have been partially deleted"; \
+				echo "   3. To retry: Simply run 'make ec2-destroy' again"; \
+				echo "   4. If state is corrupted: Remove ec2/terraform.tfstate and manually delete resources"; \
+				exit 1; \
+			fi; \
+			if echo "$$DESTROY_OUTPUT" | grep -qE "Resources: [1-9][0-9]* destroyed"; then \
+				echo "✅ EC2 infrastructure destroyed successfully!"; \
+			elif echo "$$DESTROY_OUTPUT" | grep -q "Destroy complete"; then \
+				if echo "$$DESTROY_OUTPUT" | grep -q "Resources: 0 destroyed"; then \
+					echo "⚠️  Warning: Destroy completed but no resources were destroyed."; \
+					echo "💡 This may indicate that resources were already deleted or state is out of sync."; \
+					echo "🔍 Checking if resources still exist in AWS..."; \
+					INSTANCE_ID=$$(terraform state show aws_instance.trh_platform_ec2 2>/dev/null | grep "id " | awk '{print $$3}' || echo ""); \
+					if [ -n "$$INSTANCE_ID" ]; then \
+						if aws ec2 describe-instances --instance-ids "$$INSTANCE_ID" >/dev/null 2>&1; then \
+							echo "❌ Instance $$INSTANCE_ID still exists in AWS but was not destroyed!"; \
+							echo "💡 Attempting to terminate instance directly..."; \
+							aws ec2 terminate-instances --instance-ids "$$INSTANCE_ID" >/dev/null 2>&1 && \
+							echo "✅ Instance termination initiated." || \
+							echo "⚠️  Failed to terminate instance. Please terminate manually."; \
+						else \
+							echo "✅ Instance does not exist in AWS. Removing from state..."; \
+							terraform state rm aws_instance.trh_platform_ec2 2>/dev/null || true; \
+						fi; \
+					fi; \
+					SG_ID=$$(terraform state show aws_security_group.trh_platform_security_group 2>/dev/null | grep "id " | awk '{print $$3}' || echo ""); \
+					if [ -n "$$SG_ID" ]; then \
+						if aws ec2 describe-security-groups --group-ids "$$SG_ID" >/dev/null 2>&1; then \
+							echo "❌ Security group $$SG_ID still exists in AWS but was not destroyed!"; \
+							echo "💡 Attempting to delete security group directly..."; \
+							aws ec2 delete-security-group --group-id "$$SG_ID" >/dev/null 2>&1 && \
+							echo "✅ Security group deleted." || \
+							echo "⚠️  Failed to delete security group. Please delete manually."; \
+						else \
+							echo "✅ Security group does not exist in AWS. Removing from state..."; \
+							terraform state rm aws_security_group.trh_platform_security_group 2>/dev/null || true; \
+						fi; \
+					fi; \
+					KEY_NAME=$$(terraform state show aws_key_pair.trh_platform_key 2>/dev/null | grep "key_name" | awk '{print $$3}' || echo ""); \
+					if [ -n "$$KEY_NAME" ]; then \
+						if aws ec2 describe-key-pairs --key-names "$$KEY_NAME" >/dev/null 2>&1; then \
+							echo "❌ Key pair $$KEY_NAME still exists in AWS but was not destroyed!"; \
+							echo "💡 Attempting to delete key pair directly..."; \
+							aws ec2 delete-key-pair --key-name "$$KEY_NAME" >/dev/null 2>&1 && \
+							echo "✅ Key pair deleted." || \
+							echo "⚠️  Failed to delete key pair. Please delete manually."; \
+						else \
+							echo "✅ Key pair does not exist in AWS. Removing from state..."; \
+							terraform state rm aws_key_pair.trh_platform_key 2>/dev/null || true; \
+						fi; \
+					fi; \
+				else \
+					echo "✅ EC2 infrastructure destroyed successfully!"; \
+				fi; \
+			else \
+				echo "⚠️  Warning: Could not determine destroy status from output."; \
+			fi; \
+		fi; \
 	else \
 		echo "⚠️  No .env file found. Using default values."; \
 		echo ""; \
+		cd ec2 && \
+		if [ ! -f terraform.tfstate ]; then \
+			echo "⚠️  No Terraform state file found. Infrastructure may already be destroyed."; \
+			exit 0; \
+		fi && \
+		echo "🔄 Refreshing Terraform state to ensure accuracy..."; \
+		HAS_RESOURCES=$$(terraform state list 2>/dev/null | wc -l | tr -d ' '); \
+		REFRESH_OUTPUT=$$(terraform refresh 2>&1); \
+		REFRESH_EXIT=$$?; \
+		if [ $$REFRESH_EXIT -ne 0 ]; then \
+			if echo "$$REFRESH_OUTPUT" | grep -qE "UnauthorizedOperation|AccessDenied|InvalidInstanceID|InvalidUserID|AuthFailure"; then \
+				echo "❌ CRITICAL: Terraform refresh failed due to AWS credentials issue!"; \
+				echo "   This likely means you are using different AWS credentials than when the resources were created."; \
+				echo ""; \
+				echo "   Current AWS Account: $$AWS_ACCOUNT"; \
+				echo "   Resources may belong to a different AWS account."; \
+				echo ""; \
+				echo "💡 Required Actions:"; \
+				echo "   1. Verify your current AWS credentials:"; \
+				echo "      aws sts get-caller-identity"; \
+				echo ""; \
+				echo "   2. Configure the correct AWS credentials:"; \
+				echo "      Option A: Run 'make ec2-setup' to reconfigure AWS credentials"; \
+				echo "      Option B: Manually configure with 'aws configure'"; \
+				echo "      Option C: Set environment variables:"; \
+				echo "        export AWS_ACCESS_KEY_ID=your-access-key"; \
+				echo "        export AWS_SECRET_ACCESS_KEY=your-secret-key"; \
+				echo ""; \
+				echo "   3. Verify the credentials match the account that created the resources"; \
+				echo "   4. Run 'make ec2-destroy' again"; \
+				echo ""; \
+				echo "Refresh error details:"; \
+				echo "$$REFRESH_OUTPUT" | head -10; \
+				exit 1; \
+			elif [ "$$HAS_RESOURCES" -gt 0 ]; then \
+				echo "❌ CRITICAL: Terraform refresh failed and resources exist in state!"; \
+				echo "   This likely indicates a credentials mismatch or access issue."; \
+				echo ""; \
+				echo "   Current AWS Account: $$AWS_ACCOUNT"; \
+				echo "   Resources in state: $$HAS_RESOURCES"; \
+				echo ""; \
+				echo "💡 Required Actions:"; \
+				echo "   1. Verify your current AWS credentials:"; \
+				echo "      aws sts get-caller-identity"; \
+				echo ""; \
+				echo "   2. Configure the correct AWS credentials:"; \
+				echo "      Option A: Run 'make ec2-setup' to reconfigure AWS credentials"; \
+				echo "      Option B: Manually configure with 'aws configure'"; \
+				echo "      Option C: Set environment variables:"; \
+				echo "        export AWS_ACCESS_KEY_ID=your-access-key"; \
+				echo "        export AWS_SECRET_ACCESS_KEY=your-secret-key"; \
+				echo ""; \
+				echo "   3. Verify the credentials match the account that created the resources"; \
+				echo "   4. Run 'make ec2-destroy' again"; \
+				echo ""; \
+				echo "Refresh error details:"; \
+				echo "$$REFRESH_OUTPUT" | head -10; \
+				exit 1; \
+			else \
+				echo "⚠️  Warning: Terraform refresh failed (this may be normal if resources are already deleted):"; \
+				echo "$$REFRESH_OUTPUT" | head -5; \
+				echo "   Continuing with destroy operation..."; \
+			fi; \
+		fi; \
 		echo "📋 Planning destruction..."; \
-		cd ec2 && terraform plan -destroy; \
-		echo "💥 Destroying infrastructure..."; \
-		terraform destroy -auto-approve; \
-		echo "✅ EC2 infrastructure destroyed successfully!"; \
-	fi
+		DESTROY_PLAN=$$(terraform plan -destroy -no-color 2>&1); \
+		DESTROY_PLAN_EXIT=$$?; \
+		echo "$$DESTROY_PLAN"; \
+		if [ $$DESTROY_PLAN_EXIT -ne 0 ]; then \
+			echo "⚠️  Warning: Terraform plan failed. This may indicate resources are already deleted."; \
+			echo "💡 Attempting to proceed with destroy anyway..."; \
+		fi; \
+		if echo "$$DESTROY_PLAN" | grep -q "No changes"; then \
+			echo "⚠️  No resources to destroy. Infrastructure may already be destroyed."; \
+		else \
+			echo "💥 Destroying infrastructure..."; \
+			DESTROY_OUTPUT=$$(terraform destroy -auto-approve 2>&1); \
+			DESTROY_EXIT=$$?; \
+			echo "$$DESTROY_OUTPUT"; \
+			if [ $$DESTROY_EXIT -ne 0 ]; then \
+				echo "❌ Failed to destroy infrastructure. Please check the error messages above."; \
+				echo ""; \
+				echo "💡 Recovery options:"; \
+				echo "   1. Check if resources still exist in AWS manually"; \
+				echo "   2. If this is a retry, some resources may have been partially deleted"; \
+				echo "   3. To retry: Simply run 'make ec2-destroy' again"; \
+				echo "   4. If state is corrupted: Remove ec2/terraform.tfstate and manually delete resources"; \
+				exit 1; \
+			fi; \
+			if echo "$$DESTROY_OUTPUT" | grep -qE "Resources: [1-9][0-9]* destroyed"; then \
+				echo "✅ EC2 infrastructure destroyed successfully!"; \
+			elif echo "$$DESTROY_OUTPUT" | grep -q "Destroy complete"; then \
+				if echo "$$DESTROY_OUTPUT" | grep -q "Resources: 0 destroyed"; then \
+					echo "⚠️  Warning: Destroy completed but no resources were destroyed."; \
+					echo "💡 This may indicate that resources were already deleted or state is out of sync."; \
+					echo "🔍 Checking if resources still exist in AWS..."; \
+					INSTANCE_ID=$$(terraform state show aws_instance.trh_platform_ec2 2>/dev/null | grep "id " | awk '{print $$3}' || echo ""); \
+					if [ -n "$$INSTANCE_ID" ]; then \
+						if aws ec2 describe-instances --instance-ids "$$INSTANCE_ID" >/dev/null 2>&1; then \
+							echo "❌ Instance $$INSTANCE_ID still exists in AWS but was not destroyed!"; \
+							echo "💡 Attempting to terminate instance directly..."; \
+							aws ec2 terminate-instances --instance-ids "$$INSTANCE_ID" >/dev/null 2>&1 && \
+							echo "✅ Instance termination initiated." || \
+							echo "⚠️  Failed to terminate instance. Please terminate manually."; \
+						else \
+							echo "✅ Instance does not exist in AWS. Removing from state..."; \
+							terraform state rm aws_instance.trh_platform_ec2 2>/dev/null || true; \
+						fi; \
+					fi; \
+					SG_ID=$$(terraform state show aws_security_group.trh_platform_security_group 2>/dev/null | grep "id " | awk '{print $$3}' || echo ""); \
+					if [ -n "$$SG_ID" ]; then \
+						if aws ec2 describe-security-groups --group-ids "$$SG_ID" >/dev/null 2>&1; then \
+							echo "❌ Security group $$SG_ID still exists in AWS but was not destroyed!"; \
+							echo "💡 Attempting to delete security group directly..."; \
+							aws ec2 delete-security-group --group-id "$$SG_ID" >/dev/null 2>&1 && \
+							echo "✅ Security group deleted." || \
+							echo "⚠️  Failed to delete security group. Please delete manually."; \
+						else \
+							echo "✅ Security group does not exist in AWS. Removing from state..."; \
+							terraform state rm aws_security_group.trh_platform_security_group 2>/dev/null || true; \
+						fi; \
+					fi; \
+					KEY_NAME=$$(terraform state show aws_key_pair.trh_platform_key 2>/dev/null | grep "key_name" | awk '{print $$3}' || echo ""); \
+					if [ -n "$$KEY_NAME" ]; then \
+						if aws ec2 describe-key-pairs --key-names "$$KEY_NAME" >/dev/null 2>&1; then \
+							echo "❌ Key pair $$KEY_NAME still exists in AWS but was not destroyed!"; \
+							echo "💡 Attempting to delete key pair directly..."; \
+							aws ec2 delete-key-pair --key-name "$$KEY_NAME" >/dev/null 2>&1 && \
+							echo "✅ Key pair deleted." || \
+							echo "⚠️  Failed to delete key pair. Please delete manually."; \
+						else \
+							echo "✅ Key pair does not exist in AWS. Removing from state..."; \
+							terraform state rm aws_key_pair.trh_platform_key 2>/dev/null || true; \
+						fi; \
+					fi; \
+				else \
+					echo "✅ EC2 infrastructure destroyed successfully!"; \
+				fi; \
+			else \
+				echo "⚠️  Warning: Could not determine destroy status from output."; \
+			fi; \
+		fi; \
+	fi; \
 	@echo "Deleting .env file..."; \
 	rm -f ec2/.env; \
 	echo "✅ .env file deleted successfully!"; \
 	echo "Deleting Terraform state files..."; \
-	
 	rm -f ec2/terraform.tfstate; \
 	rm -f ec2/terraform.tfstate.backup; \
 	rm -f ec2/.terraform.lock.hcl; \
