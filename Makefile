@@ -41,9 +41,9 @@ down:
 	@echo "Warning: This will stop and remove all platform containers. Data may be lost."
 	@read -p "Are you sure you want to proceed? [y/N]: " confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		echo "Stopping TRH services..."; \
+		echo "🛑 Stopping TRH services..."; \
 		docker compose down; \
-		echo "✓ Services stopped successfully!"; \
+		echo "✅ Services stopped successfully!"; \
 	else \
 		echo "Operation cancelled."; \
 		exit 1; \
