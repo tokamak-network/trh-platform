@@ -38,9 +38,16 @@ update:
 
 # Stop all services
 down:
-	@echo "🛑 Stopping TRH services..."
-	docker compose down
-	@echo "✅ Services stopped successfully!"
+	@echo "Warning: This will stop and remove all platform containers. Data may be lost."
+	@read -p "Are you sure you want to proceed? [y/N]: " confirm; \
+	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
+		echo "🛑 Stopping TRH services..."; \
+		docker compose down; \
+		echo "✅ Services stopped successfully!"; \
+	else \
+		echo "Operation cancelled."; \
+		exit 1; \
+	fi
 
 # Main setup target - starts services and runs setup script
 setup: up
