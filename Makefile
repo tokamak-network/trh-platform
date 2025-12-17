@@ -26,14 +26,22 @@ help:
 # Start all services in detached mode
 up:
 	@echo "🚀 Starting TRH services..."
-	docker compose up -d
+	@if [ ! -f config/.env.docker ]; then \
+		echo "📋 Creating config/.env.docker file from template..."; \
+		cp config/env.docker.template config/.env.docker; \
+	fi
+	docker compose --env-file config/.env.docker up -d
 	@echo "✅ Services started successfully!"
 
 # Update services with latest images
 update:
 	@echo "🔄 Checking for image updates..."
-	docker compose pull
-	docker compose up -d
+	@if [ ! -f config/.env.docker ]; then \
+		echo "📋 Creating config/.env.docker file from template..."; \
+		cp config/env.docker.template config/.env.docker; \
+	fi
+	docker compose --env-file config/.env.docker pull
+	docker compose --env-file config/.env.docker up -d
 	@echo "✅ Services updated successfully!"
 
 # Stop all services
@@ -42,7 +50,7 @@ down:
 	@read -p "Are you sure you want to proceed? [y/N]: " confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
 		echo "🛑 Stopping TRH services..."; \
-		docker compose down; \
+		docker compose --env-file config/.env.docker down; \
 		echo "✅ Services stopped successfully!"; \
 	else \
 		echo "Operation cancelled."; \
@@ -58,17 +66,17 @@ setup: up
 
 # Show logs from all services
 logs:
-	docker compose logs -f
+	docker compose --env-file config/.env.docker logs -f
 
 # Show status of running containers
 status:
 	@echo "📊 Container Status:"
-	docker compose ps
+	docker compose --env-file config/.env.docker ps
 
 # Clean up - stop services and remove volumes
 clean:
 	@echo "🧹 Cleaning up TRH services..."
-	docker compose down -v
+	docker compose --env-file config/.env.docker down -v
 	@echo "✅ Cleanup completed!"
 
 # Configure environment variables interactively
@@ -79,6 +87,7 @@ config:
 	@# Copy template files
 	@cp config/env.backend.template config/.env.backend
 	@cp config/env.frontend.template config/.env.frontend
+	@cp config/env.docker.template config/.env.docker
 	@echo "📋 Template files copied successfully!"
 	@echo ""
 	@# Frontend configuration
@@ -98,6 +107,7 @@ config:
 	@echo ""
 	@echo "✅ Environment variables configured successfully!"
 	@echo "📁 Configuration files created:"
+	@echo "   - config/.env.docker"
 	@echo "   - config/.env.frontend"
 	@echo "   - config/.env.backend"
 

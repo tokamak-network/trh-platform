@@ -21,7 +21,7 @@ sleep 10
 
 # Function to find the running trh-backend container
 find_container() {
-    docker compose ps -q backend --status running
+    docker compose --env-file config/.env.docker ps -q backend --status running
 }
 
 # Retry mechanism to find the container
