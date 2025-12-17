@@ -63,6 +63,13 @@ make ec2-clean    # Clean up Terraform state (use when deployment fails)
 
 Environment variables are configured via templates:
 
+### Docker Image Versions
+```bash
+cp config/env.docker.template config/.env.docker
+```
+This configures which versions of the backend and UI Docker images to use. Default: `v1.0.1-alpha` for backend, `1.0.0` for UI
+
+### Service Configuration
 ```bash
 cp config/env.backend.template config/.env.backend
 cp config/env.frontend.template config/.env.frontend
