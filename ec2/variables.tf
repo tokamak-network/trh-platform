@@ -37,3 +37,10 @@ variable "admin_password" {
   type        = string
   default     = "admin"
 }
+
+variable "tokamak_ai_api_key" {
+  description = "API key for Tokamak AI Gateway (chatbot)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
