@@ -113,7 +113,7 @@ resource "aws_instance" "trh_platform_ec2" {
       "set -e",
       "echo 'Starting TRH Platform setup...'",
       "cd /home/ubuntu",
-      "git clone https://github.com/tokamak-network/trh-platform",
+      "git clone -b ${var.git_branch} https://github.com/tokamak-network/trh-platform",
       "cd trh-platform",
       "echo 'Setting up environment configuration programmatically...'",
       "# Copy template files",
