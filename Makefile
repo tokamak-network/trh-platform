@@ -88,6 +88,7 @@ config:
 	@cp config/env.backend.template config/.env.backend
 	@cp config/env.frontend.template config/.env.frontend
 	@cp config/env.docker.template config/.env.docker
+	@cp config/env.chatbot.template config/.env.chatbot
 	@echo "📋 Template files copied successfully!"
 	@echo ""
 	@# Frontend configuration
@@ -95,6 +96,9 @@ config:
 	@read -p "API Base URL [http://localhost:8000]: " api_url; \
 	api_url=$${api_url:-http://localhost:8000}; \
 	sed -i'' -e "s|^NEXT_PUBLIC_API_BASE_URL=.*|NEXT_PUBLIC_API_BASE_URL=$$api_url|" config/.env.frontend
+	@read -p "Chatbot URL [http://localhost:8001]: " chatbot_url; \
+	chatbot_url=$${chatbot_url:-http://localhost:8001}; \
+	sed -i'' -e "s|^NEXT_PUBLIC_CHATBOT_URL=.*|NEXT_PUBLIC_CHATBOT_URL=$$chatbot_url|" config/.env.frontend
 	@echo ""
 	@# Backend configuration
 	@echo "=== Backend Configuration ==="
@@ -105,11 +109,21 @@ config:
 	admin_password=$${admin_password:-admin}; \
 	sed -i'' -e "s|^DEFAULT_ADMIN_PASSWORD=.*|DEFAULT_ADMIN_PASSWORD=$$admin_password|" config/.env.backend
 	@echo ""
+	@# Chatbot configuration
+	@echo "=== Chatbot Configuration ==="
+	@read -p "Tokamak AI API Key [your-api-key-here]: " ai_api_key; \
+	ai_api_key=$${ai_api_key:-your-api-key-here}; \
+	sed -i'' -e "s|^TOKAMAK_AI_API_KEY=.*|TOKAMAK_AI_API_KEY=$$ai_api_key|" config/.env.chatbot
+	@read -p "Chatbot CORS Origins [http://localhost:3000]: " cors_origins; \
+	cors_origins=$${cors_origins:-http://localhost:3000}; \
+	sed -i'' -e "s|^CORS_ORIGINS=.*|CORS_ORIGINS=$$cors_origins|" config/.env.chatbot
+	@echo ""
 	@echo "✅ Environment variables configured successfully!"
 	@echo "📁 Configuration files created:"
 	@echo "   - config/.env.docker"
 	@echo "   - config/.env.frontend"
 	@echo "   - config/.env.backend"
+	@echo "   - config/.env.chatbot"
 
 # ========================================
 # EC2 Infrastructure Commands
@@ -229,6 +243,10 @@ ec2-deploy:
 		admin_password="admin"; \
 	fi; \
 	echo ""; \
+	echo "=== Chatbot Configuration ==="; \
+	read -p "Tokamak AI API Key (for chatbot, leave empty to skip): " ai_api_key; \
+	ai_api_key=$${ai_api_key:-}; \
+	echo ""; \
 	. ec2/.env; \
 	if [ -z "$$KEY_PAIR_NAME" ]; then \
 		echo "❌ KEY_PAIR_NAME not found in ec2/.env file."; \
@@ -242,6 +260,7 @@ ec2-deploy:
 	export TF_VAR_private_key_path="$$HOME/.ssh/$$KEY_PAIR_NAME"; \
 	export TF_VAR_admin_email="$$admin_email"; \
 	export TF_VAR_admin_password="$$admin_password"; \
+	export TF_VAR_tokamak_ai_api_key="$$ai_api_key"; \
 	echo "📝 Writing environment variables to .env file..."; \
 	echo "KEY_PAIR_NAME=$$KEY_PAIR_NAME" > ec2/.env; \
 	echo "TF_VAR_instance_type=$$instance_type" >> ec2/.env; \
@@ -251,6 +270,7 @@ ec2-deploy:
 	echo "TF_VAR_private_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME" >> ec2/.env; \
 	echo "TF_VAR_admin_email=$$admin_email" >> ec2/.env; \
 	echo "TF_VAR_admin_password=$$admin_password" >> ec2/.env; \
+	echo "TF_VAR_tokamak_ai_api_key=$$ai_api_key" >> ec2/.env; \
 	echo "🔑 Using SSH key pair: $$KEY_PAIR_NAME"; \
 	echo "🔑 Using public key path: $$HOME/.ssh/$$KEY_PAIR_NAME.pub"; \
 	echo "🔑 Using private key path: $$HOME/.ssh/$$KEY_PAIR_NAME"; \

@@ -32,6 +32,26 @@ services:
       - backend
     restart: unless-stopped
 
+  chatbot:
+    image: tokamaknetwork/tokamak-architect-bot:${TRH_CHATBOT_VERSION:-latest}
+    container_name: tokamak-architect-bot
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./config/.env.chatbot
+    volumes:
+      - chatbot_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   backend_storage:
+  chatbot_data:

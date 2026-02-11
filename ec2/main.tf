@@ -51,6 +51,15 @@ resource "aws_security_group" "trh_platform_security_group" {
     description = "Backend port 8000"
   }
 
+  # Chatbot API port 8001
+  ingress {
+    from_port   = 8001
+    to_port     = 8001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Tokamak Architect Bot API"
+  }
+
   # All outbound traffic
   egress {
     from_port   = 0
@@ -119,14 +128,21 @@ resource "aws_instance" "trh_platform_ec2" {
       "# Copy template files",
       "cp config/env.backend.template config/.env.backend",
       "cp config/env.frontend.template config/.env.frontend",
+      "cp config/env.chatbot.template config/.env.chatbot",
       "# Configure frontend with instance public IP",
       "sed -i 's|^NEXT_PUBLIC_API_BASE_URL=.*|NEXT_PUBLIC_API_BASE_URL=http://${self.public_ip}:8000|' config/.env.frontend",
+      "sed -i 's|^NEXT_PUBLIC_CHATBOT_URL=.*|NEXT_PUBLIC_CHATBOT_URL=http://${self.public_ip}:8001|' config/.env.frontend",
       "# Configure backend with provided values",
       "sed -i 's|^DEFAULT_ADMIN_EMAIL=.*|DEFAULT_ADMIN_EMAIL=${var.admin_email}|' config/.env.backend",
       "sed -i 's|^DEFAULT_ADMIN_PASSWORD=.*|DEFAULT_ADMIN_PASSWORD=${var.admin_password}|' config/.env.backend",
+      "# Configure chatbot",
+      "sed -i 's|^TOKAMAK_AI_API_KEY=.*|TOKAMAK_AI_API_KEY=${var.tokamak_ai_api_key}|' config/.env.chatbot",
+      "sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=http://${self.public_ip}:3000|' config/.env.chatbot",
       "echo 'Environment configuration completed!'",
       "echo 'Running make setup...'", 
       "make setup",
+      "echo 'Ingesting chatbot documentation...'",
+      "docker compose exec -T chatbot python -m scripts.ingest || echo 'Chatbot ingestion will be retried after services are fully up'",
       "echo 'TRH Platform setup completed successfully!'"
     ]
   }
