@@ -22,7 +22,7 @@ import {
   restartWithUpdates,
   PullProgress
 } from './docker';
-import { installDockerDesktop } from './installer';
+import { installDockerDesktop, type InstallResult } from './installer';
 import {
   showPlatformView,
   destroyPlatformView,
@@ -210,7 +210,7 @@ function setupIpcHandlers(): void {
   ipcMain.handle('docker:get-status', () => getDockerStatus());
   ipcMain.handle('docker:get-install-url', () => getDockerInstallUrl());
 
-  ipcMain.handle('docker:install-docker', async (): Promise<void> => {
+  ipcMain.handle('docker:install-docker', async (): Promise<InstallResult> => {
     if (!mainWindow || mainWindow.isDestroyed()) {
       throw new Error('Main window is not available');
     }
@@ -219,7 +219,7 @@ function setupIpcHandlers(): void {
     }
     dockerOperationInProgress = true;
     try {
-      await installDockerDesktop(mainWindow);
+      return await installDockerDesktop(mainWindow);
     } finally {
       dockerOperationInProgress = false;
     }

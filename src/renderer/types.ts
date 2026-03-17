@@ -48,6 +48,7 @@ export interface ElectronAPI {
     stop: () => Promise<void>;
     waitHealthy: (timeoutMs?: number) => Promise<boolean>;
     getInstallUrl: () => Promise<string>;
+    installDocker: () => Promise<{ requiresRelogin: boolean }>;
     checkBackendDeps: () => Promise<BackendDependencies>;
     installBackendDeps: () => Promise<void>;
     onPullProgress: (callback: (progress: PullProgress) => void) => () => void;
@@ -60,6 +61,19 @@ export interface ElectronAPI {
     loadPlatform: () => Promise<void>;
     openExternal: (url: string) => Promise<void>;
     getVersion: () => Promise<string>;
+  };
+  webview: {
+    goBack: () => void;
+    goForward: () => void;
+    reload: () => void;
+    loadUrl: (url: string) => void;
+    show: () => void;
+    hide: () => Promise<void>;
+    onVisibilityChanged: (callback: (visible: boolean) => void) => () => void;
+    onDidNavigate: (callback: (info: { url: string; canGoBack: boolean; canGoForward: boolean }) => void) => () => void;
+    onDidFinishLoad: (callback: (info: { url: string; canGoBack: boolean; canGoForward: boolean }) => void) => () => void;
+    onLoadFailed: (callback: (info: { errorCode: number; errorDescription: string }) => void) => () => void;
+    removeAllListeners: () => void;
   };
 }
 

@@ -455,20 +455,29 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
     });
 
     try {
-      await api.docker.installDocker();
-      appendLog('Docker Desktop installed. Starting daemon...');
-      updateStep('docker', { status: 'loading', detail: 'Starting Docker...' });
+      const result = await api.docker.installDocker();
       setShowInstallDocker(false);
-      // Retry setup after install
-      runningRef.current = false;
-      runSetup();
+      if (result.requiresRelogin) {
+        appendLog('Docker installed. You must log out and back in for group changes to take effect.');
+        updateStep('docker', { status: 'error', detail: 'Relogin required' });
+        setError({
+          title: 'Log Out Required',
+          message: 'Docker was installed successfully. Please log out and back in to apply group permissions, then click Retry.',
+        });
+        setShowRetry(true);
+      } else {
+        appendLog('Docker installed. Starting daemon...');
+        updateStep('docker', { status: 'loading', detail: 'Starting Docker...' });
+        runningRef.current = false;
+        runSetup();
+      }
     } catch (err: any) {
       const msg = err?.message || 'Installation failed.';
       appendLog(`Docker install failed: ${msg}`);
       updateStep('docker', { status: 'error', detail: 'Install failed' });
       setError({
         title: 'Installation Failed',
-        message: `${msg} Please install Docker Desktop manually from docker.com and retry.`,
+        message: `${msg} Please install Docker manually from docker.com and retry.`,
       });
       setShowRetry(true);
     } finally {

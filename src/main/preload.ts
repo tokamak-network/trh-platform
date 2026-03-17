@@ -50,7 +50,7 @@ const electronAPI = {
     stop: (): Promise<void> => ipcRenderer.invoke('docker:stop'),
     waitHealthy: (timeoutMs?: number): Promise<boolean> => ipcRenderer.invoke('docker:wait-healthy', timeoutMs),
     getInstallUrl: (): Promise<string> => ipcRenderer.invoke('docker:get-install-url'),
-    installDocker: (): Promise<void> => ipcRenderer.invoke('docker:install-docker'),
+    installDocker: (): Promise<{ requiresRelogin: boolean }> => ipcRenderer.invoke('docker:install-docker'),
     checkBackendDeps: (): Promise<BackendDependencies> => ipcRenderer.invoke('docker:check-backend-deps'),
     installBackendDeps: (): Promise<void> => ipcRenderer.invoke('docker:install-backend-deps'),
 
