@@ -27,6 +27,16 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Set version from tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          npm version "${VERSION#v}" --no-git-tag-version
+
       - name: Install dependencies
         run: npm ci
 
@@ -57,6 +67,16 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Set version from tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          npm version "${VERSION#v}" --no-git-tag-version
+
       - name: Install dependencies
         run: npm ci
 
@@ -86,6 +106,16 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+
+      - name: Set version from tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          npm version "${VERSION#v}" --no-git-tag-version
 
       - name: Install dependencies
         run: npm ci
