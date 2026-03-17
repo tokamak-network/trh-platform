@@ -1,147 +1,151 @@
 # TRH Platform
 
-This repository contains the TRH Platform, which uses Docker Compose to orchestrate a backend, frontend, and a PostgreSQL database.
+One-click desktop application for [Tokamak Rollup Hub](https://github.com/tokamak-network). Deploy L2 rollups without touching the command line.
 
-## Project Structure
+## Features
 
-- `docker-compose.yml`: Orchestrates the services (frontend, backend, database)
-- `Makefile`: Provides convenient commands for managing the application
-- `setup.sh`: Script to configure the backend container
-- `config/`: Contains environment variable templates for backend and frontend
-- `README.md`: Project documentation
+- Automatic Docker container orchestration
+- Built-in setup wizard with dependency checking
+- System tray integration for background operation
+- Cross-platform support (macOS, Windows, Linux)
+
+## Requirements
+
+- **Docker Desktop** - Required for running the platform services
+- **Node.js 18+** - For development only
 
 ## Quick Start
 
-### Local Development
+### For Users
+
+1. Download the latest release from [Releases](https://github.com/tokamak-network/trh-platform/releases)
+2. Install and open TRH Platform
+3. Follow the setup wizard
+
+### For Developers
 
 ```bash
-# Clone and setup
-git clone <your-repo-url>
+# Clone the repository
+git clone https://github.com/tokamak-network/trh-platform.git
 cd trh-platform
-make setup
+
+# Install dependencies
+npm install
+
+# Build required Docker images (see Docker Images section)
+
+# Run in development mode
+npm run dev
 ```
 
-**Prerequisites**: Docker, Docker Compose, Make
+## Docker Images
 
-### EC2 Deployment
+This application requires the following Docker images to be available locally:
+
+| Image | Source |
+|-------|--------|
+| `trh-backend:electron` | Built from [trh-backend](https://github.com/tokamak-network/trh-backend) |
+| `trh-platform-ui:electron` | Built from [trh-platform-ui](https://github.com/tokamak-network/trh-platform-ui) |
+| `postgres:15-alpine` | Pulled from Docker Hub |
+
+### Building the Backend Image
 
 ```bash
-# Single command deployment
-make ec2-deploy
+git clone https://github.com/tokamak-network/trh-backend.git
+cd trh-backend
+# Use main branch or specific release tag when available
+git checkout feat/cross-trade-integration
+docker build -t trh-backend:electron .
 ```
 
-**Prerequisites**: AWS Account, AWS Access Key ID/Secret
+### Building the Platform UI Image
 
-On first run, you'll be prompted for:
-- AWS Credentials (Access Key ID, Secret Access Key, Region)
-- SSH Key Pair Name
-- Instance Type (default: t2.large)
-- Instance Name (default: trh-platform-ec2)
-
-## Available Commands
-
-### Local Development
 ```bash
-make setup    # Start services and setup (recommended)
-make up       # Start services
-make down     # Stop services
-make logs     # Show logs
-make status   # Show container status
-make clean    # Stop and remove volumes
+git clone https://github.com/tokamak-network/trh-platform-ui.git
+cd trh-platform-ui
+# Use main branch or specific release tag when available
+git checkout feat/update-cross-trade
+docker build -t trh-platform-ui:electron .
 ```
 
-### EC2 Deployment
+## Development
+
 ```bash
-make ec2-deploy   # Deploy to AWS EC2
-make ec2-update   # Update running instance
-make ec2-destroy  # Destroy infrastructure
-make ec2-status   # Show infrastructure status
-make ec2-clean    # Clean up Terraform state (use when deployment fails)
+# Run in development mode
+npm run dev
+
+# Watch mode (auto-recompile)
+npm run dev:watch
+
+# Build TypeScript only
+npm run build
 ```
+
+## Building Releases
+
+```bash
+# Build for current platform
+npm run package
+
+# Build for specific platforms
+npm run package:mac
+npm run package:win
+npm run package:linux
+```
+
+Build output is in the `release/` directory.
+
+> **Note:** Windows builds require `icon.ico`. Use a tool like ImageMagick to convert `icon.png`:
+> ```bash
+> convert icon.png -define icon:auto-resize=256,128,64,48,32,16 icon.ico
+> ```
+
+## Project Structure
+
+```
+trh-platform/
+├── src/main/
+│   ├── index.ts        # Electron main process
+│   ├── preload.ts      # IPC bridge (renderer ↔ main)
+│   └── docker.ts       # Docker container management
+├── public/
+│   ├── setup.html      # Setup wizard UI
+│   └── assets/         # Images, icons, logos
+├── resources/
+│   └── docker-compose.yml
+└── package.json
+```
+
+## How It Works
+
+1. **Setup Wizard** - Checks Docker installation and pulls required images
+2. **Container Orchestration** - Starts PostgreSQL, backend API, and platform UI
+3. **Dependency Installation** - Installs required tools (pnpm, node, forge, aws) in the backend container
+4. **Health Monitoring** - Waits for all services to be healthy before loading the UI
+5. **Platform UI** - Loads the web interface at `http://localhost:3000`
+
+## Ports Used
+
+| Service | Port |
+|---------|------|
+| Platform UI | 3000 |
+| Backend API | 8000 |
+| PostgreSQL | 5433 |
 
 ## Configuration
 
-Environment variables are configured via templates:
+Environment files are managed in the `config/` directory. These are excluded from git via `.gitignore`. The Electron app manages docker-compose configuration via environment variables passed directly to the container orchestration layer.
 
-### Docker Image Versions
-```bash
-cp config/env.docker.template config/.env.docker
-```
-This configures which versions of the backend and UI Docker images to use. Default: `v1.0.1-alpha` for backend, `1.0.0` for UI
+## License
 
-### Service Configuration
-```bash
-cp config/env.backend.template config/.env.backend
-cp config/env.frontend.template config/.env.frontend
-```
+[MIT](LICENSE)
 
-**Important**: Update `NEXT_PUBLIC_API_BASE_URL` in `config/.env.frontend`:
-- Local: `http://localhost:8000`
-- EC2: `http://<instance-ip>:8000`
+## Contributing
 
-## Troubleshooting
+Contributions are welcome! Please read our contributing guidelines before submitting PRs.
 
-### Deployment Failures
+## Related Projects
 
-If `make ec2-deploy` fails:
-
-```bash
-# Check if resources exist
-make ec2-status
-
-# If resources exist, destroy them first
-make ec2-destroy
-
-# Clean up state and retry
-make ec2-clean
-make ec2-deploy
-```
-
-### Destroy Failures - AWS Credentials Mismatch
-
-If `make ec2-destroy` fails due to credentials mismatch:
-
-1. Verify current credentials: `aws sts get-caller-identity`
-2. Configure correct credentials: Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables while `aws configure`
-3. Retry: `make ec2-destroy`
-
-**Note**: You must use the same AWS credentials that created the resources.
-
-### If account info cannot be read from state
-
-When the Terraform state has no account info (ARN missing) and destroy cannot proceed:
-
-**Find resource IDs via AWS CLI**
-```bash
-# Instance ID by Name tag (replace with your instance name)
-aws ec2 describe-instances --filters "Name=tag:Name,Values=<instance-name>" \
-  --query "Reservations[].Instances[].InstanceId" --output text
-
-# Security Group ID by name prefix (replace with your SG prefix if customized)
-aws ec2 describe-security-groups --filters "Name=group-name,Values=<sg-name-or-prefix>*" \
-  --query "SecurityGroups[].GroupId" --output text
-
-# Key Pair name (list and pick the one you used)
-aws ec2 describe-key-pairs --query "KeyPairs[].KeyName" --output text
-```
-
-**Terminate resources manually (if needed)**
-- From AWS Console **or** CLI:
-  ```bash
-  aws ec2 terminate-instances --instance-ids <instance-id>
-  ```
-- Delete related resources if present:
-  ```bash
-  aws ec2 delete-security-group --group-id <sg-id>
-  aws ec2 delete-key-pair --key-name <key-name>
-  ```
-- Then clean local state:
-  ```bash
-  make ec2-clean
-  ```
-
-## Access
-
-- **Backend**: http://localhost:8000
-- **Frontend**: http://localhost:3000
-- **PostgreSQL**: localhost:5432
+- [trh-backend](https://github.com/tokamak-network/trh-backend) - Backend API
+- [trh-platform-ui](https://github.com/tokamak-network/trh-platform-ui) - Platform UI
+- [tokamak-network](https://github.com/tokamak-network) - Tokamak Network organization
