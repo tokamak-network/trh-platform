@@ -1,0 +1,163 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-mac:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & package macOS
+        run: npm run package:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: |
+            release/*.dmg
+            release/*.zip
+          retention-days: 7
+
+  build-win:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & package Windows
+        run: npm run package:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: |
+            release/*.exe
+            release/*.zip
+          retention-days: 7
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & package Linux
+        run: npm run package:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: |
+            release/*.AppImage
+            release/*.deb
+          retention-days: 7
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-mac, build-win, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: TRH Desktop ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+          generate_release_notes: true
+          files: |
+            release-assets/macos-release/*.dmg
+            release-assets/macos-release/*.zip
+            release-assets/windows-release/*.exe
+            release-assets/windows-release/*.zip
+            release-assets/linux-release/*.AppImage
+            release-assets/linux-release/*.deb
+          body: |
+            ## TRH Desktop ${{ steps.version.outputs.tag }}
+
+            ### 다운로드
+
+            | 플랫폼 | 파일 | 아키텍처 |
+            |--------|------|----------|
+            | macOS | `*-arm64.dmg` | Apple Silicon (M1/M2/M3) |
+            | macOS | `*.dmg` | Intel (x64) |
+            | Windows | `*.exe` | x64 |
+            | Linux | `*.AppImage`, `*.deb` | x64 |
+
+            ### 설치 방법
+
+            📖 [설치 및 실행 가이드](https://github.com/tokamak-network/trh-platform/blob/main/docs/install-guide.html)
+
+            ### macOS 주의사항
+
+            처음 실행 시 "개발자를 확인할 수 없음" 경고가 표시될 수 있습니다.
+            앱을 **우클릭 → 열기**로 실행하세요.
