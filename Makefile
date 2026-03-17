@@ -215,6 +215,14 @@ ec2-deploy:
 		instance_name="trh-platform-ec2"; \
 	fi; \
 	echo ""; \
+	echo "=== Git Branch Configuration ==="; \
+	read -p "Git Branch [main]: " git_branch; \
+	git_branch=$${git_branch:-main}; \
+	git_branch=$$(echo "$$git_branch" | tr -d "[:space:]"); \
+	if [ -z "$$git_branch" ]; then \
+		git_branch="main"; \
+	fi; \
+	echo ""; \
 	echo "=== Platform Admin Configuration ==="; \
 	read -p "Admin Email [admin@gmail.com]: " admin_email; \
 	admin_email=$${admin_email:-admin@gmail.com}; \
@@ -242,6 +250,7 @@ ec2-deploy:
 	export TF_VAR_private_key_path="$$HOME/.ssh/$$KEY_PAIR_NAME"; \
 	export TF_VAR_admin_email="$$admin_email"; \
 	export TF_VAR_admin_password="$$admin_password"; \
+	export TF_VAR_git_branch="$$git_branch"; \
 	echo "📝 Writing environment variables to .env file..."; \
 	echo "KEY_PAIR_NAME=$$KEY_PAIR_NAME" > ec2/.env; \
 	echo "TF_VAR_instance_type=$$instance_type" >> ec2/.env; \
@@ -251,12 +260,14 @@ ec2-deploy:
 	echo "TF_VAR_private_key_path=$$HOME/.ssh/$$KEY_PAIR_NAME" >> ec2/.env; \
 	echo "TF_VAR_admin_email=$$admin_email" >> ec2/.env; \
 	echo "TF_VAR_admin_password=$$admin_password" >> ec2/.env; \
+	echo "TF_VAR_git_branch=$$git_branch" >> ec2/.env; \
 	echo "🔑 Using SSH key pair: $$KEY_PAIR_NAME"; \
 	echo "🔑 Using public key path: $$HOME/.ssh/$$KEY_PAIR_NAME.pub"; \
 	echo "🔑 Using private key path: $$HOME/.ssh/$$KEY_PAIR_NAME"; \
 	echo "🔧 Configuration:"; \
 	echo "   - Instance Type: $$instance_type"; \
 	echo "   - Instance Name: $$instance_name"; \
+	echo "   - Git Branch: $$git_branch"; \
 	echo "   - Admin Email: $$admin_email"; \
 	echo "🏗️  Initializing Terraform..."; \
 	cd ec2 && \
@@ -383,12 +394,15 @@ ec2-update:
 			echo "📝 Adding host key to known_hosts..."; \
 			ssh-keyscan -H "$$INSTANCE_IP" >> ~/.ssh/known_hosts 2>/dev/null || true; \
 		fi; \
-		echo "🚀 Connecting to instance to update..."; \
+		GIT_BRANCH=$${TF_VAR_git_branch:-main}; \
+		echo "🚀 Connecting to instance to update (branch: $$GIT_BRANCH)..."; \
 		ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -i ~/.ssh/$$TF_VAR_key_pair_name ubuntu@$$INSTANCE_IP " \
 			cd trh-platform && \
 			echo '📥 Fetching latest code...' && \
 			git fetch --all && \
-			echo '🔄 Pulling latest changes from current branch...' && \
+			echo '🔄 Checking out branch: $$GIT_BRANCH...' && \
+			git checkout $$GIT_BRANCH && \
+			echo '🔄 Pulling latest changes...' && \
 			git pull && \
 			echo '🔄 Pulling latest Docker images...' && \
 			PULL_OUTPUT=\$$(docker compose pull 2>&1) && \
@@ -465,12 +479,14 @@ ec2-destroy:
 		echo "   - TF_VAR_instance_name: $$TF_VAR_instance_name"; \
 		echo "   - TF_VAR_key_pair_name: $$TF_VAR_key_pair_name"; \
 		echo "   - TF_VAR_public_key_path: $$TF_VAR_public_key_path"; \
+		echo "   - TF_VAR_git_branch: $$TF_VAR_git_branch"; \
 		echo ""; \
 		cd ec2 && \
 		export TF_VAR_instance_type="$$TF_VAR_instance_type" && \
 		export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
 		export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
 		export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
+		export TF_VAR_git_branch="$${TF_VAR_git_branch:-main}" && \
 		if [ ! -f terraform.tfstate ]; then \
 			echo "⚠️  No Terraform state file found. Infrastructure may already be destroyed."; \
 			exit 0; \
@@ -780,6 +796,7 @@ ec2-status:
 		echo "   - TF_VAR_instance_name: $$TF_VAR_instance_name"; \
 		echo "   - TF_VAR_key_pair_name: $$TF_VAR_key_pair_name"; \
 		echo "   - TF_VAR_public_key_path: $$TF_VAR_public_key_path"; \
+		echo "   - TF_VAR_git_branch: $$TF_VAR_git_branch"; \
 		echo ""; \
 		if [ -f ec2/terraform.tfstate ]; then \
 			echo "📁 Terraform state file found"; \
@@ -790,6 +807,7 @@ ec2-status:
 			export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
 			export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
 			export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
+			export TF_VAR_git_branch="$${TF_VAR_git_branch:-main}" && \
 			terraform show -json | jq -r '.values.root_module.resources[]? | select(.type=="aws_instance") | "Instance: \(.values.tags.Name // "unnamed") (\(.values.instance_type)) - \(.values.instance_state)"' 2>/dev/null) || echo "No instances found or jq not available"; \
 			echo ""; \
 			echo "📋 Terraform Outputs:"; \
@@ -798,6 +816,7 @@ ec2-status:
 			export TF_VAR_instance_name="$$TF_VAR_instance_name" && \
 			export TF_VAR_key_pair_name="$$TF_VAR_key_pair_name" && \
 			export TF_VAR_public_key_path="$$TF_VAR_public_key_path" && \
+			export TF_VAR_git_branch="$${TF_VAR_git_branch:-main}" && \
 			terraform output 2>/dev/null) || echo "No outputs available"; \
 		else \
 			echo "❌ No Terraform state found. Infrastructure may not be deployed."; \

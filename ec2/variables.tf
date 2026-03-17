@@ -37,3 +37,14 @@ variable "admin_password" {
   type        = string
   default     = "admin"
 }
+
+variable "git_branch" {
+  description = "Git branch to clone for deployment"
+  type        = string
+  default     = "main"
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._/-]+$", var.git_branch))
+    error_message = "git_branch must only contain alphanumeric characters, dots, underscores, hyphens, and forward slashes."
+  }
+}
