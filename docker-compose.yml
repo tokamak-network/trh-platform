@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    image: tokamaknetwork/trh-backend@sha256:6e7e1c418ba3e1206f6a3a29e43780b74ca3882492bd8be04472c69ed3b839d7
+    image: tokamaknetwork/trh-backend:latest
     ports:
       - "8000:8000"
     env_file:
@@ -23,7 +23,7 @@ services:
       - backend_storage:/app/storage
 
   ui:
-    image: tokamaknetwork/trh-platform-ui@sha256:7540d7f4ae1fe4b6034956aa44dc9fd96d1fe7db7b8c97ef07d12a1cb769bd75
+    image: tokamaknetwork/trh-platform-ui:latest
     ports:
       - "3000:3000"
     env_file:

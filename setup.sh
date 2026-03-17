@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# Script to setup TRH backend container
-# This script will:
-# 1. Get the running trh-backend container
-# 2. Execute into the container
-# 3. Run the install-all-packages.sh script
-# 4. Source bashrc
-# 5. Exit
+# Script to verify TRH backend container setup
+# Dependencies are now pre-installed in the Docker image.
+# This script only verifies that the container is running and tools are available.
 
 set -e
 
@@ -28,14 +24,14 @@ find_container() {
 CONTAINER_ID=""
 for attempt in $(seq 1 $MAX_RETRIES); do
     echo "Attempt $attempt/$MAX_RETRIES to find container..."
-    
+
     CONTAINER_ID=$(find_container)
-    
+
     if [ -n "$CONTAINER_ID" ]; then
         echo "✅ Found container: $CONTAINER_ID"
         break
     fi
-    
+
     if [ $attempt -lt $MAX_RETRIES ]; then
         echo "❌ No running trh-backend container found. Retrying in ${RETRY_DELAY} seconds..."
         sleep $RETRY_DELAY
@@ -47,32 +43,32 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     fi
 done
 
-echo "🚀 Executing into container and running setup..."
+echo "🔍 Verifying pre-installed tools in container..."
 
-# Execute into the container and run the commands
+# Verify tools are available in the container
 docker exec -i "$CONTAINER_ID" bash -c "
-echo '📦 Running install-all-packages.sh...'
+echo '📦 Verifying installed tools...'
 
-# Install TRH SDK packages (equivalent to what setup.sh does at the end)
-wget https://raw.githubusercontent.com/tokamak-network/trh-backend/refs/heads/main/docker_install_dependencies_script.sh
-chmod +x docker_install_dependencies_script.sh
-DEBIAN_FRONTEND=noninteractive TZ=UTC ./docker_install_dependencies_script.sh
+TOOLS_OK=true
 
-# Ensure necessary binaries are available in the PATH
-ln -sf /root/.local/share/pnpm/pnpm /usr/local/bin/pnpm
-ln -sf /root/.nvm/versions/node/v20.16.0/bin/npx /usr/local/bin/npx
-ln -sf /root/.foundry/bin/forge /usr/local/bin/forge
-ln -sf /root/.foundry/bin/cast /usr/local/bin/cast
-ln -sf /root/.foundry/bin/anvil /usr/local/bin/anvil
-ln -sf /root/.nvm/versions/node/v20.16.0/bin/node /usr/local/bin/node
-ln -sf /root/.nvm/versions/node/v20.16.0/bin/npm /usr/local/bin/npm
+for cmd in aws terraform helm kubectl node npm npx pnpm forge cast anvil go; do
+    if command -v \$cmd &> /dev/null; then
+        echo \"✅ \$cmd is available\"
+    else
+        echo \"❌ \$cmd is NOT available\"
+        TOOLS_OK=false
+    fi
+done
 
-
-echo '🔄 Sourcing bashrc...'
-source ~/.bashrc
-
-echo '✅ Setup completed successfully!'
-echo 'Exiting container...'
+if [ \"\$TOOLS_OK\" = true ]; then
+    echo ''
+    echo '✅ All tools are pre-installed and available!'
+else
+    echo ''
+    echo '⚠️  Some tools are missing. The Docker image may need to be rebuilt.'
+    echo '  Run: docker buildx build --platform linux/amd64,linux/arm64 -t tokamaknetwork/trh-backend:latest --push .'
+    exit 1
+fi
 "
 
-echo "🎉 Container setup completed!" 
+echo "🎉 Container verification completed!"
