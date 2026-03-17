@@ -1,9 +1,6 @@
 name: Build & Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version:
@@ -27,15 +24,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Set version from tag
+      - name: Set version
         shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          npm version "${VERSION#v}" --no-git-tag-version
+        run: npm version "${{ github.event.inputs.version }}" --no-git-tag-version
 
       - name: Install dependencies
         run: npm ci
@@ -67,15 +58,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Set version from tag
+      - name: Set version
         shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          npm version "${VERSION#v}" --no-git-tag-version
+        run: npm version "${{ github.event.inputs.version }}" --no-git-tag-version
 
       - name: Install dependencies
         run: npm ci
@@ -107,15 +92,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Set version from tag
+      - name: Set version
         shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          npm version "${VERSION#v}" --no-git-tag-version
+        run: npm version "${{ github.event.inputs.version }}" --no-git-tag-version
 
       - name: Install dependencies
         run: npm ci
@@ -149,12 +128,7 @@ jobs:
 
       - name: Determine version
         id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
+        run: echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
