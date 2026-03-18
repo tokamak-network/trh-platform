@@ -4,7 +4,8 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  -webkit-app-region: drag;
+  padding-top: 72px;
+  -webkit-app-region: no-drag;
   background:
     linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.9) 100%),
     url('../assets/images/default-bg.png');
@@ -15,7 +16,6 @@
 .config-container {
   width: 100%;
   max-width: 440px;
-  -webkit-app-region: no-drag;
 }
 
 .config-header {

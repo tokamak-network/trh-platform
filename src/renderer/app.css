@@ -20,7 +20,45 @@ body {
   min-height: 100vh;
 }
 
+/* macOS hiddenInset titlebar drag area */
+.titlebar-drag {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  -webkit-app-region: drag;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .hidden { display: none !important; }
+
+.update-banner-global {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--blue);
+  color: #fff;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.update-banner-global button {
+  margin-left: 12px;
+  background: #fff;
+  color: var(--blue);
+  border: none;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
 .version {
   position: fixed;

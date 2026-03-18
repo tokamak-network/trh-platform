@@ -11,24 +11,15 @@ import { BrowserWindow, WebContentsView, ipcMain } from 'electron';
 
 const PLATFORM_UI_URL = 'http://localhost:3000';
 
-// Header height in pixels reserved for navigation controls drawn in the renderer
-const HEADER_HEIGHT = 48;
-
 let platformView: WebContentsView | null = null;
 let hostWindow: BrowserWindow | null = null;
 
 /**
- * Returns the content bounds for the WebContentsView, filling the window
- * below the header bar.
+ * Returns the content bounds for the WebContentsView, filling the entire window.
  */
 function getViewBounds(win: BrowserWindow): Electron.Rectangle {
   const [width, height] = win.getContentSize();
-  return {
-    x: 0,
-    y: HEADER_HEIGHT,
-    width,
-    height: Math.max(0, height - HEADER_HEIGHT)
-  };
+  return { x: 0, y: 0, width, height };
 }
 
 /**
@@ -87,8 +78,8 @@ export function showPlatformView(win: BrowserWindow): void {
     if (win && !win.isDestroyed()) {
       win.webContents.send('webview:did-navigate', {
         url: navigationUrl,
-        canGoBack: platformView?.webContents.canGoBack() ?? false,
-        canGoForward: platformView?.webContents.canGoForward() ?? false
+        canGoBack: platformView?.webContents.navigationHistory.canGoBack() ?? false,
+        canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
       });
     }
   });
@@ -97,8 +88,8 @@ export function showPlatformView(win: BrowserWindow): void {
     if (win && !win.isDestroyed()) {
       win.webContents.send('webview:did-navigate', {
         url: navigationUrl,
-        canGoBack: platformView?.webContents.canGoBack() ?? false,
-        canGoForward: platformView?.webContents.canGoForward() ?? false
+        canGoBack: platformView?.webContents.navigationHistory.canGoBack() ?? false,
+        canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
       });
     }
   });
@@ -117,8 +108,8 @@ export function showPlatformView(win: BrowserWindow): void {
     if (win && !win.isDestroyed()) {
       win.webContents.send('webview:did-finish-load', {
         url: platformView?.webContents.getURL() ?? '',
-        canGoBack: platformView?.webContents.canGoBack() ?? false,
-        canGoForward: platformView?.webContents.canGoForward() ?? false
+        canGoBack: platformView?.webContents.navigationHistory.canGoBack() ?? false,
+        canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
       });
     }
   });
@@ -172,14 +163,14 @@ export function destroyPlatformView(): void {
  */
 export function registerWebviewIpcHandlers(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle('webview:go-back', () => {
-    if (platformView?.webContents.canGoBack()) {
-      platformView.webContents.goBack();
+    if (platformView?.webContents.navigationHistory.canGoBack()) {
+      platformView.webContents.navigationHistory.goBack();
     }
   });
 
   ipcMain.handle('webview:go-forward', () => {
-    if (platformView?.webContents.canGoForward()) {
-      platformView.webContents.goForward();
+    if (platformView?.webContents.navigationHistory.canGoForward()) {
+      platformView.webContents.navigationHistory.goForward();
     }
   });
 

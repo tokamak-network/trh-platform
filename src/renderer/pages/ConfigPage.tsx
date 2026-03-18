@@ -27,7 +27,7 @@ export default function ConfigPage({ onContinue }: ConfigPageProps) {
       }
       onContinue(email, password);
     } else {
-      onContinue('admin@gmail.com', 'admin123');
+      onContinue('admin@gmail.com', 'admin');
     }
   };
 
@@ -55,7 +55,7 @@ export default function ConfigPage({ onContinue }: ConfigPageProps) {
               <div className="config-option-desc">Quick setup with pre-configured admin account</div>
               <div className="credentials-display">
                 <p>Email: <code>admin@gmail.com</code></p>
-                <p>Password: <code>admin123</code></p>
+                <p>Password: <code>admin</code></p>
               </div>
             </div>
           </div>
