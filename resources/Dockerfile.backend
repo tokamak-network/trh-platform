@@ -1,5 +1,5 @@
 # Custom backend image with all required dependencies for TRH Desktop
-FROM trh-backend:cross-trade
+FROM tokamaknetwork/trh-backend:latest
 
 # Install base dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

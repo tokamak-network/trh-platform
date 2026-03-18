@@ -74,11 +74,17 @@ const electronAPI = {
       ipcRenderer.on('docker:log', handler);
       return () => ipcRenderer.removeListener('docker:log', handler);
     },
+    onUpdateAvailable: (callback: (available: boolean) => void): (() => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, available: boolean) => callback(available);
+      ipcRenderer.on('docker:update-available', handler);
+      return () => ipcRenderer.removeListener('docker:update-available', handler);
+    },
     removeAllListeners: (): void => {
       ipcRenderer.removeAllListeners('docker:pull-progress');
       ipcRenderer.removeAllListeners('docker:status-update');
       ipcRenderer.removeAllListeners('docker:install-progress');
       ipcRenderer.removeAllListeners('docker:log');
+      ipcRenderer.removeAllListeners('docker:update-available');
     }
   },
 
@@ -86,6 +92,20 @@ const electronAPI = {
     loadPlatform: (): Promise<void> => ipcRenderer.invoke('app:load-platform'),
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:open-external', url),
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version')
+  },
+
+  notifications: {
+    getAll: (): Promise<import('./notifications').AppNotification[]> => ipcRenderer.invoke('notifications:get-all'),
+    markRead: (id: string): Promise<void> => ipcRenderer.invoke('notifications:mark-read', id),
+    markAllRead: (): Promise<void> => ipcRenderer.invoke('notifications:mark-all-read'),
+    dismiss: (id: string): Promise<void> => ipcRenderer.invoke('notifications:dismiss', id),
+    executeAction: (id: string): Promise<void> => ipcRenderer.invoke('notifications:execute-action', id),
+    getUnreadCount: (): Promise<number> => ipcRenderer.invoke('notifications:get-unread-count'),
+    onChanged: (callback: () => void): (() => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('notifications:changed', handler);
+      return () => ipcRenderer.removeListener('notifications:changed', handler);
+    },
   },
 
   webview: {

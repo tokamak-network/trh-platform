@@ -76,6 +76,7 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
     api.docker.removeAllListeners();
     const logCleanup = api.docker.onLog((line) => {
       setLogs(prev => [...prev, createLogLine(line)]);
+
     });
 
     appendLog('Starting setup...');
@@ -230,8 +231,8 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
           return;
         }
 
-        appendLog('Starting containers with docker compose...');
-        updateStep('containers', { status: 'loading', detail: 'Starting...' });
+        appendLog('Starting containers...');
+        updateStep('containers', { status: 'loading', detail: 'Starting containers...' });
         await api.docker.start({ adminEmail, adminPassword });
         appendLog('Containers started successfully');
         updateStep('containers', { status: 'success', detail: 'Running' });
@@ -505,8 +506,8 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
         <div className="steps">
           <StepItem index={1} title="Docker Environment" detail={steps.docker.detail} status={steps.docker.status} />
           <StepItem index={2} title="Container Images" detail={steps.images.detail} status={steps.images.status} showProgress progress={steps.images.progress} />
-          <StepItem index={3} title="Starting Services" detail={steps.containers.detail} status={steps.containers.status} />
-          <StepItem index={4} title="Backend Dependencies" detail={steps.deps.detail} status={steps.deps.status} showProgress progress={steps.deps.progress} />
+          <StepItem index={3} title="Building & Starting Services" detail={steps.containers.detail} status={steps.containers.status} />
+          <StepItem index={4} title="Verifying Dependencies" detail={steps.deps.detail} status={steps.deps.status} showProgress progress={steps.deps.progress} />
           <StepItem index={5} title="Platform Ready" detail={steps.ready.detail} status={steps.ready.status} />
         </div>
 

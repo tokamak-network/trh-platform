@@ -212,7 +212,7 @@ function validateCredentials(config?: ContainerConfig): { email?: string; passwo
   if (config?.adminPassword) {
     const password = String(config.adminPassword);
     if (password.length > 128) throw new Error('Password too long');
-    if (password.length < 8) throw new Error('Password must be at least 8 characters');
+    if (password.length < 5) throw new Error('Password must be at least 5 characters');
     result.password = password;
   }
 
@@ -324,7 +324,7 @@ export async function pullImages(onProgress: (progress: PullProgress) => void): 
   const composePath = getComposePath();
 
   return new Promise((resolve, reject) => {
-    const pull = spawn(DOCKER_BIN, ['compose', '-f', composePath, 'pull'], {
+    const pull = spawn(DOCKER_BIN, ['compose', '-f', composePath, 'pull', '--ignore-buildable'], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, PATH: EXTENDED_PATH }
     });
@@ -371,7 +371,7 @@ export async function pullImages(onProgress: (progress: PullProgress) => void): 
 }
 
 const UPDATE_IMAGES = [
-  'tokamaknetwork/trh-backend:latest',
+  'tokamaknetwork/trh-backend-desktop:latest',
   'tokamaknetwork/trh-platform-ui:latest',
 ];
 
@@ -397,7 +397,7 @@ export async function checkForUpdates(): Promise<boolean> {
 
   // Pull latest images
   return new Promise((resolve) => {
-    const pull = spawn(DOCKER_BIN, ['compose', '-f', composePath, 'pull', '-q'], {
+    const pull = spawn(DOCKER_BIN, ['compose', '-f', composePath, 'pull', '-q', '--ignore-buildable'], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, PATH: EXTENDED_PATH }
     });
@@ -441,6 +441,7 @@ export async function checkForUpdates(): Promise<boolean> {
   });
 }
 
+
 export async function restartWithUpdates(config?: ContainerConfig): Promise<void> {
   emitLog('Restarting containers with updated images...');
   await stopContainers();
@@ -450,6 +451,7 @@ export async function restartWithUpdates(config?: ContainerConfig): Promise<void
 
 export async function startContainers(config?: ContainerConfig): Promise<void> {
   const composePath = getComposePath();
+
   const credentials = validateCredentials(config);
 
   const env: NodeJS.ProcessEnv = { ...process.env, PATH: EXTENDED_PATH };

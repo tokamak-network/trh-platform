@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: tokamaknetwork/trh-backend:latest
+    image: tokamaknetwork/trh-backend-desktop:latest
     container_name: trh-backend
     ports:
       - "8000:8000"

@@ -31,6 +31,17 @@ export interface PortCheckResult {
   conflicts: PortConflict[];
 }
 
+export interface AppNotification {
+  id: string;
+  type: 'image-update' | 'release-update' | 'system';
+  title: string;
+  message: string;
+  timestamp: number;
+  read: boolean;
+  actionLabel?: string;
+  actionType?: 'update-containers';
+}
+
 export interface ElectronAPI {
   docker: {
     checkInstalled: () => Promise<boolean>;
@@ -55,6 +66,7 @@ export interface ElectronAPI {
     onStatusUpdate: (callback: (status: string) => void) => () => void;
     onInstallProgress: (callback: (status: string) => void) => () => void;
     onLog: (callback: (line: string) => void) => () => void;
+    onUpdateAvailable: (callback: (available: boolean) => void) => () => void;
     removeAllListeners: () => void;
   };
   app: {
@@ -74,6 +86,15 @@ export interface ElectronAPI {
     onDidFinishLoad: (callback: (info: { url: string; canGoBack: boolean; canGoForward: boolean }) => void) => () => void;
     onLoadFailed: (callback: (info: { errorCode: number; errorDescription: string }) => void) => () => void;
     removeAllListeners: () => void;
+  };
+  notifications: {
+    getAll: () => Promise<AppNotification[]>;
+    markRead: (id: string) => Promise<void>;
+    markAllRead: () => Promise<void>;
+    dismiss: (id: string) => Promise<void>;
+    executeAction: (id: string) => Promise<void>;
+    getUnreadCount: () => Promise<number>;
+    onChanged: (callback: () => void) => () => void;
   };
 }
 

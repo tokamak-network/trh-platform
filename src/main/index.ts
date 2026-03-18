@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, NativeImage, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, NativeImage, dialog, Notification } from 'electron';
 import * as path from 'path';
 import {
   isDockerInstalled,
@@ -28,11 +28,16 @@ import {
   destroyPlatformView,
   registerWebviewIpcHandlers
 } from './webview';
+import * as NotificationStore from './notifications';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
 let dockerOperationInProgress = false;
+let updateAvailable = false;
+let updateCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 const PLATFORM_UI_URL = 'http://localhost:3000';
 const VITE_DEV_URL = 'http://localhost:5173';
@@ -94,21 +99,38 @@ function createWindow(): void {
   });
 }
 
-function createTray(): void {
-  const iconPath = getPublicPath('tray-icon.png');
-  let icon: NativeImage;
+function buildTrayMenu(): Electron.Menu {
+  const template: Electron.MenuItemConstructorOptions[] = [];
 
-  try {
-    icon = nativeImage.createFromPath(iconPath);
-    if (icon.isEmpty()) icon = nativeImage.createEmpty();
-  } catch {
-    icon = nativeImage.createEmpty();
+  if (updateAvailable) {
+    template.push({
+      label: '🔄 Update Available — Click to Update',
+      click: async () => {
+        if (dockerOperationInProgress) {
+          dialog.showErrorBox('Operation In Progress', 'Please wait for the current operation to complete.');
+          return;
+        }
+        dockerOperationInProgress = true;
+        try {
+          await restartWithUpdates();
+          updateAvailable = false;
+          tray?.setContextMenu(buildTrayMenu());
+          tray?.setToolTip('TRH Desktop');
+          mainWindow?.webContents.send('docker:update-available', false);
+        } catch (error) {
+          dialog.showErrorBox(
+            'Update Failed',
+            error instanceof Error ? error.message : 'Failed to update services'
+          );
+        } finally {
+          dockerOperationInProgress = false;
+        }
+      }
+    });
+    template.push({ type: 'separator' });
   }
 
-  tray = new Tray(icon);
-  tray.setToolTip('TRH Desktop');
-
-  const contextMenu = Menu.buildFromTemplate([
+  template.push(
     {
       label: 'Show Window',
       click: () => {
@@ -191,9 +213,25 @@ function createTray(): void {
         app.quit();
       }
     }
-  ]);
+  );
 
-  tray.setContextMenu(contextMenu);
+  return Menu.buildFromTemplate(template);
+}
+
+function createTray(): void {
+  const iconPath = getPublicPath('tray-icon.png');
+  let icon: NativeImage;
+
+  try {
+    icon = nativeImage.createFromPath(iconPath);
+    if (icon.isEmpty()) icon = nativeImage.createEmpty();
+  } catch {
+    icon = nativeImage.createEmpty();
+  }
+
+  tray = new Tray(icon);
+  tray.setToolTip('TRH Desktop');
+  tray.setContextMenu(buildTrayMenu());
 
   tray.on('click', () => {
     if (mainWindow?.isVisible()) {
@@ -202,6 +240,50 @@ function createTray(): void {
       mainWindow?.show();
     }
   });
+}
+
+function startUpdateChecker(): void {
+  const runCheck = async () => {
+    if (dockerOperationInProgress || updateAvailable) return;
+    try {
+      const hasUpdate = await checkForUpdates();
+      if (!hasUpdate) return;
+
+      updateAvailable = true;
+
+      // Update tray menu
+      tray?.setContextMenu(buildTrayMenu());
+      tray?.setToolTip('TRH Desktop — Update Available');
+
+      // Add to notification store
+      if (!NotificationStore.hasUpdateNotification()) {
+        NotificationStore.add({
+          type: 'image-update',
+          title: 'Platform Update Available',
+          message: 'New Docker images are available for TRH Platform.',
+          actionLabel: 'Update Now',
+          actionType: 'update-containers',
+        });
+      }
+
+      // Notify renderer (legacy banner support)
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('docker:update-available', true);
+      }
+
+      // macOS system notification
+      if (Notification.isSupported()) {
+        new Notification({
+          title: 'TRH Desktop Update Available',
+          body: 'New platform images are available. Open TRH Desktop to update.',
+        }).show();
+      }
+    } catch {
+      // Silently ignore background check failures
+    }
+  };
+
+  updateCheckInterval = setInterval(runCheck, UPDATE_CHECK_INTERVAL_MS);
 }
 
 function setupIpcHandlers(): void {
@@ -370,6 +452,33 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('app:get-version', () => app.getVersion());
 
+  // Notification IPC handlers
+  ipcMain.handle('notifications:get-all', () => NotificationStore.getAll());
+  ipcMain.handle('notifications:mark-read', (_event, id: string) => NotificationStore.markRead(id));
+  ipcMain.handle('notifications:mark-all-read', () => NotificationStore.markAllRead());
+  ipcMain.handle('notifications:dismiss', (_event, id: string) => NotificationStore.dismiss(id));
+  ipcMain.handle('notifications:get-unread-count', () => NotificationStore.getUnreadCount());
+  ipcMain.handle('notifications:execute-action', async (_event, id: string) => {
+    const all = NotificationStore.getAll();
+    const notification = all.find(n => n.id === id);
+    if (!notification) throw new Error('Notification not found');
+
+    if (notification.actionType === 'update-containers') {
+      if (dockerOperationInProgress) throw new Error('Docker operation already in progress');
+      dockerOperationInProgress = true;
+      try {
+        await restartWithUpdates();
+        updateAvailable = false;
+        tray?.setContextMenu(buildTrayMenu());
+        tray?.setToolTip('TRH Desktop');
+        mainWindow?.webContents.send('docker:update-available', false);
+        NotificationStore.dismiss(id);
+      } finally {
+        dockerOperationInProgress = false;
+      }
+    }
+  });
+
   registerWebviewIpcHandlers(() => mainWindow);
 }
 
@@ -391,6 +500,8 @@ app.whenReady().then(async () => {
   setupIpcHandlers();
   createWindow();
   createTray();
+  NotificationStore.initNotificationStore(() => mainWindow);
+  startUpdateChecker();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -408,6 +519,11 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async (event) => {
   if (isQuitting) return;
   isQuitting = true;
+
+  if (updateCheckInterval) {
+    clearInterval(updateCheckInterval);
+    updateCheckInterval = null;
+  }
 
   event.preventDefault();
   destroyPlatformView();
