@@ -42,6 +42,29 @@ export interface AppNotification {
   actionType?: 'update-containers';
 }
 
+export type KeyRole = 'admin' | 'proposer' | 'batcher' | 'challenger' | 'sequencer';
+
+export interface KeystoreAPI {
+  store: (mnemonic: string) => Promise<void>;
+  has: () => Promise<boolean>;
+  isAvailable: () => Promise<boolean>;
+  getAddresses: () => Promise<Record<KeyRole, string>>;
+  previewAddresses: (mnemonic: string) => Promise<Record<KeyRole, string>>;
+  delete: () => Promise<void>;
+  validate: (mnemonic: string) => Promise<boolean>;
+}
+
+export interface BlockedRequest {
+  url: string;
+  timestamp: number;
+  method: string;
+  source: 'renderer' | 'webview';
+}
+
+export interface NetworkGuardAPI {
+  getBlockedRequests: () => Promise<BlockedRequest[]>;
+}
+
 export interface ElectronAPI {
   docker: {
     checkInstalled: () => Promise<boolean>;
@@ -96,6 +119,8 @@ export interface ElectronAPI {
     getUnreadCount: () => Promise<number>;
     onChanged: (callback: () => void) => () => void;
   };
+  keystore: KeystoreAPI;
+  networkGuard: NetworkGuardAPI;
 }
 
 declare global {

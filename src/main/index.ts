@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, NativeImage, dialog, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, NativeImage, dialog, Notification, session } from 'electron';
 import * as path from 'path';
 import {
   isDockerInstalled,
@@ -29,6 +29,20 @@ import {
   registerWebviewIpcHandlers
 } from './webview';
 import * as NotificationStore from './notifications';
+import {
+  isAvailable as keystoreIsAvailable,
+  hasSeedPhrase,
+  storeSeedPhrase,
+  getAddresses,
+  previewAddresses,
+  deleteSeedPhrase,
+  validateMnemonic,
+} from './keystore';
+import {
+  initNetworkGuard,
+  setMainWindowId,
+  getBlockedRequests,
+} from './network-guard';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -64,6 +78,7 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 700,
     show: false,
+    icon: getPublicPath('icon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 16 },
     backgroundColor: '#f3f4f6',
@@ -205,6 +220,39 @@ function buildTrayMenu(): Electron.Menu {
         }
       }
     },
+  );
+
+  if (hasSeedPhrase()) {
+    template.push({ type: 'separator' });
+    template.push({
+      label: 'Delete Stored Keys',
+      click: async () => {
+        const result = await dialog.showMessageBox({
+          type: 'warning',
+          buttons: ['Cancel', 'Delete'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Delete Stored Keys',
+          message: 'This will permanently delete your stored seed phrase from this device. This action cannot be undone. Continue?',
+        });
+        if (result.response === 1) {
+          try {
+            deleteSeedPhrase();
+            tray?.setContextMenu(buildTrayMenu());
+            dialog.showMessageBox({
+              type: 'info',
+              title: 'Keys Deleted',
+              message: 'Your stored seed phrase has been permanently deleted.',
+            });
+          } catch (error) {
+            dialog.showErrorBox('Delete Failed', error instanceof Error ? error.message : 'Failed to delete keys');
+          }
+        }
+      },
+    });
+  }
+
+  template.push(
     { type: 'separator' },
     {
       label: 'Quit',
@@ -479,6 +527,20 @@ function setupIpcHandlers(): void {
     }
   });
 
+  // Keystore IPC handlers
+  ipcMain.handle('keystore:store', async (_event, mnemonic: string) => {
+    storeSeedPhrase(mnemonic);
+  });
+  ipcMain.handle('keystore:has', () => hasSeedPhrase());
+  ipcMain.handle('keystore:is-available', () => keystoreIsAvailable());
+  ipcMain.handle('keystore:get-addresses', () => getAddresses());
+  ipcMain.handle('keystore:preview-addresses', (_event, mnemonic: string) => previewAddresses(mnemonic));
+  ipcMain.handle('keystore:delete', () => deleteSeedPhrase());
+  ipcMain.handle('keystore:validate', (_event, mnemonic: string) => validateMnemonic(mnemonic));
+
+  // Network Guard IPC handlers
+  ipcMain.handle('network-guard:get-blocked', () => getBlockedRequests());
+
   registerWebviewIpcHandlers(() => mainWindow);
 }
 
@@ -498,8 +560,18 @@ app.whenReady().then(async () => {
   });
 
   setupIpcHandlers();
+  initNetworkGuard(session.defaultSession);
   createWindow();
+  if (mainWindow) {
+    setMainWindowId(mainWindow.webContents.id);
+  }
   createTray();
+
+  // Set dock icon explicitly in dev mode (packaged app uses the .icns from bundle automatically)
+  if (isDev && process.platform === 'darwin' && app.dock) {
+    const dockIcon = nativeImage.createFromPath(getPublicPath('icon.png'));
+    if (!dockIcon.isEmpty()) app.dock.setIcon(dockIcon);
+  }
   NotificationStore.initNotificationStore(() => mainWindow);
   startUpdateChecker();
 

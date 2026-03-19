@@ -121,3 +121,103 @@ h1 {
 }
 
 .btn-outline:hover { border-color: var(--gray-400); }
+
+/* Step 6: Key Setup */
+.key-setup-form {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--gray-100);
+  border-radius: 10px;
+}
+
+.key-setup-desc {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.key-setup-warning {
+  text-align: center;
+}
+
+.key-setup-warning p {
+  font-size: 13px;
+  color: var(--error);
+  margin-bottom: 12px;
+}
+
+.seed-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  resize: none;
+  outline: none;
+  -webkit-text-security: disc;
+}
+
+.seed-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.1);
+}
+
+.seed-error {
+  font-size: 12px;
+  color: var(--error);
+  margin-top: 6px;
+}
+
+.seed-addresses {
+  margin-top: 12px;
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-200);
+}
+
+.seed-addresses-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.seed-addresses table {
+  width: 100%;
+  font-size: 12px;
+}
+
+.seed-addresses td {
+  padding: 3px 0;
+}
+
+.role-name {
+  font-weight: 600;
+  color: var(--dark);
+  text-transform: capitalize;
+  width: 90px;
+}
+
+.role-path {
+  color: var(--gray-400);
+  font-family: 'SF Mono', monospace;
+  font-size: 11px;
+}
+
+.role-addr {
+  color: var(--gray-600);
+  font-family: 'SF Mono', monospace;
+  text-align: right;
+}
+
+.key-setup-buttons {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
