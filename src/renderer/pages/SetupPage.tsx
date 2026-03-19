@@ -33,6 +33,7 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
     containers: { status: 'pending', detail: 'Waiting...' },
     deps: { status: 'pending', detail: 'Waiting...' },
     ready: { status: 'pending', detail: 'Waiting...' },
+    keysetup: { status: 'pending', detail: 'Waiting...' },
   });
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [error, setError] = useState<{ title: string; message: string } | null>(null);
@@ -40,6 +41,12 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
   const [showInstallDocker, setShowInstallDocker] = useState(false);
   const [installingDocker, setInstallingDocker] = useState(false);
   const [portModal, setPortModal] = useState<PortModalState>({ open: false });
+  const [showKeySetup, setShowKeySetup] = useState(false);
+  const [seedInput, setSeedInput] = useState('');
+  const [seedValid, setSeedValid] = useState<boolean | null>(null);
+  const [seedAddresses, setSeedAddresses] = useState<Record<string, string> | null>(null);
+  const [keystoreAvailable, setKeystoreAvailable] = useState(true);
+  const [savingKeys, setSavingKeys] = useState(false);
   const runningRef = useRef(false);
 
   const appendLog = useCallback((text: string) => {
@@ -71,6 +78,7 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
       containers: { status: 'pending', detail: 'Waiting...' },
       deps: { status: 'pending', detail: 'Waiting...' },
       ready: { status: 'pending', detail: 'Waiting...' },
+      keysetup: { status: 'pending', detail: 'Waiting...' },
     });
 
     api.docker.removeAllListeners();
@@ -416,8 +424,17 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
 
     runningRef.current = false;
     logCleanup();
-    await new Promise(r => setTimeout(r, 600));
-    onComplete();
+
+    updateStep('keysetup', { status: 'loading', detail: 'Ready for input' });
+
+    try {
+      const available = await api.keystore.isAvailable();
+      setKeystoreAvailable(available);
+    } catch {
+      setKeystoreAvailable(false);
+    }
+
+    setShowKeySetup(true);
   }, [adminEmail, adminPassword, appendLog, updateStep, onComplete]);
 
   useEffect(() => {
@@ -441,6 +458,52 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
 
   const handleRetry = () => {
     runSetup();
+  };
+
+  const handleSeedChange = async (value: string) => {
+    setSeedInput(value);
+    setSeedAddresses(null);
+    setSeedValid(null);
+
+    const trimmed = value.trim();
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    if (words.length !== 12 && words.length !== 24) {
+      if (words.length > 0) setSeedValid(false);
+      return;
+    }
+
+    try {
+      const valid = await api.keystore.validate(trimmed);
+      setSeedValid(valid);
+      if (valid) {
+        const addrs = await api.keystore.previewAddresses(trimmed);
+        setSeedAddresses(addrs);
+      }
+    } catch {
+      setSeedValid(false);
+    }
+  };
+
+  const handleSaveKeys = async () => {
+    if (!seedValid || savingKeys) return;
+    setSavingKeys(true);
+    try {
+      await api.keystore.store(seedInput.trim());
+      updateStep('keysetup', { status: 'success', detail: 'Keys stored securely' });
+      await new Promise(r => setTimeout(r, 1000));
+      onComplete();
+    } catch (err: any) {
+      updateStep('keysetup', { status: 'error', detail: 'Save failed' });
+      setError({ title: 'Keystore Error', message: err.message || 'Failed to store seed phrase.' });
+      setShowRetry(true);
+    } finally {
+      setSavingKeys(false);
+    }
+  };
+
+  const handleSkipKeys = () => {
+    updateStep('keysetup', { status: 'success', detail: 'Skipped' });
+    onComplete();
   };
 
   const handleInstallDocker = async () => {
@@ -509,7 +572,62 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
           <StepItem index={3} title="Building & Starting Services" detail={steps.containers.detail} status={steps.containers.status} />
           <StepItem index={4} title="Verifying Dependencies" detail={steps.deps.detail} status={steps.deps.status} showProgress progress={steps.deps.progress} />
           <StepItem index={5} title="Platform Ready" detail={steps.ready.detail} status={steps.ready.status} />
+          <StepItem index={6} title="L2 Key Setup" detail={steps.keysetup.detail} status={steps.keysetup.status} />
         </div>
+
+        {showKeySetup && (
+          <div className="key-setup-form">
+            {!keystoreAvailable ? (
+              <div className="key-setup-warning">
+                <p>OS keychain is not available. Seed phrase storage is disabled on this system.</p>
+                <button className="btn btn-outline" onClick={handleSkipKeys}>Skip</button>
+              </div>
+            ) : (
+              <>
+                <p className="key-setup-desc">
+                  Enter your seed phrase to enable L2 rollup deployment.
+                  Your phrase is encrypted locally and never sent over the network.
+                </p>
+                <textarea
+                  className="seed-input"
+                  placeholder="Enter 12 or 24 word seed phrase..."
+                  value={seedInput}
+                  onChange={(e) => handleSeedChange(e.target.value)}
+                  rows={3}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                {seedValid === false && (
+                  <p className="seed-error">Invalid seed phrase. Must be 12 or 24 words.</p>
+                )}
+                {seedValid && seedAddresses && (
+                  <div className="seed-addresses">
+                    <p className="seed-addresses-title">Derived Addresses</p>
+                    <table>
+                      <tbody>
+                        {Object.entries(seedAddresses).map(([role, addr]) => (
+                          <tr key={role}>
+                            <td className="role-name">{role}</td>
+                            <td className="role-path">{"m/44'/60'/0'/0/" + ({ admin: 0, proposer: 1, batcher: 2, challenger: 3, sequencer: 4 } as Record<string, number>)[role]}</td>
+                            <td className="role-addr">{String(addr).slice(0, 6)}...{String(addr).slice(-4)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="key-setup-buttons">
+                  <button className="btn btn-primary" onClick={handleSaveKeys} disabled={!seedValid || savingKeys}>
+                    {savingKeys ? 'Saving...' : 'Save & Continue'}
+                  </button>
+                  <button className="btn btn-outline" onClick={handleSkipKeys}>
+                    Skip for now
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="error-box visible">
