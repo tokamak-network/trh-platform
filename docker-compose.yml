@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     volumes:
       - backend_storage:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
 
   ui:
     image: tokamaknetwork/trh-platform-ui:latest
