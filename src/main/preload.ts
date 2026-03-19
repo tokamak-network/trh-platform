@@ -142,6 +142,21 @@ const electronAPI = {
       ipcRenderer.removeAllListeners('webview:did-finish-load');
       ipcRenderer.removeAllListeners('webview:load-failed');
     }
+  },
+
+  keystore: {
+    store: (mnemonic: string): Promise<void> => ipcRenderer.invoke('keystore:store', mnemonic),
+    has: (): Promise<boolean> => ipcRenderer.invoke('keystore:has'),
+    isAvailable: (): Promise<boolean> => ipcRenderer.invoke('keystore:is-available'),
+    getAddresses: (): Promise<Record<string, string>> => ipcRenderer.invoke('keystore:get-addresses'),
+    previewAddresses: (mnemonic: string): Promise<Record<string, string>> => ipcRenderer.invoke('keystore:preview-addresses', mnemonic),
+    delete: (): Promise<void> => ipcRenderer.invoke('keystore:delete'),
+    validate: (mnemonic: string): Promise<boolean> => ipcRenderer.invoke('keystore:validate', mnemonic),
+  },
+
+  networkGuard: {
+    getBlockedRequests: (): Promise<Array<{ url: string; timestamp: number; method: string; source: string }>> =>
+      ipcRenderer.invoke('network-guard:get-blocked'),
   }
 };
 
