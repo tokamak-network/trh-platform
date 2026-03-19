@@ -38,6 +38,7 @@ services:
     volumes:
       - trh_backend_data:/app/data
       - trh_backend_logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
