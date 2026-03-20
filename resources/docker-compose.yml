@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: tokamaknetwork/trh-backend-desktop:latest
+    image: trh-backend-full:latest
     container_name: trh-backend
     ports:
       - "8000:8000"
@@ -38,6 +38,7 @@ services:
     volumes:
       - trh_backend_data:/app/data
       - trh_backend_logs:/app/logs
+      - trh_backend_storage:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
@@ -63,3 +64,5 @@ volumes:
   trh_postgres_data:
   trh_backend_data:
   trh_backend_logs:
+  trh_backend_storage:
+    name: trh_backend_storage
