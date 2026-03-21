@@ -124,6 +124,16 @@ export function deriveKeysToEnv(roles: KeyRole[]): Record<string, string> {
   return env;
 }
 
+export function getSeedWords(): string[] | null {
+  if (!hasSeedPhrase()) return null;
+  try {
+    const mnemonic = decryptSeedPhrase();
+    return mnemonic.split(/\s+/);
+  } catch {
+    return null;
+  }
+}
+
 export function deleteSeedPhrase(): void {
   const keystorePath = getKeystorePath();
   if (fs.existsSync(keystorePath)) {

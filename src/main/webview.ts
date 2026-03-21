@@ -9,7 +9,7 @@
 
 import * as path from 'path';
 import { BrowserWindow, WebContentsView, ipcMain } from 'electron';
-import { hasSeedPhrase, getAddresses, deriveKeysToEnv } from './keystore';
+import { hasSeedPhrase, getAddresses, deriveKeysToEnv, getSeedWords } from './keystore';
 import type { KeyRole } from './keystore';
 import { getCredentials as getAwsCredentials } from './aws-auth';
 import { addAllowedHost } from './network-guard';
@@ -190,6 +190,7 @@ async function injectKeystoreAccounts(): Promise<void> {
       admin: { address: addresses.admin, privateKey: keys.ADMIN_PRIVATE_KEY },
       proposer: { address: addresses.proposer, privateKey: keys.PROPOSER_PRIVATE_KEY },
       batcher: { address: addresses.batcher, privateKey: keys.BATCHER_PRIVATE_KEY },
+      challenger: { address: addresses.challenger, privateKey: keys.CHALLENGER_PRIVATE_KEY },
       sequencer: { address: addresses.sequencer, privateKey: keys.SEQUENCER_PRIVATE_KEY },
     };
 
@@ -389,6 +390,11 @@ export function registerWebviewIpcHandlers(getMainWindow: () => BrowserWindow | 
     if (win) hidePlatformView(win);
   });
 
+  // Return seed phrase words from keystore for preset deploy flow
+  ipcMain.handle('desktop:get-seed-words', async (): Promise<string[] | null> => {
+    return getSeedWords();
+  });
+
   // Fetch balances using user-provided L1 RPC URL
   ipcMain.handle('desktop:fetch-balances', async (_event, rpcUrl: string): Promise<Record<string, string>> => {
     if (!hasSeedPhrase()) return {};
@@ -402,7 +408,7 @@ export function registerWebviewIpcHandlers(getMainWindow: () => BrowserWindow | 
     }
 
     const addresses = getAddresses();
-    const addrList = [addresses.admin, addresses.proposer, addresses.batcher, addresses.sequencer];
+    const addrList = [addresses.admin, addresses.proposer, addresses.batcher, addresses.challenger, addresses.sequencer];
     const balances: Record<string, string> = {};
     await Promise.all(
       addrList.map(async (addr) => {

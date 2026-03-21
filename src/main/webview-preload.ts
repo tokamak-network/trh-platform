@@ -23,4 +23,8 @@ contextBridge.exposeInMainWorld('__TRH_DESKTOP__', {
   // Balance fetching via user-provided L1 RPC
   fetchBalances: (rpcUrl: string): Promise<Record<string, string>> =>
     ipcRenderer.invoke('desktop:fetch-balances', rpcUrl),
+
+  // Seed phrase access (for preset deploy flow)
+  getSeedWords: (): Promise<string[] | null> =>
+    ipcRenderer.invoke('desktop:get-seed-words'),
 });
