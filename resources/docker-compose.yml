@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: trh-postgres
     ports:
       - "5433:5432"
@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: trh-backend-full:latest
+    image: tokamaknetwork/trh-backend:latest
     container_name: trh-backend
     ports:
       - "8000:8000"

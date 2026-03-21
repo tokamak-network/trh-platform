@@ -65,6 +65,42 @@ export interface NetworkGuardAPI {
   getBlockedRequests: () => Promise<BlockedRequest[]>;
 }
 
+export interface AwsProfile {
+  name: string;
+  source: 'credentials' | 'sso';
+}
+
+export interface AwsCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken?: string;
+  source: string;
+  expiresAt?: number;
+}
+
+export interface SsoAccount {
+  accountId: string;
+  accountName: string;
+  emailAddress: string;
+}
+
+export interface SsoRole {
+  roleName: string;
+  accountId: string;
+}
+
+export interface AwsAuthAPI {
+  listProfiles: () => Promise<AwsProfile[]>;
+  loadProfile: (name: string) => Promise<AwsCredentials>;
+  ssoLogin: (profileName: string) => Promise<AwsCredentials>;
+  ssoLoginDirect: (startUrl: string, region: string) => Promise<void>;
+  ssoListAccounts: () => Promise<SsoAccount[]>;
+  ssoListRoles: (accountId: string) => Promise<SsoRole[]>;
+  ssoAssumeRole: (accountId: string, roleName: string) => Promise<AwsCredentials>;
+  getCredentials: () => Promise<AwsCredentials | null>;
+  clear: () => Promise<void>;
+}
+
 export interface ElectronAPI {
   docker: {
     checkInstalled: () => Promise<boolean>;
@@ -120,6 +156,7 @@ export interface ElectronAPI {
     onChanged: (callback: () => void) => () => void;
   };
   keystore: KeystoreAPI;
+  awsAuth: AwsAuthAPI;
   networkGuard: NetworkGuardAPI;
 }
 

@@ -320,6 +320,40 @@ export async function getDockerStatus(): Promise<DockerStatus> {
   }
 }
 
+function getServiceImages(composePath: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  try {
+    const content = fs.readFileSync(composePath, 'utf-8');
+    let currentService = '';
+    let inServices = false;
+
+    for (const line of content.split('\n')) {
+      if (line.match(/^services:\s*$/)) { inServices = true; continue; }
+      if (inServices && line.match(/^\S/) && !line.startsWith('#')) { inServices = false; continue; }
+      if (!inServices) continue;
+
+      const svcMatch = line.match(/^  (\w[\w-]*):\s*$/);
+      if (svcMatch) { currentService = svcMatch[1]; continue; }
+
+      const imgMatch = line.match(/^\s+image:\s*(.+)/);
+      if (imgMatch && currentService) {
+        result[currentService] = imgMatch[1].trim();
+        currentService = '';
+      }
+    }
+  } catch { /* ignore */ }
+  return result;
+}
+
+function imageExistsLocally(image: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    exec(`"${DOCKER_BIN}" image inspect "${image}" --format ok`, {
+      timeout: 10000,
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    }, (err) => resolve(!err));
+  });
+}
+
 export async function pullImages(onProgress: (progress: PullProgress) => void): Promise<void> {
   const composePath = getComposePath();
 
@@ -352,13 +386,25 @@ export async function pullImages(onProgress: (progress: PullProgress) => void): 
     pull.stdout.on('data', parseOutput);
     pull.stderr.on('data', parseOutput);
 
-    pull.on('close', code => {
+    pull.on('close', async code => {
       clearTimeout(timeout);
       activeProcesses.delete(pull);
       if (code === 0) {
         resolve();
+        return;
+      }
+
+      // Pull failed — check if all images exist locally anyway
+      const serviceImages = getServiceImages(composePath);
+      const images = Object.values(serviceImages);
+      const checks = await Promise.all(images.map(img => imageExistsLocally(img)));
+      const missing = images.filter((_, i) => !checks[i]);
+
+      if (missing.length === 0) {
+        emitLog('Pull had errors, but all images are available locally.');
+        resolve();
       } else {
-        reject(new Error(`Docker pull failed with code ${code}. Check if images exist or network is available.`));
+        reject(new Error(`Missing images: ${missing.join(', ')}. Pull failed with code ${code}.`));
       }
     });
 

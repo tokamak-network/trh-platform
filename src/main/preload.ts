@@ -154,6 +154,18 @@ const electronAPI = {
     validate: (mnemonic: string): Promise<boolean> => ipcRenderer.invoke('keystore:validate', mnemonic),
   },
 
+  awsAuth: {
+    listProfiles: (): Promise<any[]> => ipcRenderer.invoke('aws-auth:list-profiles'),
+    loadProfile: (name: string): Promise<any> => ipcRenderer.invoke('aws-auth:load-profile', name),
+    ssoLogin: (profileName: string): Promise<any> => ipcRenderer.invoke('aws-auth:sso-login', profileName),
+    ssoLoginDirect: (startUrl: string, region: string): Promise<void> => ipcRenderer.invoke('aws-auth:sso-login-direct', startUrl, region),
+    ssoListAccounts: (): Promise<any[]> => ipcRenderer.invoke('aws-auth:sso-list-accounts'),
+    ssoListRoles: (accountId: string): Promise<any[]> => ipcRenderer.invoke('aws-auth:sso-list-roles', accountId),
+    ssoAssumeRole: (accountId: string, roleName: string): Promise<any> => ipcRenderer.invoke('aws-auth:sso-assume-role', accountId, roleName),
+    getCredentials: (): Promise<any> => ipcRenderer.invoke('aws-auth:get-credentials'),
+    clear: (): Promise<void> => ipcRenderer.invoke('aws-auth:clear'),
+  },
+
   networkGuard: {
     getBlockedRequests: (): Promise<Array<{ url: string; timestamp: number; method: string; source: string }>> =>
       ipcRenderer.invoke('network-guard:get-blocked'),

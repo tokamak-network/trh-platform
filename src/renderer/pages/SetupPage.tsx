@@ -47,6 +47,9 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
   const [seedAddresses, setSeedAddresses] = useState<Record<string, string> | null>(null);
   const [keystoreAvailable, setKeystoreAvailable] = useState(true);
   const [savingKeys, setSavingKeys] = useState(false);
+  const [existingAddresses, setExistingAddresses] = useState<Record<string, string> | null>(null);
+  const [showEditSeed, setShowEditSeed] = useState(false);
+  const [deletingKeys, setDeletingKeys] = useState(false);
   const runningRef = useRef(false);
 
   const appendLog = useCallback((text: string) => {
@@ -425,11 +428,22 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
     runningRef.current = false;
     logCleanup();
 
-    updateStep('keysetup', { status: 'loading', detail: 'Ready for input' });
+    updateStep('keysetup', { status: 'loading', detail: 'Checking keystore...' });
 
     try {
       const available = await api.keystore.isAvailable();
       setKeystoreAvailable(available);
+
+      if (available) {
+        const hasKeys = await api.keystore.has();
+        if (hasKeys) {
+          const addrs = await api.keystore.getAddresses();
+          setExistingAddresses(addrs);
+          updateStep('keysetup', { status: 'success', detail: 'Keys already stored' });
+        } else {
+          updateStep('keysetup', { status: 'loading', detail: 'Ready for input' });
+        }
+      }
     } catch {
       setKeystoreAvailable(false);
     }
@@ -504,6 +518,28 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
   const handleSkipKeys = () => {
     updateStep('keysetup', { status: 'success', detail: 'Skipped' });
     onComplete();
+  };
+
+  const handleDeleteKeys = async () => {
+    if (deletingKeys) return;
+    setDeletingKeys(true);
+    try {
+      await api.keystore.delete();
+      setExistingAddresses(null);
+      setShowEditSeed(false);
+      setSeedInput('');
+      setSeedValid(null);
+      setSeedAddresses(null);
+      updateStep('keysetup', { status: 'loading', detail: 'Ready for input' });
+    } catch (err: any) {
+      setError({ title: 'Delete Error', message: err.message || 'Failed to delete seed phrase.' });
+    } finally {
+      setDeletingKeys(false);
+    }
+  };
+
+  const handleEditKeys = () => {
+    setShowEditSeed(true);
   };
 
   const handleInstallDocker = async () => {
@@ -582,6 +618,37 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
                 <p>OS keychain is not available. Seed phrase storage is disabled on this system.</p>
                 <button className="btn btn-outline" onClick={handleSkipKeys}>Skip</button>
               </div>
+            ) : existingAddresses && !showEditSeed ? (
+              <>
+                <p className="key-setup-desc">
+                  Seed phrase is already stored securely in your OS keychain.
+                </p>
+                <div className="seed-addresses">
+                  <p className="seed-addresses-title">Stored Addresses</p>
+                  <table>
+                    <tbody>
+                      {Object.entries(existingAddresses).map(([role, addr]) => (
+                        <tr key={role}>
+                          <td className="role-name">{role}</td>
+                          <td className="role-path">{"m/44'/60'/0'/0/" + ({ admin: 0, proposer: 1, batcher: 2, challenger: 3, sequencer: 4 } as Record<string, number>)[role]}</td>
+                          <td className="role-addr">{String(addr).slice(0, 6)}...{String(addr).slice(-4)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="key-setup-buttons">
+                  <button className="btn btn-primary" onClick={onComplete}>
+                    Continue
+                  </button>
+                  <button className="btn btn-outline" onClick={handleEditKeys}>
+                    Replace
+                  </button>
+                  <button className="btn btn-danger" onClick={handleDeleteKeys} disabled={deletingKeys}>
+                    {deletingKeys ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <p className="key-setup-desc">
@@ -620,9 +687,15 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
                   <button className="btn btn-primary" onClick={handleSaveKeys} disabled={!seedValid || savingKeys}>
                     {savingKeys ? 'Saving...' : 'Save & Continue'}
                   </button>
-                  <button className="btn btn-outline" onClick={handleSkipKeys}>
-                    Skip for now
-                  </button>
+                  {showEditSeed ? (
+                    <button className="btn btn-outline" onClick={() => setShowEditSeed(false)}>
+                      Cancel
+                    </button>
+                  ) : (
+                    <button className="btn btn-outline" onClick={handleSkipKeys}>
+                      Skip for now
+                    </button>
+                  )}
                 </div>
               </>
             )}

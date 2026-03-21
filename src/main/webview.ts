@@ -7,7 +7,12 @@
  * NOTE: Electron version in use is ^33.0.0 — WebContentsView is the correct API.
  */
 
+import * as path from 'path';
 import { BrowserWindow, WebContentsView, ipcMain } from 'electron';
+import { hasSeedPhrase, getAddresses, deriveKeysToEnv } from './keystore';
+import type { KeyRole } from './keystore';
+import { getCredentials as getAwsCredentials } from './aws-auth';
+import { addAllowedHost } from './network-guard';
 
 const PLATFORM_UI_URL = 'http://localhost:3000';
 
@@ -47,12 +52,14 @@ export function showPlatformView(win: BrowserWindow): void {
     return;
   }
 
+  const preloadPath = path.join(__dirname, 'webview-preload.js');
+
   platformView = new WebContentsView({
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
-      // Allow mixed content from localhost
+      sandbox: false, // preload requires sandbox:false
+      preload: preloadPath,
       allowRunningInsecureContent: false
     }
   });
@@ -82,6 +89,8 @@ export function showPlatformView(win: BrowserWindow): void {
         canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
       });
     }
+    injectKeystoreAccounts();
+    injectAwsCredentials();
   });
 
   platformView.webContents.on('did-navigate-in-page', (_event, navigationUrl) => {
@@ -92,6 +101,8 @@ export function showPlatformView(win: BrowserWindow): void {
         canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
       });
     }
+    injectKeystoreAccounts();
+    injectAwsCredentials();
   });
 
   platformView.webContents.on('did-fail-load', (_event, errorCode, errorDescription, failedUrl) => {
@@ -112,6 +123,10 @@ export function showPlatformView(win: BrowserWindow): void {
         canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
       });
     }
+
+    // Inject keystore-derived accounts into the web frontend
+    injectKeystoreAccounts();
+    injectAwsCredentials();
   });
 
   attachResizeHandler(win);
@@ -131,6 +146,180 @@ export function hidePlatformView(win: BrowserWindow): void {
     platformView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
   }
   win.webContents.send('webview:visibility-changed', false);
+}
+
+/**
+ * Fetches ETH balance for an address via JSON-RPC.
+ */
+async function fetchBalance(rpcUrl: string, address: string): Promise<string> {
+  try {
+    const res = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_getBalance',
+        params: [address, 'latest'],
+        id: 1,
+      }),
+    });
+    const json = await res.json() as { result?: string };
+    if (json.result) {
+      const wei = BigInt(json.result);
+      const eth = Number(wei) / 1e18;
+      return `${eth.toFixed(4)} ETH`;
+    }
+  } catch { /* RPC error */ }
+  return '—';
+}
+
+/**
+ * Injects keystore-derived account data into the WebContentsView.
+ * Provides addresses, private keys, and balances so the web frontend can skip
+ * the Account Selection step when keys are already stored in the desktop app.
+ */
+async function injectKeystoreAccounts(): Promise<void> {
+  if (!platformView || !hasSeedPhrase()) return;
+
+  try {
+    const addresses = getAddresses();
+    const roles: KeyRole[] = ['admin', 'proposer', 'batcher', 'challenger', 'sequencer'];
+    const keys = deriveKeysToEnv(roles);
+
+    const payload = {
+      admin: { address: addresses.admin, privateKey: keys.ADMIN_PRIVATE_KEY },
+      proposer: { address: addresses.proposer, privateKey: keys.PROPOSER_PRIVATE_KEY },
+      batcher: { address: addresses.batcher, privateKey: keys.BATCHER_PRIVATE_KEY },
+      sequencer: { address: addresses.sequencer, privateKey: keys.SEQUENCER_PRIVATE_KEY },
+    };
+
+    platformView.webContents.executeJavaScript(
+      `window.__TRH_DESKTOP_ACCOUNTS__ = ${JSON.stringify(payload)};`
+    ).catch(() => { /* ignore injection errors */ });
+
+    // Inject balance-refresh hook that uses the L1 RPC URL from the deployment form
+    platformView.webContents.executeJavaScript(`
+      (function() {
+        if (window.__TRH_BALANCE_HOOK_INSTALLED__) return;
+        window.__TRH_BALANCE_HOOK_INSTALLED__ = true;
+
+        function findRpcInput() {
+          // Look for input with L1 RPC URL placeholder or label
+          var inputs = document.querySelectorAll('input[placeholder*="rpc"], input[placeholder*="RPC"], input[placeholder*="alchemy"], input[placeholder*="infura"]');
+          if (inputs.length > 0) return inputs[0];
+          // Fallback: find by label text
+          var labels = document.querySelectorAll('label');
+          for (var i = 0; i < labels.length; i++) {
+            if (labels[i].textContent && labels[i].textContent.match(/L1.*RPC|RPC.*URL/i)) {
+              var input = labels[i].closest('.form-group, .field, div')?.querySelector('input');
+              if (input) return input;
+            }
+          }
+          return null;
+        }
+
+        function hookRefreshButton() {
+          var buttons = document.querySelectorAll('button');
+          var refreshBtn = null;
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent && buttons[i].textContent.match(/refresh.*balance/i)) {
+              refreshBtn = buttons[i];
+              break;
+            }
+          }
+          if (!refreshBtn || refreshBtn.__trh_hooked__) return;
+          refreshBtn.__trh_hooked__ = true;
+
+          refreshBtn.addEventListener('click', async function(e) {
+            if (!window.__TRH_DESKTOP__ || !window.__TRH_DESKTOP__.fetchBalances) return;
+            var rpcInput = findRpcInput();
+            var rpcUrl = rpcInput ? rpcInput.value : '';
+            if (!rpcUrl) return;
+
+            e.stopPropagation();
+            e.preventDefault();
+
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = 'Loading...';
+            try {
+              var balances = await window.__TRH_DESKTOP__.fetchBalances(rpcUrl);
+              // Update balance display in account selection UI
+              var accounts = window.__TRH_DESKTOP_ACCOUNTS__ || {};
+              var selects = document.querySelectorAll('select, .account-select, [class*="account"]');
+              // Try updating text near each account address
+              Object.entries(balances).forEach(function(entry) {
+                var addr = entry[0];
+                var bal = entry[1];
+                var addrShort = addr.slice(0, 6) + '...' + addr.slice(-4);
+                // Find elements containing this address and update nearby balance display
+                var allEls = document.querySelectorAll('input, span, td, div, p');
+                for (var j = 0; j < allEls.length; j++) {
+                  var el = allEls[j];
+                  var text = el.value || el.textContent || '';
+                  if (text.includes(addr) || text.includes(addrShort)) {
+                    // Look for a sibling or nearby element to show balance
+                    var parent = el.closest('tr, .account-row, .form-group, div');
+                    if (parent) {
+                      var balEl = parent.querySelector('.balance, [class*="balance"]');
+                      if (balEl) {
+                        balEl.textContent = bal;
+                      } else {
+                        // Check if there's already a balance span we added
+                        var existing = parent.querySelector('.trh-balance-display');
+                        if (existing) {
+                          existing.textContent = bal;
+                        } else {
+                          var span = document.createElement('span');
+                          span.className = 'trh-balance-display';
+                          span.style.cssText = 'margin-left:8px;color:#666;font-size:0.9em;';
+                          span.textContent = bal;
+                          el.parentElement.appendChild(span);
+                        }
+                      }
+                    }
+                    break;
+                  }
+                }
+              });
+            } catch(err) {
+              console.error('[TRH] Balance fetch error:', err);
+            } finally {
+              refreshBtn.disabled = false;
+              refreshBtn.innerHTML = '↻ Refresh Balances';
+            }
+          }, true);
+        }
+
+        // Hook on DOM changes (SPA navigation)
+        var observer = new MutationObserver(function() { hookRefreshButton(); });
+        observer.observe(document.body, { childList: true, subtree: true });
+        hookRefreshButton();
+      })();
+    `).catch(() => { /* ignore */ });
+  } catch {
+    // Keystore read failed — skip injection silently
+  }
+}
+
+/**
+ * Injects AWS credentials into the WebContentsView.
+ * Provides credentials so the web frontend can use them for AWS API calls.
+ */
+function injectAwsCredentials(): void {
+  if (!platformView) return;
+  const creds = getAwsCredentials();
+  if (!creds) return;
+
+  const payload = {
+    accessKeyId: creds.accessKeyId,
+    secretAccessKey: creds.secretAccessKey,
+    sessionToken: creds.sessionToken,
+    source: creds.source,
+  };
+
+  platformView.webContents.executeJavaScript(
+    `window.__TRH_AWS_CREDENTIALS__ = ${JSON.stringify(payload)};`
+  ).catch(() => {});
 }
 
 /**
@@ -198,5 +387,37 @@ export function registerWebviewIpcHandlers(getMainWindow: () => BrowserWindow | 
   ipcMain.handle('webview:hide', () => {
     const win = getMainWindow();
     if (win) hidePlatformView(win);
+  });
+
+  // Fetch balances using user-provided L1 RPC URL
+  ipcMain.handle('desktop:fetch-balances', async (_event, rpcUrl: string): Promise<Record<string, string>> => {
+    if (!hasSeedPhrase()) return {};
+
+    // Whitelist the RPC host so NetworkGuard allows the request
+    try {
+      const parsed = new URL(rpcUrl);
+      addAllowedHost(parsed.hostname);
+    } catch {
+      return {};
+    }
+
+    const addresses = getAddresses();
+    const addrList = [addresses.admin, addresses.proposer, addresses.batcher, addresses.sequencer];
+    const balances: Record<string, string> = {};
+    await Promise.all(
+      addrList.map(async (addr) => {
+        balances[addr] = await fetchBalance(rpcUrl, addr);
+      })
+    );
+
+    // Inject balances into WebView so platform-ui can read them
+    if (platformView) {
+      platformView.webContents.executeJavaScript(
+        `window.__TRH_DESKTOP_BALANCES__ = ${JSON.stringify(balances)};`
+        + `window.dispatchEvent(new Event('trh-balances-loaded'));`
+      ).catch(() => { /* ignore */ });
+    }
+
+    return balances;
   });
 }

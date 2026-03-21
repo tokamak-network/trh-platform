@@ -18,6 +18,12 @@ const STATIC_PATTERNS: RegExp[] = [
   /^github\.com$/,
   /^api\.github\.com$/,
   /\.githubusercontent\.com$/,
+  // L1 RPC endpoints
+  /\.alchemy\.com$/,
+  /\.infura\.io$/,
+  /\.publicnode\.com$/,
+  /^rpc\.sepolia\.org$/,
+  /\.quicknode\.com$/,
 ];
 
 const dynamicHosts = new Set<string>();

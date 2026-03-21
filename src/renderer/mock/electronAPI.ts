@@ -236,6 +236,27 @@ export const mockElectronAPI: ElectronAPI = {
     validate: async () => true,
   },
 
+  awsAuth: {
+    listProfiles: async () => [
+      { name: 'default', source: 'credentials' as const },
+      { name: 'dev', source: 'credentials' as const },
+    ],
+    loadProfile: async () => ({
+      accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
+      secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+      source: 'profile:default',
+    }),
+    ssoLogin: async () => ({
+      accessKeyId: 'ASIAIOSFODNN7EXAMPLE',
+      secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+      sessionToken: 'FwoGZXIvYXdzEBYaDH...',
+      source: 'sso:dev',
+      expiresAt: Date.now() + 3600000,
+    }),
+    getCredentials: async () => null,
+    clear: async () => {},
+  },
+
   networkGuard: {
     getBlockedRequests: async () => [],
   },

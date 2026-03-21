@@ -122,6 +122,19 @@ h1 {
 
 .btn-outline:hover { border-color: var(--gray-400); }
 
+.btn-danger {
+  background: #DC2626;
+  color: white;
+  border: 1px solid #DC2626;
+}
+
+.btn-danger:hover { background: #B91C1C; }
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Step 6: Key Setup */
 .key-setup-form {
   margin-top: 20px;

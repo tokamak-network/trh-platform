@@ -43,6 +43,17 @@ import {
   setMainWindowId,
   getBlockedRequests,
 } from './network-guard';
+import {
+  listProfiles as listAwsProfiles,
+  loadProfile as loadAwsProfile,
+  startSsoLogin as startAwsSsoLogin,
+  startSsoLoginDirect as startAwsSsoLoginDirect,
+  listSsoAccounts as listAwsSsoAccounts,
+  listSsoRoles as listAwsSsoRoles,
+  assumeSsoRole as assumeAwsSsoRole,
+  getCredentials as getAwsCredentials,
+  clearCredentials as clearAwsCredentials,
+} from './aws-auth';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -55,7 +66,7 @@ const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 const PLATFORM_UI_URL = 'http://localhost:3000';
 const VITE_DEV_URL = 'http://localhost:5173';
-const isDev = !app.isPackaged;
+const isDev = !app.isPackaged && process.env.ELECTRON_USE_BUILD !== '1';
 
 function getRendererPath(): string {
   if (app.isPackaged) {
@@ -538,6 +549,35 @@ function setupIpcHandlers(): void {
   ipcMain.handle('keystore:delete', () => deleteSeedPhrase());
   ipcMain.handle('keystore:validate', (_event, mnemonic: string) => validateMnemonic(mnemonic));
 
+  // AWS Auth IPC handlers
+  ipcMain.handle('aws-auth:list-profiles', () => {
+    return listAwsProfiles();
+  });
+  ipcMain.handle('aws-auth:load-profile', (_event, name: string) => {
+    return loadAwsProfile(name);
+  });
+  ipcMain.handle('aws-auth:sso-login', async (_event, profileName: string) => {
+    return startAwsSsoLogin(profileName);
+  });
+  ipcMain.handle('aws-auth:get-credentials', () => {
+    return getAwsCredentials();
+  });
+  ipcMain.handle('aws-auth:clear', () => {
+    clearAwsCredentials();
+  });
+  ipcMain.handle('aws-auth:sso-login-direct', async (_event, startUrl: string, region: string) => {
+    return startAwsSsoLoginDirect(startUrl, region);
+  });
+  ipcMain.handle('aws-auth:sso-list-accounts', async () => {
+    return listAwsSsoAccounts();
+  });
+  ipcMain.handle('aws-auth:sso-list-roles', async (_event, accountId: string) => {
+    return listAwsSsoRoles(accountId);
+  });
+  ipcMain.handle('aws-auth:sso-assume-role', async (_event, accountId: string, roleName: string) => {
+    return assumeAwsSsoRole(accountId, roleName);
+  });
+
   // Network Guard IPC handlers
   ipcMain.handle('network-guard:get-blocked', () => getBlockedRequests());
 
@@ -567,8 +607,8 @@ app.whenReady().then(async () => {
   }
   createTray();
 
-  // Set dock icon explicitly in dev mode (packaged app uses the .icns from bundle automatically)
-  if (isDev && process.platform === 'darwin' && app.dock) {
+  // Set dock icon explicitly when not packaged (packaged app uses the .icns from bundle automatically)
+  if (!app.isPackaged && process.platform === 'darwin' && app.dock) {
     const dockIcon = nativeImage.createFromPath(getPublicPath('icon.png'));
     if (!dockIcon.isEmpty()) app.dock.setIcon(dockIcon);
   }
