@@ -714,7 +714,8 @@ export async function checkBackendDependencies(): Promise<BackendDependencies> {
     checkCommand('aws')
   ]);
 
-  return { pnpm, node, forge, aws, allInstalled: pnpm && node && forge && aws };
+  // aws is optional — only needed for AWS deployments, not local
+  return { pnpm, node, forge, aws, allInstalled: pnpm && node && forge };
 }
 
 export async function installBackendDependencies(onProgress?: (status: string) => void): Promise<void> {

@@ -51,7 +51,7 @@ echo '📦 Verifying installed tools...'
 
 TOOLS_OK=true
 
-for cmd in aws terraform helm kubectl node npm npx pnpm forge cast anvil go; do
+for cmd in node npm npx pnpm forge cast anvil go; do
     if command -v \$cmd &> /dev/null; then
         echo \"✅ \$cmd is available\"
     else
