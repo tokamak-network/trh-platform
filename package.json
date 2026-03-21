@@ -1,6 +1,6 @@
 {
   "name": "trh-platform",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Tokamak Rollup Hub Desktop - One-click L2 rollup deployment",
   "author": "Tokamak Network <dev@tokamak.network>",
   "license": "MIT",
