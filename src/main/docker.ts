@@ -417,7 +417,7 @@ export async function pullImages(onProgress: (progress: PullProgress) => void): 
 }
 
 const UPDATE_IMAGES = [
-  'tokamaknetwork/trh-backend-desktop:latest',
+  'tokamaknetwork/trh-backend:latest',
   'tokamaknetwork/trh-platform-ui:latest',
 ];
 
