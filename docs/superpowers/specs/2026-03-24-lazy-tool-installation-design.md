@@ -24,6 +24,10 @@ Start parallel installation of all four AWS tools as goroutines when AWS deploym
 | Failure handling | Preserve progress + resumable | `ResumableError` records failed phase; re-deploy skips completed phases |
 | UI treatment | Background, deploy logs only | SDK log stream already surfaces in Electron deploy view |
 | Version strategy | Pinned versions | Reproducibility; versions stored in `versions.go` constants |
+| Install method | All binary download (no apt-get) | Avoids apt-get lock contention between parallel goroutines |
+| Channel type | Buffered (size 1) | Prevents goroutine leak if WaitFor is never called |
+| State file path | `/app/storage/.tool-install-state/` | Persists across container recreation via Docker volume |
+| Concurrency guard | `sync.Once` per ToolReadiness | Prevents duplicate install goroutines on double-trigger |
 
 ## Architecture
 
@@ -55,14 +59,25 @@ deployNetworkToAWS() entry
 ```go
 // pkg/stacks/thanos/tool_readiness.go
 
+type InstallStatus int
+
+const (
+    InstallPending   InstallStatus = iota
+    InstallRunning
+    InstallCompleted
+    InstallFailed
+)
+
 type ToolReadiness struct {
-    results map[string]chan error  // per-tool completion channel
-    logger  *zap.SugaredLogger
+    results  map[string]chan error  // per-tool completion channel (buffered, size 1)
+    statuses map[string]*atomic.Value // per-tool InstallStatus
+    once     sync.Once
+    logger   *zap.SugaredLogger
 }
 
 func NewToolReadiness(ctx context.Context, logger *zap.SugaredLogger) *ToolReadiness
-func (tr *ToolReadiness) Start(ctx context.Context)         // launch 4 goroutines
-func (tr *ToolReadiness) WaitFor(tools ...string) error     // block until tools ready
+func (tr *ToolReadiness) Start(ctx context.Context)         // launch 4 goroutines (idempotent via sync.Once)
+func (tr *ToolReadiness) WaitFor(tools ...string) error     // block until tools ready (with ctx + 5min timeout)
 func (tr *ToolReadiness) Status() map[string]InstallStatus  // current state query
 ```
 
@@ -70,12 +85,15 @@ func (tr *ToolReadiness) Status() map[string]InstallStatus  // current state que
 
 Each goroutine follows the same pattern:
 
-1. Check state file (`/app/.tool-install-state/<tool>.json`) — already installed? skip
+1. Check state file (`/app/storage/.tool-install-state/<tool>.json`) — already installed? skip
 2. Check binary (`which <tool>`) + version match — already present? record state, skip
-3. Execute installation (apt-get, binary download, or install script)
+3. Execute installation (binary download — no apt-get to avoid lock contention)
 4. Verify installation (`<tool> --version`)
-5. Write state file
-6. Send result to channel (`nil` for success, `error` for failure)
+5. Write state file atomically (write to temp file, then `os.Rename`)
+6. Send result to channel via `defer` — guarantees channel always receives (prevents goroutine leak)
+
+Each goroutine respects context cancellation and has a 5-minute individual timeout.
+`WaitFor` uses `select` on both the result channel and `ctx.Done()` to avoid indefinite blocking.
 
 ### ResumableError
 
@@ -104,22 +122,30 @@ const (
 
 ### Installation Methods (Ubuntu container)
 
-| Tool | Method | Time | Size |
-|------|--------|------|------|
-| Terraform 1.9.8 | HashiCorp APT repository | ~30s | ~80MB |
-| AWS CLI 2.22.0 | Official zip download + install script | ~40s | ~120MB |
-| kubectl 1.31.4 | Binary download + sha256 verification | ~10s | ~50MB |
-| Helm 3.16.3 | get-helm-3 script | ~10s | ~50MB |
+All tools use direct binary download (no apt-get) to enable true parallel installation without lock contention.
+
+| Tool | Method | URL Pattern | Time | Size |
+|------|--------|-------------|------|------|
+| Terraform 1.9.8 | Zip download + unzip | `releases.hashicorp.com/terraform/{ver}/terraform_{ver}_linux_{arch}.zip` | ~15s | ~80MB |
+| AWS CLI 2.22.0 | Zip download + install script | `awscli.amazonaws.com/awscli-exe-linux-{arch}.zip` | ~40s | ~120MB |
+| kubectl 1.31.4 | Binary download + sha256 verify | `dl.k8s.io/release/v{ver}/bin/linux/{arch}/kubectl` | ~10s | ~50MB |
+| Helm 3.16.3 | Tarball download + extract | `get.helm.sh/helm-v{ver}-linux-{arch}.tar.gz` | ~10s | ~50MB |
+
+Prerequisites: `curl` and `unzip` must be available in the container. Both are already installed in the `trh-backend` Dockerfile (`curl` via apt-get, `unzip` to be added if missing).
 
 ### Install State Files
 
 ```
-/app/.tool-install-state/
+/app/storage/.tool-install-state/
   terraform.json    {"version": "1.9.8", "status": "installed", "timestamp": "..."}
   aws-cli.json      {"version": "2.22.0", "status": "installed", "timestamp": "..."}
   kubectl.json      {"version": "1.31.4", "status": "installed", "timestamp": "..."}
   helm.json         {"version": "3.16.3", "status": "installed", "timestamp": "..."}
 ```
+
+Path is under `/app/storage/` (Docker volume `trh_backend_storage`) so state persists across container recreation. Note: state file persistence + binary absence (after container recreate) is handled correctly — resume logic always re-verifies with `which` + version check.
+
+State files are written atomically (temp file + `os.Rename`) to prevent corruption on process interruption.
 
 Resume logic: file exists + version matches + `which` succeeds = skip. Any mismatch = reinstall.
 
@@ -128,10 +154,12 @@ Resume logic: file exists + version matches + `which` succeeds = skip. Any misma
 | Scenario | Handling | User Message |
 |----------|----------|-------------|
 | Network failure (download) | `ResumableError{Phase: N}`, state file `"status": "failed"` | `"Terraform installation failed: network error. Re-run deploy to resume from Phase N"` |
-| Insufficient disk | Pre-check via `df` (minimum 500MB), skip install if insufficient | `"Insufficient disk space for AWS tools (~300MB required)"` |
+| Insufficient disk | Pre-check via `df` (minimum 700MB for peak usage), skip install if insufficient | `"Insufficient disk space for AWS tools (~700MB required during installation)"` |
 | Install succeeds, verification fails | No state file written, reinstall on retry | `"Terraform installed but version verification failed"` |
 | Terraform crash during Phase 2-3 | Existing Terraform error handling (unchanged) | Existing error messages |
-| Context canceled (user abort) | Goroutines exit, partial install preserved | `"Deployment canceled"` |
+| Context canceled (user abort) | Goroutines exit via ctx.Done(), partial install preserved | `"Deployment canceled"` |
+| Individual tool timeout (5min) | Goroutine returns timeout error, other tools unaffected | `"Terraform installation timed out after 5 minutes"` |
+| Duplicate deploy trigger | `sync.Once` prevents second goroutine set; reuses existing channels | No additional message (transparent) |
 
 ## Log Format
 
@@ -169,7 +197,9 @@ Resume logic: file exists + version matches + `which` succeeds = skip. Any misma
 
 | File | Type | Content |
 |------|------|---------|
-| `src/main/docker.ts` | Modified | Remove `aws` from `checkBackendDeps()` — not needed at setup stage |
+| `src/main/docker.ts` | Modified | Remove `aws` field from `checkBackendDeps()` — not needed at setup stage |
+| `src/main/preload.ts` | Modified | Remove `aws` from `BackendDependencies` interface |
+| `src/renderer/types.ts` | Modified | Remove `aws` from `BackendDependencies` type definition |
 
 ### Unchanged Files
 
@@ -183,5 +213,5 @@ Resume logic: file exists + version matches + `which` succeeds = skip. Any misma
 ### Summary
 
 - New: 3 files
-- Modified: 5 files
-- Total: 8 files
+- Modified: 7 files
+- Total: 10 files
