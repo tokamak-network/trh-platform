@@ -29,7 +29,6 @@ export interface BackendDependencies {
   pnpm: boolean;
   node: boolean;
   forge: boolean;
-  aws: boolean;
   allInstalled: boolean;
 }
 

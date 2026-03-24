@@ -66,7 +66,6 @@ export interface BackendDependencies {
   pnpm: boolean;
   node: boolean;
   forge: boolean;
-  aws: boolean;
   allInstalled: boolean;
 }
 
@@ -707,15 +706,13 @@ export async function checkBackendDependencies(): Promise<BackendDependencies> {
     }
   };
 
-  const [pnpm, node, forge, aws] = await Promise.all([
+  const [pnpm, node, forge] = await Promise.all([
     checkCommand('pnpm'),
     checkCommand('node'),
     checkCommand('forge'),
-    checkCommand('aws')
   ]);
 
-  // aws is optional — only needed for AWS deployments, not local
-  return { pnpm, node, forge, aws, allInstalled: pnpm && node && forge };
+  return { pnpm, node, forge, allInstalled: pnpm && node && forge };
 }
 
 export async function installBackendDependencies(onProgress?: (status: string) => void): Promise<void> {
