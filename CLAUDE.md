@@ -202,3 +202,276 @@ The repository uses Conventional Commits format. All branches should follow the 
 - `main` - production release branch
 
 Terraform state files (terraform.tfstate*) are committed to git for infrastructure version tracking. Do not remove from .gitignore.
+
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
+
+**TRH Preset Deployment Test Harness**
+
+TRH 플랫폼의 4가지 Preset(General, DeFi, Gaming, Full) 배포 흐름을 실제 L1/L2 통신 없이 mock 기반으로 검증하는 테스트 suite. Electron → Platform UI → Backend API → trh-sdk 전 구간의 로직 정합성을 단위/통합/E2E 테스트로 커버한다.
+
+**Core Value:** 각 Preset이 올바른 genesis config, predeploys, 모듈 구성, 체인 파라미터를 생성하는지 자동으로 검증할 수 있어야 한다.
+
+### Constraints
+
+- **Tech stack**: TypeScript/Vitest (unit/integration), Playwright (E2E) — trh-platform이 Electron + TypeScript 기반
+- **Mock boundary**: 모든 외부 의존성(L1/L2 RPC, Docker, Helm, AWS)은 mock/stub 처리
+- **Location**: 모든 테스트 코드는 `trh-platform/tests/` 디렉토리에 위치
+- **Dependencies**: 4개 저장소(trh-platform, trh-sdk, trh-backend, trh-platform-ui)의 코드를 참조하되, 테스트 실행은 trh-platform에서 수행
+<!-- GSD:project-end -->
+
+<!-- GSD:stack-start source:codebase/STACK.md -->
+## Technology Stack
+
+## Languages
+- TypeScript 5.9.3 - Full codebase (main process, renderer, tests)
+- React 19.2.4 - UI components in renderer process
+- JavaScript (auto-generated from TypeScript compilation)
+## Runtime
+- Node.js 18.0.0+ (specified in `package.json` engines field)
+- Electron 33.0.0 - Desktop application framework
+- npm (lockfile: `package-lock.json` present)
+## Frameworks
+- Electron 33.0.0 - Desktop application runtime (`src/main/index.ts` uses electron APIs)
+- React 19.2.4 - UI framework (`src/renderer/main.tsx` entry point)
+- Vite 7.3.1 - Renderer build tool (config: `vite.config.ts`)
+- TypeScript 5.9.3 - Type checking
+- Vitest 4.1.0 - Test runner and assertion library
+- Testing Library 6.9.1+
+- JSDOM 29.0.1 - DOM environment for tests
+- Happy DOM 20.8.4 - Lightweight DOM alternative for tests
+- electron-builder 25.1.8 - Packaging and distribution
+- Concurrently 9.2.1 - Run multiple commands in parallel during development
+## Key Dependencies
+- ethers 6.13.4 - Blockchain library (`src/main/keystore.ts`)
+- @aws-sdk/client-sso-oidc 3.1013.0 - AWS SSO OIDC authentication
+- @aws-sdk/client-sso 3.1013.0 - AWS SSO credential retrieval
+- React DOM 19.2.4 - React DOM rendering
+- Node.js built-ins: fs, path, os, child_process, net, https, http
+## Configuration
+- Template files in `config/`:
+- Vite env prefix: `VITE_` (defined in `vite.config.ts`)
+- Mock mode: `VITE_MOCK_ELECTRON=true` bypasses Electron for browser testing
+- Vite config: `vite.config.ts`
+- TypeScript configs:
+- Electron Builder config embedded in `package.json`
+## Platform Requirements
+- macOS, Windows, or Linux
+- Docker and Docker Compose (for backend services)
+- Node.js 18+
+- npm
+- macOS 10.13+ (Intel/Apple Silicon)
+- Windows 10+ (x64)
+- Linux (x64)
+- Backend: Docker containers (PostgreSQL 15, trh-backend, trh-platform-ui)
+## Build Outputs
+- Main process: `dist/main/index.js` (compiled from TypeScript)
+- Renderer: `dist/renderer/` (Vite bundled React app)
+- Packaged binaries: `release/` directory (created by electron-builder)
+<!-- GSD:stack-end -->
+
+<!-- GSD:conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+## Naming Patterns
+- Electron main process: camelCase (e.g., `docker.ts`, `aws-auth.ts`, `keystore.ts`)
+- React components: PascalCase (e.g., `SetupPage.tsx`, `ConfigPage.tsx`, `StepItem.tsx`)
+- Type files: PascalCase with types suffix or explicit names (e.g., `types.ts`)
+- Test files: match source name with `.test` extension (e.g., `SetupPage.test.tsx`, `aws-auth.test.ts`)
+- CSS files: match component/page name (e.g., `SetupPage.css`, `StepItem.css`)
+- camelCase for all function names
+- Async functions commonly prefixed with action words: `check`, `get`, `load`, `start`, `stop`, `install`, `pull`
+- Examples: `checkInstalled()`, `getDockerStatus()`, `startContainers()`, `killPortProcesses()`
+- camelCase for all variables
+- Boolean variables often prefix with `is`, `has`, `show`, `can` (e.g., `isDockerInstalled`, `hasSeedPhrase`, `showKeySetup`)
+- State variables with `set` prefix for React setState functions (e.g., `setViewMode`, `setError`, `setCredentials`)
+- Callback handlers prefix with `handle` or `on` (e.g., `handleConfigDone`, `onComplete`)
+- PascalCase for all type names (e.g., `DockerStatus`, `StepStatus`, `PortConflict`, `ElectronAPI`)
+- Interface names do not use `I` prefix
+- Union types use camelCase when stored in variables (e.g., `ViewMode = 'config' | 'setup' | 'webapp' | 'notifications'`)
+- Literal string types for discriminant unions (e.g., `StepStatus = 'pending' | 'loading' | 'success' | 'error'`)
+- UPPER_SNAKE_CASE for module-level constants (e.g., `UPDATE_CHECK_INTERVAL_MS`, `REQUIRED_PORTS`, `COMMAND_TIMEOUT`)
+- camelCase for constants within function scope or descriptive object keys
+## Code Style
+- No explicit eslint/prettier config files detected
+- Consistent 2-space indentation throughout codebase
+- Semicolons required (enforced by TypeScript strict mode)
+- Quote style: single quotes for strings, backticks for templates
+- TypeScript strict mode enabled in both `tsconfig.electron.json` and `tsconfig.renderer.json`
+- Compiler options: `strict: true`, `esModuleInterop: true`, `forceConsistentCasingInFileNames: true`
+- No separate ESLint configuration files present
+- Strict TypeScript everywhere: `strict: true` in all configs
+- All function parameters and return types explicitly typed
+- No implicit `any` allowed
+- Union types preferred over optional fields where semantically appropriate
+## Import Organization
+- No path aliases configured
+- Relative imports used throughout (e.g., `import StepItem from '../components/StepItem'`)
+- Explicit relative paths with `../` for parent directory navigation
+- Barrel files (`index.ts`) not used; direct imports from source files preferred
+- Each module exports specific functions/interfaces without default exports (with exception of React components)
+- React components use default export pattern
+- Utility modules use named exports
+## Error Handling
+- Explicit `try-catch` blocks for error-prone operations
+- Error messages descriptive and specific to failure context
+- Runtime validation before operations (e.g., checking port availability, validating mnemonics)
+- Promise rejection handling with proper error propagation
+- For React components: error state managed via `useState` with error object containing `{ title, message }`
+- Example from `SetupPage.tsx`: `const [error, setError] = useState<{ title: string; message: string } | null>(null)`
+- Electron IPC handlers throw specific errors that propagate to renderer process
+- BDD-style error assertions in tests: `expect(mockFn).toHaveBeenCalledWith(expectedValue)`
+- Early return pattern used extensively (e.g., `if (!installed) { ... return; }`)
+- Null/undefined checks before operations
+- Type guards used with `instanceof Error` pattern: `error instanceof Error ? error.message : 'Unknown error'`
+## Logging
+- `console.warn()` for non-critical issues
+- `console.error()` for exceptions and failures
+- Logging callback pattern in electron: `setLogCallback()` function allows main process to stream logs to renderer
+- Example: `setLogCallback((line: string) => { mainWindow?.webContents.send('docker:log', line); })`
+- Test logging in `docker.ts`: `emitLog()` internal function trims and filters empty lines before callback
+## Comments
+- Complex algorithms or non-obvious logic (e.g., Docker port detection with fallback strategy)
+- Boundary conditions and timeout constants with rationale
+- Section separators for major logical blocks (e.g., `// ---------------------------------------------------------------------------`)
+- Type definitions followed by inline documentation in types (not separate comments)
+- Very rarely used; code preferred to be self-documenting through naming
+- Not used; TypeScript interfaces and type signatures are self-documenting
+- Function names and parameters are sufficiently descriptive
+## Function Design
+- No strict function size limit enforced
+- Complex multi-step operations kept together in single function with clear step comments
+- Example: `runSetup()` in `SetupPage.tsx` contains 6-step Docker/backend initialization
+- Destructuring used for React component props
+- Named objects preferred over multiple parameters for option-like arguments
+- Example: `function createWindow()` takes no parameters; configuration is hardcoded
+- IPC handlers use `(_event, ...args)` pattern where event is unused but TypeScript-required
+- Promises extensively used for async operations
+- `void` return type for event handlers and callbacks
+- Discriminant unions for complex state (e.g., `PortModalState = { open: false } | { open: true; conflicts: PortConflict[]; resolve: ... }`)
+- Generic promise resolution: `Promise<T>` where T is clearly typed
+## Module Design
+- Mix of named and default exports
+- React components use default exports: `export default function SetupPage(...)`
+- Utility modules use named exports: `export function checkInstalled(): boolean`
+- Type-only exports for interfaces: `export interface DockerStatus { ... }`
+- Electron module re-exports aggregated from multiple sub-modules (e.g., `index.ts` imports from `docker.ts`, `keystore.ts`, etc.)
+- Not used; direct imports from source files preferred throughout codebase
+- Main process logic isolated in `src/main/` (Electron, Docker, filesystem operations)
+- Renderer process logic isolated in `src/renderer/` (React components, UI state)
+- Type definitions centralized in `src/renderer/types.ts` for cross-process contracts
+- Test files co-located with source (`.test.tsx` or `.test.ts` extension)
+<!-- GSD:conventions-end -->
+
+<!-- GSD:architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+## Pattern Overview
+- Two-process isolation: Main process (Node.js) handles system operations, renderer process (React) handles UI
+- Preload-based security: Context isolation with exposed ElectronAPI via preload script
+- Embedded web view: localhost:3000 platform UI runs in a WebContentsView within the Electron window
+- Service-focused main process: Docker operations, key management, AWS authentication are separate modules
+- IPC-driven: All renderer-main communication through ipcRenderer/ipcMain with explicit handlers
+## Layers
+- Purpose: React-based user interface for desktop app configuration, setup, and notifications
+- Location: `src/renderer/`
+- Contains: React components (pages, reusable components), styles, type definitions, mock APIs
+- Depends on: ElectronAPI (via preload), local state management (hooks)
+- Used by: Electron window (BrowserWindow)
+- Purpose: Manages Docker containers, keystore encryption, AWS authentication, network security
+- Location: `src/main/`
+- Contains: Modular service files (docker.ts, keystore.ts, aws-auth.ts, network-guard.ts), IPC handlers, preload scripts
+- Depends on: Electron APIs, child_process for Docker CLI, @aws-sdk for AWS auth, ethers for key derivation
+- Used by: Renderer process via IPC, Tray menu
+- Purpose: Securely exposes main process functionality to renderer
+- Location: `src/main/preload.ts` (main window), `src/main/webview-preload.ts` (webview)
+- Contains: IPC invocation wrappers, event listeners, ElectronAPI type definitions
+- Depends on: Electron contextBridge, ipcRenderer
+- Used by: Renderer, webview
+- Purpose: Displays platform UI (localhost:3000) within the desktop app
+- Location: Managed by `src/main/webview.ts`
+- Contains: WebContentsView instance, injection logic for keystore/AWS credentials
+- Depends on: Main process services, IPC handlers
+- Used by: Electron app for platform deployment UI
+## Data Flow
+- Docker operation mutex: `dockerOperationInProgress` flag prevents concurrent operations
+- Update checker: Background interval (60 min) checks for new Docker images
+- Keystore cache: Decrypted mnemonic stays in memory, cleared after key derivation
+- AWS credentials cache: Kept in module scope (`currentCredentials`), cleared on explicit logout
+- Notification store: In-process store notified via IPC events
+## Key Abstractions
+- Purpose: Abstracts Docker CLI operations (compose, health checks, pulls)
+- Exports: isDockerInstalled, isDockerRunning, getDockerStatus, startContainers, stopContainers, pullImages, waitForHealthy, checkBackendDependencies, installBackendDependencies
+- Pattern: Async functions that exec Docker commands, parse output, return typed results
+- Purpose: Manages encrypted seed phrase storage using OS keychain (Electron safeStorage)
+- Exports: storeSeedPhrase, hasSeedPhrase, deleteSeedPhrase, getAddresses, previewAddresses, deriveKeysToEnv
+- Pattern: Encrypt/decrypt using safeStorage, derive keys using ethers HDNodeWallet with BIP44 paths
+- Purpose: Handles AWS credential management (profiles, SSO login, role assumption)
+- Exports: listProfiles, loadProfile, startSsoLogin, assumeSsoRole, getCredentials, clearCredentials
+- Pattern: AWS SDK clients for SSO/OIDC flow, INI file parsing for ~/.aws/credentials, in-memory credential cache
+- Purpose: Blocks external network requests except from whitelisted domains
+- Exports: initNetworkGuard, addAllowedHost, getBlockedRequests, setMainWindowId
+- Pattern: Electron session.webRequest hook with regex patterns and dynamic allowlist
+- Purpose: Detects and guides Docker Desktop installation on missing Docker
+- Exports: installDockerDesktop
+- Pattern: Platform-specific download URLs, spawn installer, wait for completion
+- Purpose: Manages WebContentsView lifecycle and injection of desktop-specific data
+- Exports: showPlatformView, hidePlatformView, destroyPlatformView, registerWebviewIpcHandlers, setAdminCredentials
+- Pattern: Create/reuse WebContentsView with preload, inject window.__ globals, track navigation
+- Purpose: Manages in-app notifications with persistence
+- Pattern: Array store with timestamps, read/dismissed flags, action handlers
+## Entry Points
+- Location: `src/main/index.ts`
+- Triggers: Electron app.whenReady()
+- Responsibilities:
+- Location: `src/renderer/App.tsx`
+- Triggers: React createRoot in `src/renderer/main.tsx`
+- Responsibilities:
+- `src/main/preload.ts`: Exposes ElectronAPI to renderer (contextBridge)
+- `src/main/webview-preload.ts`: Simple marker for webview sandbox
+## Error Handling
+- Docker operations: Try/catch with stderr capture, emit user-friendly messages via log callback
+- Keystore: Validate mnemonic format before storage, catch decryption errors with "data corrupted" message
+- AWS auth: INI parsing errors return empty results, SSO login catches URL/network errors
+- Network Guard: URL parsing errors silently allow (no blocking on parse failure)
+- Async IPC: Errors thrown in main handlers propagate to renderer as IPC errors with .message preserved
+- Setup page: Catches step errors, displays in modal, allows retry from any step
+## Cross-Cutting Concerns
+- Docker: setLogCallback() in main, logs streamed to renderer via `docker:log` IPC event
+- Other services: console.log/warn/error in main process (visible in Electron dev tools)
+- Renderer: window.electronAPI event listeners log to console
+- Mnemonic: validateMnemonic() checks BIP39 format before storage
+- URLs: URL constructor throws on invalid URLs in webview load
+- Port checks: lsof/netstat parsing with timeout and error fallback
+- Renderer: No auth check (assumes user has physical access)
+- WebView: Auto-login via backend API after docker start, stored credentials in component state
+- AWS: Credentials stored in module scope, cleared on logout or app quit
+- Docker operations protected by `dockerOperationInProgress` mutex
+- Long operations use Electron event emitters for progress (not blocking)
+- Async IPC handlers don't block renderer
+- Keystore uses OS safeStorage (encrypted via system keychain)
+- Private keys never injected into webview (only addresses)
+- Network guard blocks external requests by default (whitelist only)
+- Preload uses contextIsolation:true and sandbox:true
+- AWS credentials cleared on quit
+<!-- GSD:architecture-end -->
+
+<!-- GSD:workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd:debug` for investigation and bug fixing
+- `/gsd:execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- GSD:workflow-end -->
+
+<!-- GSD:profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- GSD:profile-end -->
