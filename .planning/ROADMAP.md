@@ -45,10 +45,11 @@ Plans:
   2. 컨테이너 의존성 순서(postgres -> backend -> frontend)와 health check 설정이 올바른 테스트가 통과한다
   3. Local Docker 경로의 docker compose 명령 시퀀스와 AWS EC2 경로의 Terraform init/plan/apply 시퀀스가 mock 검증을 통과한다
   4. Local/AWS 공통 로직과 인프라별 분기 로직이 올바르게 분리되어 있음을 검증하는 테스트가 통과한다
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Docker compose Zod schema validation (DOCK-01~04): js-yaml parsing, service structure, dependencies, healthcheck, env vars
+- [ ] 02-02-PLAN.md — Deploy target sequence tests (DTGT-01~04): Local Docker commands, AWS Terraform sequence, security group ports
 
 ### Phase 3: IPC Integration
 **Goal**: Electron IPC 채널과 Backend API contract이 올바른 payload로 통신하는 것이 검증된 상태
@@ -87,6 +88,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
-| 2. Docker Stack & Deploy Target | 0/1 | Not started | - |
+| 2. Docker Stack & Deploy Target | 0/2 | Planning complete | - |
 | 3. IPC Integration | 0/1 | Not started | - |
 | 4. E2E Wizard Scenarios | 0/1 | Not started | - |
