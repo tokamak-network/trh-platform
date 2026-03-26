@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Test infra setup: Vitest config, zod, golden JSON fixture, schemas, helpers
-- [ ] 01-02-PLAN.md — Preset config unit tests (PSET-01~07): chain params, modules, predeploys, fee tokens, matrix
+- [x] 01-02-PLAN.md — Preset config unit tests (PSET-01~07): chain params, modules, predeploys, fee tokens, matrix
 - [ ] 01-03-PLAN.md — Funding flow unit tests (FUND-01~04): BIP44 derivation, balance thresholds, blocking logic
 
 ### Phase 2: Docker Stack & Deploy Target
