@@ -53,10 +53,10 @@
 
 ### Infrastructure (INFR)
 
-- [ ] **INFR-01**: 테스트 실행에 Docker daemon, 실제 네트워크, AWS 자격증명이 불필요한지 확인
-- [ ] **INFR-02**: Vitest + Playwright 기반 테스트 환경 구성 및 CI 실행 가능
-- [ ] **INFR-03**: Preset fixture 데이터를 JSON으로 중앙 관리하여 테스트 간 공유
-- [ ] **INFR-04**: Zod 기반 API contract 스키마 정의로 mock 정합성 보장
+- [x] **INFR-01**: 테스트 실행에 Docker daemon, 실제 네트워크, AWS 자격증명이 불필요한지 확인
+- [x] **INFR-02**: Vitest + Playwright 기반 테스트 환경 구성 및 CI 실행 가능
+- [x] **INFR-03**: Preset fixture 데이터를 JSON으로 중앙 관리하여 테스트 간 공유
+- [x] **INFR-04**: Zod 기반 API contract 스키마 정의로 mock 정합성 보장
 
 ## v2 Requirements
 
@@ -112,10 +112,10 @@
 | E2E-02 | Phase 4 | Pending |
 | E2E-03 | Phase 4 | Pending |
 | E2E-04 | Phase 4 | Pending |
-| INFR-01 | Phase 1 | Pending |
-| INFR-02 | Phase 1 | Pending |
-| INFR-03 | Phase 1 | Pending |
-| INFR-04 | Phase 1 | Pending |
+| INFR-01 | Phase 1 | Complete |
+| INFR-02 | Phase 1 | Complete |
+| INFR-03 | Phase 1 | Complete |
+| INFR-04 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 33 total
