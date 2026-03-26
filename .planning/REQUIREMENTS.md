@@ -7,20 +7,20 @@
 
 ### Preset Config (PSET)
 
-- [x] **PSET-01**: 4개 Preset(General, DeFi, Gaming, Full)이 각각 올바른 BatchFreq, OutputFreq, ChallengePeriod을 출력하는지 unit test
-- [x] **PSET-02**: Preset별 Backup 활성화 여부(General: off, DeFi/Gaming/Full: on)가 정확한지 검증
-- [x] **PSET-03**: 배포 대상 인프라별(Local Docker, AWS EC2) config 분기가 올바른지 검증
-- [x] **PSET-04**: Preset별 Genesis Predeploys 목록이 정확한지 검증 (OP Standard, DeFi: Uniswap/USDC/WrappedETH, Gaming: VRF/AA, Full: 전체)
-- [x] **PSET-05**: Preset별 모듈 활성화 매트릭스(Bridge, Explorer, Monitoring, Uptime)가 정확한지 검증
-- [x] **PSET-06**: Preset별 Fee Token 가용성(General: TON/ETH only, 나머지: +USDT/USDC)이 정확한지 검증
-- [x] **PSET-07**: 4개 Preset x 2개 인프라(Local/AWS)를 파라메트릭하게 순회하는 cross-preset regression matrix 테스트
+- [ ] **PSET-01**: 4개 Preset(General, DeFi, Gaming, Full)이 각각 올바른 BatchFreq, OutputFreq, ChallengePeriod을 출력하는지 unit test
+- [ ] **PSET-02**: Preset별 Backup 활성화 여부(General: off, DeFi/Gaming/Full: on)가 정확한지 검증
+- [ ] **PSET-03**: 배포 대상 인프라별(Local Docker, AWS EC2) config 분기가 올바른지 검증
+- [ ] **PSET-04**: Preset별 Genesis Predeploys 목록이 정확한지 검증 (OP Standard, DeFi: Uniswap/USDC/WrappedETH, Gaming: VRF/AA, Full: 전체)
+- [ ] **PSET-05**: Preset별 모듈 활성화 매트릭스(Bridge, Explorer, Monitoring, Uptime)가 정확한지 검증
+- [ ] **PSET-06**: Preset별 Fee Token 가용성(General: TON/ETH only, 나머지: +USDT/USDC)이 정확한지 검증
+- [ ] **PSET-07**: 4개 Preset x 2개 인프라(Local/AWS)를 파라메트릭하게 순회하는 cross-preset regression matrix 테스트
 
 ### Funding Flow (FUND)
 
-- [ ] **FUND-01**: BIP44 키 파생이 seed phrase에서 admin/sequencer/batcher/proposer 4개 주소를 올바르게 생성하는지 검증
-- [ ] **FUND-02**: Testnet 최소 잔액 기준(0.5 ETH)이 올바르게 적용되는지 mock RPC로 검증
-- [ ] **FUND-03**: Mainnet 최소 잔액 기준(2 ETH)이 올바르게 적용되는지 mock RPC로 검증
-- [ ] **FUND-04**: 잔액 미달 시 배포 차단 로직이 올바르게 동작하는지 검증
+- [x] **FUND-01**: BIP44 키 파생이 seed phrase에서 admin/sequencer/batcher/proposer 4개 주소를 올바르게 생성하는지 검증
+- [x] **FUND-02**: Testnet 최소 잔액 기준(0.5 ETH)이 올바르게 적용되는지 mock RPC로 검증
+- [x] **FUND-03**: Mainnet 최소 잔액 기준(2 ETH)이 올바르게 적용되는지 mock RPC로 검증
+- [x] **FUND-04**: 잔액 미달 시 배포 차단 로직이 올바르게 동작하는지 검증
 
 ### Docker Stack (DOCK)
 
@@ -84,17 +84,17 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PSET-01 | Phase 1 | Complete |
-| PSET-02 | Phase 1 | Complete |
-| PSET-03 | Phase 1 | Complete |
-| PSET-04 | Phase 1 | Complete |
-| PSET-05 | Phase 1 | Complete |
-| PSET-06 | Phase 1 | Complete |
-| PSET-07 | Phase 1 | Complete |
-| FUND-01 | Phase 1 | Pending |
-| FUND-02 | Phase 1 | Pending |
-| FUND-03 | Phase 1 | Pending |
-| FUND-04 | Phase 1 | Pending |
+| PSET-01 | Phase 1 | Pending |
+| PSET-02 | Phase 1 | Pending |
+| PSET-03 | Phase 1 | Pending |
+| PSET-04 | Phase 1 | Pending |
+| PSET-05 | Phase 1 | Pending |
+| PSET-06 | Phase 1 | Pending |
+| PSET-07 | Phase 1 | Pending |
+| FUND-01 | Phase 1 | Complete |
+| FUND-02 | Phase 1 | Complete |
+| FUND-03 | Phase 1 | Complete |
+| FUND-04 | Phase 1 | Complete |
 | DOCK-01 | Phase 2 | Pending |
 | DOCK-02 | Phase 2 | Pending |
 | DOCK-03 | Phase 2 | Pending |

@@ -33,8 +33,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Test infra setup: Vitest config, zod, golden JSON fixture, schemas, helpers
-- [x] 01-02-PLAN.md — Preset config unit tests (PSET-01~07): chain params, modules, predeploys, fee tokens, matrix
-- [ ] 01-03-PLAN.md — Funding flow unit tests (FUND-01~04): BIP44 derivation, balance thresholds, blocking logic
+- [ ] 01-02-PLAN.md — Preset config unit tests (PSET-01~07): chain params, modules, predeploys, fee tokens, matrix
+- [x] 01-03-PLAN.md — Funding flow unit tests (FUND-01~04): BIP44 derivation, balance thresholds, blocking logic
 
 ### Phase 2: Docker Stack & Deploy Target
 **Goal**: Docker compose 스키마와 Local/AWS 배포 경로의 명령 시퀀스가 검증된 상태
