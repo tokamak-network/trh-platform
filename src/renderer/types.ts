@@ -128,7 +128,7 @@ export interface ElectronAPI {
     removeAllListeners: () => void;
   };
   app: {
-    loadPlatform: () => Promise<void>;
+    loadPlatform: (config?: { adminEmail?: string; adminPassword?: string }) => Promise<void>;
     openExternal: (url: string) => Promise<void>;
     getVersion: () => Promise<string>;
   };

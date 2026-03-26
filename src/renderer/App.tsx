@@ -15,6 +15,7 @@ export default function App() {
     password: 'admin',
   });
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [dockerHealthy, setDockerHealthy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -28,8 +29,7 @@ export default function App() {
       try {
         const status = await api.docker.getStatus();
         if (status.healthy) {
-          await api.app.loadPlatform();
-          setViewMode('webapp');
+          setDockerHealthy(true);
         }
       } catch {
         // Docker not available — proceed to config page
@@ -59,13 +59,18 @@ export default function App() {
     return cleanup;
   }, [viewMode]);
 
-  const handleConfigDone = (email: string, password: string) => {
+  const handleConfigDone = async (email: string, password: string) => {
     setCredentials({ email, password });
-    setViewMode('setup');
+    if (dockerHealthy) {
+      await api.app.loadPlatform({ adminEmail: email, adminPassword: password });
+      setViewMode('webapp');
+    } else {
+      setViewMode('setup');
+    }
   };
 
   const handleSetupDone = async () => {
-    await api.app.loadPlatform();
+    await api.app.loadPlatform({ adminEmail: credentials.email, adminPassword: credentials.password });
     setViewMode('webapp');
   };
 

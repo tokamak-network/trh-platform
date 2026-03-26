@@ -88,7 +88,7 @@ const electronAPI = {
   },
 
   app: {
-    loadPlatform: (): Promise<void> => ipcRenderer.invoke('app:load-platform'),
+    loadPlatform: (config?: { adminEmail?: string; adminPassword?: string }): Promise<void> => ipcRenderer.invoke('app:load-platform', config),
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:open-external', url),
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version')
   },

@@ -158,20 +158,47 @@ export async function getPortConflicts(): Promise<{ available: boolean; conflict
 }
 
 export async function killPortProcesses(ports: number[]): Promise<void> {
+  let dockerContainerFound = false;
+
   for (const port of ports) {
     try {
       const pidOutput = await execPromise(`lsof -i :${port} -t -sTCP:LISTEN`);
       const pids = pidOutput.split('\n').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
       for (const pid of pids) {
         try {
-          process.kill(pid, 'SIGTERM');
-          emitLog(`Killed process ${pid} on port ${port}`);
+          const name = (await execPromise(`ps -p ${pid} -o comm=`)).trim();
+          if (name.includes('docker') || name.includes('com.docker')) {
+            dockerContainerFound = true;
+            emitLog(`Port ${port} is held by Docker (${name}) — will stop containers instead of killing daemon`);
+          } else {
+            process.kill(pid, 'SIGTERM');
+            emitLog(`Killed process ${pid} on port ${port}`);
+          }
         } catch (err) {
           emitLog(`Could not kill process ${pid} on port ${port}: ${err instanceof Error ? err.message : 'unknown'}`);
         }
       }
     } catch {
       // No process found on port, already free
+    }
+  }
+
+  if (dockerContainerFound) {
+    emitLog('Stopping Docker containers occupying required ports...');
+    for (const port of ports) {
+      try {
+        // Find container ID by published port, regardless of compose project
+        const containerId = (await execPromise(
+          `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.ID}}"`
+        )).trim();
+        if (containerId) {
+          await execPromise(`"${DOCKER_BIN}" stop ${containerId}`);
+          await execPromise(`"${DOCKER_BIN}" rm -f ${containerId}`);
+          emitLog(`Stopped container ${containerId} on port ${port}`);
+        }
+      } catch {
+        emitLog(`Could not stop Docker container on port ${port}`);
+      }
     }
   }
 

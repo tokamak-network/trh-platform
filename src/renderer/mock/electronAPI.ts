@@ -180,7 +180,7 @@ export const mockElectronAPI: ElectronAPI = {
   },
 
   app: {
-    loadPlatform: async () => {
+    loadPlatform: async (_config?: { adminEmail?: string; adminPassword?: string }) => {
       emit(logListeners, '[mock] Platform loaded (WebView not available in browser mode)');
       // Simulate webview navigation after load
       setTimeout(() => {

@@ -26,7 +26,8 @@ import { installDockerDesktop, type InstallResult } from './installer';
 import {
   showPlatformView,
   destroyPlatformView,
-  registerWebviewIpcHandlers
+  registerWebviewIpcHandlers,
+  setAdminCredentials
 } from './webview';
 import * as NotificationStore from './notifications';
 import {
@@ -411,6 +412,10 @@ function setupIpcHandlers(): void {
     dockerOperationInProgress = true;
     try {
       await startContainers(config);
+      // Store credentials for auto-login when webview loads
+      if (config?.adminEmail && config?.adminPassword) {
+        setAdminCredentials(config.adminEmail, config.adminPassword);
+      }
     } finally {
       dockerOperationInProgress = false;
     }
@@ -470,8 +475,12 @@ function setupIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle('app:load-platform', async (): Promise<void> => {
+  ipcMain.handle('app:load-platform', async (_event, config?: { adminEmail?: string; adminPassword?: string }): Promise<void> => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    if (config?.adminEmail && config?.adminPassword) {
+      setAdminCredentials(config.adminEmail, config.adminPassword);
+    }
 
     const maxRetries = 10;
     const retryDelay = 1000;

@@ -15,9 +15,12 @@ import { getCredentials as getAwsCredentials } from './aws-auth';
 import { addAllowedHost } from './network-guard';
 
 const PLATFORM_UI_URL = 'http://localhost:3000';
+const BACKEND_API_URL = 'http://localhost:8000';
 
 let platformView: WebContentsView | null = null;
 let hostWindow: BrowserWindow | null = null;
+let adminCredentials: { email: string; password: string } | null = null;
+let autoLoginDone = false;
 
 /**
  * Returns the content bounds for the WebContentsView, filling the entire window.
@@ -42,6 +45,10 @@ function attachResizeHandler(win: BrowserWindow): void {
  * Creates and shows the platform WebContentsView inside the given BrowserWindow.
  * If a view already exists, it is shown without re-creating.
  */
+export function setAdminCredentials(email: string, password: string): void {
+  adminCredentials = { email, password };
+}
+
 export function showPlatformView(win: BrowserWindow): void {
   hostWindow = win;
 
@@ -127,6 +134,7 @@ export function showPlatformView(win: BrowserWindow): void {
     // Inject keystore-derived accounts into the web frontend
     injectKeystoreAccounts();
     injectAwsCredentials();
+    injectAutoLogin();
   });
 
   attachResizeHandler(win);
@@ -303,6 +311,49 @@ async function injectKeystoreAccounts(): Promise<void> {
 }
 
 /**
+ * Auto-login: calls the backend login API and injects the token into the webview
+ * so the user doesn't need to re-enter credentials on the platform UI login page.
+ */
+async function injectAutoLogin(): Promise<void> {
+  if (!platformView || !adminCredentials || autoLoginDone) return;
+
+  // Only inject on the login/auth page to avoid unnecessary API calls
+  const currentUrl = platformView.webContents.getURL();
+  const isLoginPage = currentUrl.includes('/auth') || currentUrl === PLATFORM_UI_URL + '/' || currentUrl === PLATFORM_UI_URL;
+
+  if (!isLoginPage) return;
+
+  try {
+    const response = await fetch(`${BACKEND_API_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: adminCredentials.email,
+        password: adminCredentials.password,
+      }),
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json() as { token?: string };
+    if (!data.token) return;
+
+    autoLoginDone = true;
+
+    // Store token in localStorage and cookie, then redirect to dashboard
+    await platformView.webContents.executeJavaScript(`
+      (function() {
+        localStorage.setItem('accessToken', ${JSON.stringify(data.token)});
+        document.cookie = 'auth-token=' + ${JSON.stringify(data.token)} + '; path=/';
+        window.location.href = '/';
+      })();
+    `);
+  } catch {
+    // Login failed — user will see the manual login page
+  }
+}
+
+/**
  * Injects AWS credentials into the WebContentsView.
  * Provides credentials so the web frontend can use them for AWS API calls.
  */
@@ -338,6 +389,7 @@ export function destroyPlatformView(): void {
     platformView = null;
   }
   hostWindow = null;
+  autoLoginDone = false;
 }
 
 /**
