@@ -17,10 +17,10 @@
 
 ### Funding Flow (FUND)
 
-- [ ] **FUND-01**: BIP44 키 파생이 seed phrase에서 admin/sequencer/batcher/proposer 4개 주소를 올바르게 생성하는지 검증
-- [ ] **FUND-02**: Testnet 최소 잔액 기준(0.5 ETH)이 올바르게 적용되는지 mock RPC로 검증
-- [ ] **FUND-03**: Mainnet 최소 잔액 기준(2 ETH)이 올바르게 적용되는지 mock RPC로 검증
-- [ ] **FUND-04**: 잔액 미달 시 배포 차단 로직이 올바르게 동작하는지 검증
+- [x] **FUND-01**: BIP44 키 파생이 seed phrase에서 admin/sequencer/batcher/proposer 4개 주소를 올바르게 생성하는지 검증
+- [x] **FUND-02**: Testnet 최소 잔액 기준(0.5 ETH)이 올바르게 적용되는지 mock RPC로 검증
+- [x] **FUND-03**: Mainnet 최소 잔액 기준(2 ETH)이 올바르게 적용되는지 mock RPC로 검증
+- [x] **FUND-04**: 잔액 미달 시 배포 차단 로직이 올바르게 동작하는지 검증
 
 ### Docker Stack (DOCK)
 
@@ -91,10 +91,10 @@
 | PSET-05 | Phase 1 | Pending |
 | PSET-06 | Phase 1 | Pending |
 | PSET-07 | Phase 1 | Pending |
-| FUND-01 | Phase 1 | Pending |
-| FUND-02 | Phase 1 | Pending |
-| FUND-03 | Phase 1 | Pending |
-| FUND-04 | Phase 1 | Pending |
+| FUND-01 | Phase 1 | Complete |
+| FUND-02 | Phase 1 | Complete |
+| FUND-03 | Phase 1 | Complete |
+| FUND-04 | Phase 1 | Complete |
 | DOCK-01 | Phase 2 | Pending |
 | DOCK-02 | Phase 2 | Pending |
 | DOCK-03 | Phase 2 | Pending |

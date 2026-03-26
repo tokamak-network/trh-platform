@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-26T13:26:02.367Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-03-26T13:32:04.038Z"
 last_activity: 2026-03-26
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 01 (foundation-preset-logic) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-26
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 2min | 2 tasks | 7 files |
+| Phase 01 P03 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,7 @@ Recent decisions affecting current work:
 - [Phase 01]: Zod schema validates fixture at load time via PresetsFixtureSchema.parse()
 - [Phase 01]: Funding thresholds use bigint for wei precision (0.5 ETH testnet, 2.0 ETH mainnet)
 - [Phase 01]: All 4 presets use Go source values, not PROJECT.md comparison table
+- [Phase 01]: Test derives BIP44 addresses directly via ethers HDNodeWallet, avoiding electron mock
 
 ### Pending Todos
 
@@ -78,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T13:26:02.364Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-26T13:32:04.035Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
