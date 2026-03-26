@@ -1,0 +1,98 @@
+{
+  "general": {
+    "id": "general",
+    "name": "General",
+    "description": "Basic L2 rollup with standard configuration",
+    "chainDefaults": {
+      "l2BlockTime": 2,
+      "batchSubmissionFrequency": 1800,
+      "outputRootFrequency": 1800,
+      "challengePeriod": 12,
+      "registerCandidate": false,
+      "backupEnabled": false
+    },
+    "modules": {
+      "bridge": true,
+      "blockExplorer": true,
+      "monitoring": false,
+      "crossTrade": false,
+      "uptimeService": false
+    },
+    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry"],
+    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
+    "estimatedTime": { "local": "15-20 min", "aws": "25-35 min" },
+    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+  },
+  "defi": {
+    "id": "defi",
+    "name": "DeFi",
+    "description": "DeFi-optimized L2 with DEX and stablecoin predeploys",
+    "chainDefaults": {
+      "l2BlockTime": 2,
+      "batchSubmissionFrequency": 900,
+      "outputRootFrequency": 900,
+      "challengePeriod": 12,
+      "registerCandidate": false,
+      "backupEnabled": true
+    },
+    "modules": {
+      "bridge": true,
+      "blockExplorer": true,
+      "monitoring": true,
+      "crossTrade": false,
+      "uptimeService": true
+    },
+    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry", "UniswapV3Factory", "UniswapV3SwapRouter", "UniswapV3NonfungiblePositionManager", "USDCBridge", "WrappedETH"],
+    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
+    "estimatedTime": { "local": "20-25 min", "aws": "30-40 min" },
+    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+  },
+  "gaming": {
+    "id": "gaming",
+    "name": "Gaming",
+    "description": "Gaming-optimized L2 with VRF and account abstraction",
+    "chainDefaults": {
+      "l2BlockTime": 2,
+      "batchSubmissionFrequency": 300,
+      "outputRootFrequency": 600,
+      "challengePeriod": 12,
+      "registerCandidate": false,
+      "backupEnabled": true
+    },
+    "modules": {
+      "bridge": true,
+      "blockExplorer": true,
+      "monitoring": true,
+      "crossTrade": true,
+      "uptimeService": true
+    },
+    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry", "VRF", "VRFCoordinator", "EntryPoint", "Paymaster"],
+    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
+    "estimatedTime": { "local": "20-25 min", "aws": "30-40 min" },
+    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+  },
+  "full": {
+    "id": "full",
+    "name": "Full",
+    "description": "Full-featured L2 with all predeploys and modules enabled",
+    "chainDefaults": {
+      "l2BlockTime": 2,
+      "batchSubmissionFrequency": 600,
+      "outputRootFrequency": 600,
+      "challengePeriod": 12,
+      "registerCandidate": true,
+      "backupEnabled": true
+    },
+    "modules": {
+      "bridge": true,
+      "blockExplorer": true,
+      "monitoring": true,
+      "crossTrade": true,
+      "uptimeService": true
+    },
+    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry", "UniswapV3Factory", "UniswapV3SwapRouter", "UniswapV3NonfungiblePositionManager", "USDCBridge", "WrappedETH", "VRF", "VRFCoordinator", "EntryPoint", "Paymaster"],
+    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
+    "estimatedTime": { "local": "25-30 min", "aws": "35-45 min" },
+    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+  }
+}
