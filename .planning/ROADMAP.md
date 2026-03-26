@@ -29,11 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. BIP44 seed phrase에서 4개 계정(admin/sequencer/batcher/proposer) 주소가 올바르게 파생되는 테스트가 통과한다
   4. Testnet 0.5 ETH / Mainnet 2 ETH 잔액 기준과 미달 시 차단 로직 테스트가 통과한다
   5. 4 Preset x 2 인프라(Local/AWS) 파라메트릭 cross-regression matrix가 모두 통과한다
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Test infra setup: Vitest config, zod, golden JSON fixture, schemas, helpers
+- [ ] 01-02-PLAN.md — Preset config unit tests (PSET-01~07): chain params, modules, predeploys, fee tokens, matrix
+- [ ] 01-03-PLAN.md — Funding flow unit tests (FUND-01~04): BIP44 derivation, balance thresholds, blocking logic
 
 ### Phase 2: Docker Stack & Deploy Target
 **Goal**: Docker compose 스키마와 Local/AWS 배포 경로의 명령 시퀀스가 검증된 상태
@@ -85,7 +86,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Preset Logic | 0/2 | Not started | - |
+| 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
 | 2. Docker Stack & Deploy Target | 0/1 | Not started | - |
 | 3. IPC Integration | 0/1 | Not started | - |
 | 4. E2E Wizard Scenarios | 0/1 | Not started | - |
