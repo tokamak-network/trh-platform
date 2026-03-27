@@ -75,11 +75,11 @@ Plans:
   2. 각 Preset 선택 시 올바른 모듈 미리보기와 예상 배포 시간이 표시되는 것을 검증한다
   3. 잔액 미달 시 배포 버튼이 비활성화되고, 잔액 충분 시 활성화되는 것을 검증한다
   4. 배포 시작 후 진행 상태 업데이트가 올바르게 표시되는 것을 검증한다
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — E2E infrastructure: Playwright config, MSW mock layer in trh-platform-ui, auth helpers
+- [ ] 04-02-PLAN.md — 4-preset parametric wizard E2E tests (E2E-01~04): wizard flow, module preview, funding status, deploy progress
 
 ## Progress
 
@@ -91,4 +91,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
 | 2. Docker Stack & Deploy Target | 0/2 | Planning complete | - |
 | 3. IPC Integration | 2/2 | Complete   | 2026-03-27 |
-| 4. E2E Wizard Scenarios | 0/1 | Not started | - |
+| 4. E2E Wizard Scenarios | 0/2 | Planning complete | - |
