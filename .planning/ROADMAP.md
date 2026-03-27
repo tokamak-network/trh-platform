@@ -60,10 +60,11 @@ Plans:
   2. keystore/Docker 관련 IPC payload 형태가 Zod 스키마와 일치하는 테스트가 통과한다
   3. POST /preset-deploy 요청/응답 스키마가 Backend API contract과 일치하는 테스트가 통과한다
   4. WebView credential injection(window.__TRH_DESKTOP_ACCOUNTS__, window.__TRH_AWS_CREDENTIALS__)이 올바른 형태로 주입되는 테스트가 통과한다
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — IPC channel registry matching + keystore/Docker payload Zod validation (IPC-01, IPC-02, IPC-03)
+- [ ] 03-02-PLAN.md — Backend API contract + WebView credential injection validation (IPC-04, IPC-05)
 
 ### Phase 4: E2E Wizard Scenarios
 **Goal**: Playwright로 Preset 선택부터 배포 시작까지 전체 사용자 흐름이 검증된 상태
@@ -89,5 +90,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
 | 2. Docker Stack & Deploy Target | 0/2 | Planning complete | - |
-| 3. IPC Integration | 0/1 | Not started | - |
+| 3. IPC Integration | 0/2 | Planning complete | - |
 | 4. E2E Wizard Scenarios | 0/1 | Not started | - |
