@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation & Preset Logic** - Test infra setup, fixture data, Preset config/Funding unit tests
 - [ ] **Phase 2: Docker Stack & Deploy Target** - Docker compose schema validation and deployment path verification
-- [ ] **Phase 3: IPC Integration** - Electron IPC and Backend API contract integration tests
+- [x] **Phase 3: IPC Integration** - Electron IPC and Backend API contract integration tests (completed 2026-03-27)
 - [ ] **Phase 4: E2E Wizard Scenarios** - Playwright full-flow preset deployment scenarios
 
 ## Phase Details
@@ -63,8 +63,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — IPC channel registry matching + keystore/Docker payload Zod validation (IPC-01, IPC-02, IPC-03)
-- [ ] 03-02-PLAN.md — Backend API contract + WebView credential injection validation (IPC-04, IPC-05)
+- [x] 03-01-PLAN.md — IPC channel registry matching + keystore/Docker payload Zod validation (IPC-01, IPC-02, IPC-03)
+- [x] 03-02-PLAN.md — Backend API contract + WebView credential injection validation (IPC-04, IPC-05)
 
 ### Phase 4: E2E Wizard Scenarios
 **Goal**: Playwright로 Preset 선택부터 배포 시작까지 전체 사용자 흐름이 검증된 상태
@@ -90,5 +90,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
 | 2. Docker Stack & Deploy Target | 0/2 | Planning complete | - |
-| 3. IPC Integration | 0/2 | Planning complete | - |
+| 3. IPC Integration | 2/2 | Complete   | 2026-03-27 |
 | 4. E2E Wizard Scenarios | 0/1 | Not started | - |

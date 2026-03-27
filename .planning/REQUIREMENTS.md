@@ -41,8 +41,8 @@
 - [ ] **IPC-01**: Electron IPC 채널명이 main/renderer 간 일치하는지 검증 (채널 레지스트리 기반)
 - [ ] **IPC-02**: keystore 관련 IPC payload(setSeedPhrase, getAccounts 등) 형태가 올바른지 검증
 - [ ] **IPC-03**: Docker 관련 IPC payload(docker:status, docker:compose-up 등) 형태가 올바른지 검증
-- [ ] **IPC-04**: Backend API contract(POST /preset-deploy) 요청/응답 스키마가 올바른지 검증
-- [ ] **IPC-05**: WebView credential injection(window.__TRH_DESKTOP_ACCOUNTS__, window.__TRH_AWS_CREDENTIALS__)이 올바른 형태로 주입되는지 검증
+- [x] **IPC-04**: Backend API contract(POST /preset-deploy) 요청/응답 스키마가 올바른지 검증
+- [x] **IPC-05**: WebView credential injection(window.__TRH_DESKTOP_ACCOUNTS__, window.__TRH_AWS_CREDENTIALS__)이 올바른 형태로 주입되는지 검증
 
 ### E2E Scenario (E2E)
 
@@ -106,8 +106,8 @@
 | IPC-01 | Phase 3 | Pending |
 | IPC-02 | Phase 3 | Pending |
 | IPC-03 | Phase 3 | Pending |
-| IPC-04 | Phase 3 | Pending |
-| IPC-05 | Phase 3 | Pending |
+| IPC-04 | Phase 3 | Complete |
+| IPC-05 | Phase 3 | Complete |
 | E2E-01 | Phase 4 | Pending |
 | E2E-02 | Phase 4 | Pending |
 | E2E-03 | Phase 4 | Pending |
