@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation & Preset Logic** - Test infra setup, fixture data, Preset config/Funding unit tests
 - [ ] **Phase 2: Docker Stack & Deploy Target** - Docker compose schema validation and deployment path verification
-- [x] **Phase 3: IPC Integration** - Electron IPC and Backend API contract integration tests (completed 2026-03-27)
+- [ ] **Phase 3: IPC Integration** - Electron IPC and Backend API contract integration tests
 - [ ] **Phase 4: E2E Wizard Scenarios** - Playwright full-flow preset deployment scenarios
 
 ## Phase Details
@@ -45,11 +45,10 @@ Plans:
   2. 컨테이너 의존성 순서(postgres -> backend -> frontend)와 health check 설정이 올바른 테스트가 통과한다
   3. Local Docker 경로의 docker compose 명령 시퀀스와 AWS EC2 경로의 Terraform init/plan/apply 시퀀스가 mock 검증을 통과한다
   4. Local/AWS 공통 로직과 인프라별 분기 로직이 올바르게 분리되어 있음을 검증하는 테스트가 통과한다
-**Plans**: 2 plans
+**Plans**: TBD
 
 Plans:
-- [ ] 02-01-PLAN.md — Docker compose Zod schema validation (DOCK-01~04): js-yaml parsing, service structure, dependencies, healthcheck, env vars
-- [ ] 02-02-PLAN.md — Deploy target sequence tests (DTGT-01~04): Local Docker commands, AWS Terraform sequence, security group ports
+- [ ] 02-01: TBD
 
 ### Phase 3: IPC Integration
 **Goal**: Electron IPC 채널과 Backend API contract이 올바른 payload로 통신하는 것이 검증된 상태
@@ -60,11 +59,10 @@ Plans:
   2. keystore/Docker 관련 IPC payload 형태가 Zod 스키마와 일치하는 테스트가 통과한다
   3. POST /preset-deploy 요청/응답 스키마가 Backend API contract과 일치하는 테스트가 통과한다
   4. WebView credential injection(window.__TRH_DESKTOP_ACCOUNTS__, window.__TRH_AWS_CREDENTIALS__)이 올바른 형태로 주입되는 테스트가 통과한다
-**Plans**: 2 plans
+**Plans**: TBD
 
 Plans:
-- [x] 03-01-PLAN.md — IPC channel registry matching + keystore/Docker payload Zod validation (IPC-01, IPC-02, IPC-03)
-- [x] 03-02-PLAN.md — Backend API contract + WebView credential injection validation (IPC-04, IPC-05)
+- [ ] 03-01: TBD
 
 ### Phase 4: E2E Wizard Scenarios
 **Goal**: Playwright로 Preset 선택부터 배포 시작까지 전체 사용자 흐름이 검증된 상태
@@ -75,11 +73,11 @@ Plans:
   2. 각 Preset 선택 시 올바른 모듈 미리보기와 예상 배포 시간이 표시되는 것을 검증한다
   3. 잔액 미달 시 배포 버튼이 비활성화되고, 잔액 충분 시 활성화되는 것을 검증한다
   4. 배포 시작 후 진행 상태 업데이트가 올바르게 표시되는 것을 검증한다
-**Plans**: 2 plans
+**Plans**: TBD
+**UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — E2E infrastructure: Playwright config, MSW mock layer in trh-platform-ui, auth helpers
-- [ ] 04-02-PLAN.md — 4-preset parametric wizard E2E tests (E2E-01~04): wizard flow, module preview, funding status, deploy progress
+- [x] 04-01: TBD
 
 ## Progress
 
@@ -89,6 +87,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
-| 2. Docker Stack & Deploy Target | 0/2 | Planning complete | - |
-| 3. IPC Integration | 2/2 | Complete   | 2026-03-27 |
-| 4. E2E Wizard Scenarios | 0/2 | Planning complete | - |
+| 2. Docker Stack & Deploy Target | 0/1 | Not started | - |
+| 3. IPC Integration | 0/1 | Not started | - |
+| 4. E2E Wizard Scenarios | 0/1 | Not started | - |

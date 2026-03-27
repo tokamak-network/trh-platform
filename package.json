@@ -37,6 +37,7 @@
     "package:win": "npm run build && electron-builder --win",
     "package:linux": "npm run build && electron-builder --linux",
     "test": "vitest run",
+    "test:e2e": "npx playwright test",
     "test:watch": "vitest"
   },
   "build": {
@@ -107,6 +108,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

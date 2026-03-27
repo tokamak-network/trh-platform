@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 3 completed
-last_updated: "2026-03-27T04:00:00.000Z"
-last_activity: 2026-03-27 -- Phase 03 completed (144 tests passing, 33 added)
+status: verifying
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-27T04:23:30.256Z"
+last_activity: 2026-03-27
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
-  percent: 75
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
+  percent: 0
 ---
 
 # Project State
@@ -21,17 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** 각 Preset이 올바른 genesis config, predeploys, 모듈 구성, 체인 파라미터를 생성하는지 자동으로 검증
-**Current focus:** Phase 04 — e2e-playwright (next)
+**Current focus:** Phase 01 — foundation-preset-logic
 
 ## Current Position
 
-Phase: 02 (docker-stack-deploy-target) — COMPLETED
-Phase: 03 (electron-ipc-integration) — COMPLETED
-Phase: 04 (e2e-playwright) — PENDING
-Status: Phase 03 done, ready for Phase 04
-Last activity: 2026-03-27 -- Phase 03 completed (33 tests added, 144 total passing)
+Phase: 01 (foundation-preset-logic) — EXECUTING
+Plan: 3 of 3
+Status: Phase complete — ready for verification
+Last activity: 2026-03-27
 
-Progress: [███████░░░] 75%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -55,8 +54,7 @@ Progress: [███████░░░] 75%
 *Updated after each plan completion*
 | Phase 01 P01 | 2min | 2 tasks | 7 files |
 | Phase 01 P03 | 3min | 1 tasks | 1 files |
-| Phase 03-ipc-integration P02 | 5 | 2 tasks | 3 files |
-| Phase 03-ipc-integration P01 | 5 | 3 tasks | 3 files |
+| Phase 04 P01 | 4min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -71,9 +69,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Funding thresholds use bigint for wei precision (0.5 ETH testnet, 2.0 ETH mainnet)
 - [Phase 01]: All 4 presets use Go source values, not PROJECT.md comparison table
 - [Phase 01]: Test derives BIP44 addresses directly via ethers HDNodeWallet, avoiding electron mock
-- [Phase 03-ipc-integration]: Go binding:required tag maps to Zod required; optional fields use .optional()
-- [Phase 03-ipc-integration]: PullProgress.progress is optional string not number — matched actual preload.ts interface
-- [Phase 03-ipc-integration]: PortCheckResult uses available/conflicts shape, BackendDependencies uses boolean fields — both matched actual preload.ts interfaces
+- [Phase 04]: MSW handlers use MOCK_PRESETS from trh-platform-ui for data consistency
+- [Phase 04]: MSWProvider wraps entire app before QueryProvider/AuthProvider to prevent race conditions
 
 ### Pending Todos
 
@@ -86,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T03:48:18.332Z
-Stopped at: Completed 03-ipc-integration-01-PLAN.md
+Last session: 2026-03-27T04:23:30.252Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
