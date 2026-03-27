@@ -115,13 +115,18 @@ for (const preset of PRESETS) {
 
 // ---------------------------------------------------------------------------
 // E2E-03: Funding status verification
+// FundingStatus component shows:
+//   - Badge with STATUS_LABELS[status] (e.g., "Awaiting Funds", "Ready to Deploy")
+//   - "{fulfilledCount} of {total} accounts funded"
+//   - Per-account "Pending"/"Funded" badges
+//   - Green alert "All accounts are funded" when allFulfilled
 // ---------------------------------------------------------------------------
 
 test.describe('Funding status', () => {
-  test('E2E-03a: shows unfunded status after deploy', async ({ page }) => {
+  test('E2E-03a: unfunded — deploy redirects to /rollup with pending funding', async ({ page }) => {
+    // MSW default funding handler returns allFulfilled: false (unfunded scenario)
     await completeStep1And2(page, 'General Purpose', 'general');
 
-    // Step 3: Click Deploy Rollup
     await expect(page.getByText('Preset Configuration Review')).toBeVisible({ timeout: 10000 });
 
     // Intercept deploy API to verify it is called
@@ -130,17 +135,16 @@ test.describe('Funding status', () => {
     );
 
     await page.getByRole('button', { name: 'Deploy Rollup' }).click();
-
-    // Wait for deploy API call
     await deployResponse;
 
-    // Should navigate to /rollup
+    // Should navigate to /rollup after deploy
     await page.waitForURL('**/rollup', { timeout: 15000 });
     expect(page.url()).toContain('/rollup');
   });
 
-  test('E2E-03b: shows funded status with page.route override', async ({ page }) => {
-    // Override funding API response to return all funded
+  test('E2E-03b: funded — page.route override returns all accounts fulfilled', async ({ page }) => {
+    // Override funding API response to return all funded using page.route
+    // (Playwright route interception takes priority over MSW)
     await page.route('**/preset-deploy/*/funding', (route) => {
       route.fulfill({
         contentType: 'application/json',
@@ -164,7 +168,13 @@ test.describe('Funding status', () => {
     await completeStep1And2(page, 'General Purpose', 'general');
 
     await expect(page.getByText('Preset Configuration Review')).toBeVisible({ timeout: 10000 });
+
+    const deployResponse = page.waitForResponse(
+      (response) => response.url().includes('preset-deploy') && response.request().method() === 'POST'
+    );
+
     await page.getByRole('button', { name: 'Deploy Rollup' }).click();
+    await deployResponse;
 
     // Should navigate to /rollup
     await page.waitForURL('**/rollup', { timeout: 15000 });
@@ -173,29 +183,32 @@ test.describe('Funding status', () => {
 });
 
 // ---------------------------------------------------------------------------
-// E2E-04: Deploy initiation and navigation
+// E2E-04: Deploy initiation and progress
+// Deploy flow: Click "Deploy Rollup" -> POST /preset-deploy -> deploymentId
+// returned -> toast "Deployment initiated!" -> router.push('/rollup')
 // ---------------------------------------------------------------------------
 
 test.describe('Deploy initiation', () => {
-  test('E2E-04: deploy triggers API call and navigates to /rollup', async ({ page }) => {
+  test('E2E-04: deploy triggers POST /preset-deploy and navigates to /rollup', async ({ page }) => {
     await completeStep1And2(page, 'DeFi', 'defi');
 
     await expect(page.getByText('Preset Configuration Review')).toBeVisible({ timeout: 10000 });
 
-    // Intercept deploy POST request
+    // Intercept deploy POST request to verify API call
     const deployResponse = page.waitForResponse(
       (response) => response.url().includes('preset-deploy') && response.request().method() === 'POST'
     );
 
     await page.getByRole('button', { name: 'Deploy Rollup' }).click();
 
-    // Verify POST /preset-deploy was called and returned successfully
+    // Verify POST /preset-deploy was called and returned deploymentId
     const response = await deployResponse;
     expect(response.status()).toBe(200);
     const body = await response.json();
-    expect(body.data.deploymentId).toBeTruthy();
+    expect(body.data.deploymentId).toBe('test-deploy-001');
+    expect(body.success).toBe(true);
 
-    // Verify navigation to /rollup page
+    // Verify page navigates to /rollup after deploy
     await page.waitForURL('**/rollup', { timeout: 15000 });
     expect(page.url()).toContain('/rollup');
   });
