@@ -7,11 +7,14 @@ import type { PresetsFixture } from '../schemas/preset.schema';
 const PRESET_IDS = ['general', 'defi', 'gaming', 'full'] as const;
 const INFRA_PROVIDERS = ['local', 'aws'] as const;
 
+// Run `npm run sync-fixtures` to update tests/fixtures/presets.json when backend changes.
 const OP_STANDARD_PREDEPLOYS = [
-  'L2ToL1MessagePasser', 'DeployerWhitelist', 'WETH9',
-  'L2CrossDomainMessenger', 'L2StandardBridge', 'SequencerFeeVault',
-  'OptimismMintableERC20Factory', 'L1BlockNumber', 'GasPriceOracle',
-  'L1Block', 'GovernanceToken', 'EAS', 'SchemaRegistry',
+  'L2ToL1MessagePasser',
+  'L2CrossDomainMessenger', 'L2StandardBridge', 'L2ERC721Bridge',
+  'OptimismMintableERC20Factory', 'OptimismMintableERC721Factory',
+  'L1Block', 'GasPriceOracle',
+  'SequencerFeeVault', 'BaseFeeVault', 'L1FeeVault',
+  'EAS', 'SchemaRegistry',
 ];
 
 let presets: PresetsFixture;
@@ -45,8 +48,9 @@ describe.each(PRESET_IDS)('Preset: %s', (presetId) => {
     }
   });
 
-  it.each(INFRA_PROVIDERS)('infra: %s - has estimated time for infra type', (infra) => {
-    expect(presets[presetId].estimatedTime).toHaveProperty(infra);
+  it.each(INFRA_PROVIDERS)('infra: %s - has estimated deploy and funding wait times', (_infra) => {
+    expect(presets[presetId].estimatedTime).toHaveProperty('deploy');
+    expect(presets[presetId].estimatedTime).toHaveProperty('fundingWait');
   });
 
   it.each(INFRA_PROVIDERS)('infra: %s - has non-empty fee tokens', (_infra) => {

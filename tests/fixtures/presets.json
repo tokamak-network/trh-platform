@@ -1,98 +1,223 @@
 {
   "general": {
     "id": "general",
-    "name": "General",
-    "description": "Basic L2 rollup with standard configuration",
+    "name": "General Purpose",
+    "description": "Baseline rollup preset for standard application workloads.",
     "chainDefaults": {
-      "l2BlockTime": 2,
+      "backupEnabled": false,
       "batchSubmissionFrequency": 1800,
-      "outputRootFrequency": 1800,
       "challengePeriod": 12,
-      "registerCandidate": false,
-      "backupEnabled": false
+      "l2BlockTime": 2,
+      "outputRootFrequency": 1800,
+      "registerCandidate": false
     },
     "modules": {
-      "bridge": true,
       "blockExplorer": true,
-      "monitoring": false,
+      "bridge": true,
       "crossTrade": false,
+      "monitoring": false,
       "uptimeService": false
     },
-    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry"],
-    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
-    "estimatedTime": { "local": "15-20 min", "aws": "25-35 min" },
-    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+    "genesisPredeploys": [
+      "L2ToL1MessagePasser",
+      "L2CrossDomainMessenger",
+      "L2StandardBridge",
+      "L2ERC721Bridge",
+      "OptimismMintableERC20Factory",
+      "OptimismMintableERC721Factory",
+      "L1Block",
+      "GasPriceOracle",
+      "SequencerFeeVault",
+      "BaseFeeVault",
+      "L1FeeVault",
+      "SchemaRegistry",
+      "EAS"
+    ],
+    "availableFeeTokens": [
+      "TON",
+      "ETH",
+      "USDT",
+      "USDC"
+    ],
+    "estimatedTime": {
+      "deploy": "20-30m",
+      "fundingWait": "5-15m"
+    },
+    "overridableFields": [
+      "l2BlockTime",
+      "batchSubmissionFrequency",
+      "outputRootFrequency",
+      "challengePeriod",
+      "backupEnabled"
+    ]
   },
   "defi": {
     "id": "defi",
     "name": "DeFi",
-    "description": "DeFi-optimized L2 with DEX and stablecoin predeploys",
+    "description": "Preset for exchange, liquidity, and settlement-heavy workloads.",
     "chainDefaults": {
-      "l2BlockTime": 2,
+      "backupEnabled": true,
       "batchSubmissionFrequency": 900,
-      "outputRootFrequency": 900,
       "challengePeriod": 12,
-      "registerCandidate": false,
-      "backupEnabled": true
+      "l2BlockTime": 2,
+      "outputRootFrequency": 900,
+      "registerCandidate": false
     },
     "modules": {
-      "bridge": true,
       "blockExplorer": true,
-      "monitoring": true,
+      "bridge": true,
       "crossTrade": false,
+      "monitoring": true,
       "uptimeService": true
     },
-    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry", "UniswapV3Factory", "UniswapV3SwapRouter", "UniswapV3NonfungiblePositionManager", "USDCBridge", "WrappedETH"],
-    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
-    "estimatedTime": { "local": "20-25 min", "aws": "30-40 min" },
-    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+    "genesisPredeploys": [
+      "L2ToL1MessagePasser",
+      "L2CrossDomainMessenger",
+      "L2StandardBridge",
+      "L2ERC721Bridge",
+      "OptimismMintableERC20Factory",
+      "OptimismMintableERC721Factory",
+      "L1Block",
+      "GasPriceOracle",
+      "SequencerFeeVault",
+      "BaseFeeVault",
+      "L1FeeVault",
+      "SchemaRegistry",
+      "EAS",
+      "UniswapV3Factory",
+      "UniswapV3SwapRouter",
+      "UniswapV3NonfungiblePositionManager",
+      "USDCBridge",
+      "WrappedETH"
+    ],
+    "availableFeeTokens": [
+      "TON",
+      "ETH",
+      "USDT",
+      "USDC"
+    ],
+    "estimatedTime": {
+      "deploy": "30-40m",
+      "fundingWait": "5-15m"
+    },
+    "overridableFields": [
+      "batchSubmissionFrequency",
+      "outputRootFrequency",
+      "challengePeriod"
+    ]
   },
   "gaming": {
     "id": "gaming",
     "name": "Gaming",
-    "description": "Gaming-optimized L2 with VRF and account abstraction",
+    "description": "Preset optimized for higher throughput and player-facing observability.",
     "chainDefaults": {
-      "l2BlockTime": 2,
+      "backupEnabled": true,
       "batchSubmissionFrequency": 300,
-      "outputRootFrequency": 600,
       "challengePeriod": 12,
-      "registerCandidate": false,
-      "backupEnabled": true
+      "l2BlockTime": 2,
+      "outputRootFrequency": 600,
+      "registerCandidate": false
     },
     "modules": {
-      "bridge": true,
       "blockExplorer": true,
-      "monitoring": true,
+      "bridge": true,
       "crossTrade": true,
+      "monitoring": true,
       "uptimeService": true
     },
-    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry", "VRF", "VRFCoordinator", "EntryPoint", "Paymaster"],
-    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
-    "estimatedTime": { "local": "20-25 min", "aws": "30-40 min" },
-    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+    "genesisPredeploys": [
+      "L2ToL1MessagePasser",
+      "L2CrossDomainMessenger",
+      "L2StandardBridge",
+      "L2ERC721Bridge",
+      "OptimismMintableERC20Factory",
+      "OptimismMintableERC721Factory",
+      "L1Block",
+      "GasPriceOracle",
+      "SequencerFeeVault",
+      "BaseFeeVault",
+      "L1FeeVault",
+      "SchemaRegistry",
+      "EAS",
+      "VRF",
+      "VRFCoordinator",
+      "EntryPoint",
+      "Paymaster"
+    ],
+    "availableFeeTokens": [
+      "TON",
+      "ETH",
+      "USDT",
+      "USDC"
+    ],
+    "estimatedTime": {
+      "deploy": "35-45m",
+      "fundingWait": "5-15m"
+    },
+    "overridableFields": [
+      "l2BlockTime",
+      "batchSubmissionFrequency",
+      "outputRootFrequency"
+    ]
   },
   "full": {
     "id": "full",
-    "name": "Full",
-    "description": "Full-featured L2 with all predeploys and modules enabled",
+    "name": "Full Suite",
+    "description": "All recommended modules enabled for demos, staging, or high-touch managed environments.",
     "chainDefaults": {
-      "l2BlockTime": 2,
+      "backupEnabled": true,
       "batchSubmissionFrequency": 600,
-      "outputRootFrequency": 600,
       "challengePeriod": 12,
-      "registerCandidate": true,
-      "backupEnabled": true
+      "l2BlockTime": 2,
+      "outputRootFrequency": 600,
+      "registerCandidate": false
     },
     "modules": {
-      "bridge": true,
       "blockExplorer": true,
-      "monitoring": true,
+      "bridge": true,
       "crossTrade": true,
+      "monitoring": true,
       "uptimeService": true
     },
-    "genesisPredeploys": ["L2ToL1MessagePasser", "DeployerWhitelist", "WETH9", "L2CrossDomainMessenger", "L2StandardBridge", "SequencerFeeVault", "OptimismMintableERC20Factory", "L1BlockNumber", "GasPriceOracle", "L1Block", "GovernanceToken", "EAS", "SchemaRegistry", "UniswapV3Factory", "UniswapV3SwapRouter", "UniswapV3NonfungiblePositionManager", "USDCBridge", "WrappedETH", "VRF", "VRFCoordinator", "EntryPoint", "Paymaster"],
-    "availableFeeTokens": ["TON", "ETH", "USDT", "USDC"],
-    "estimatedTime": { "local": "25-30 min", "aws": "35-45 min" },
-    "overridableFields": ["l2BlockTime", "batchSubmissionFrequency", "outputRootFrequency"]
+    "genesisPredeploys": [
+      "L2ToL1MessagePasser",
+      "L2CrossDomainMessenger",
+      "L2StandardBridge",
+      "L2ERC721Bridge",
+      "OptimismMintableERC20Factory",
+      "OptimismMintableERC721Factory",
+      "L1Block",
+      "GasPriceOracle",
+      "SequencerFeeVault",
+      "BaseFeeVault",
+      "L1FeeVault",
+      "SchemaRegistry",
+      "EAS",
+      "UniswapV3Factory",
+      "UniswapV3SwapRouter",
+      "UniswapV3NonfungiblePositionManager",
+      "USDCBridge",
+      "WrappedETH",
+      "VRF",
+      "VRFCoordinator",
+      "EntryPoint",
+      "Paymaster"
+    ],
+    "availableFeeTokens": [
+      "TON",
+      "ETH",
+      "USDT",
+      "USDC"
+    ],
+    "estimatedTime": {
+      "deploy": "40-50m",
+      "fundingWait": "5-15m"
+    },
+    "overridableFields": [
+      "l2BlockTime",
+      "batchSubmissionFrequency",
+      "outputRootFrequency",
+      "challengePeriod"
+    ]
   }
 }

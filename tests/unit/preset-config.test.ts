@@ -4,11 +4,14 @@ import { loadPresets } from '../helpers/load-fixtures';
 import { PresetDefinitionSchema } from '../schemas/preset.schema';
 import type { PresetsFixture } from '../schemas/preset.schema';
 
+// Run `npm run sync-fixtures` to update tests/fixtures/presets.json when backend changes.
 const OP_STANDARD_PREDEPLOYS = [
-  'L2ToL1MessagePasser', 'DeployerWhitelist', 'WETH9',
-  'L2CrossDomainMessenger', 'L2StandardBridge', 'SequencerFeeVault',
-  'OptimismMintableERC20Factory', 'L1BlockNumber', 'GasPriceOracle',
-  'L1Block', 'GovernanceToken', 'EAS', 'SchemaRegistry',
+  'L2ToL1MessagePasser',
+  'L2CrossDomainMessenger', 'L2StandardBridge', 'L2ERC721Bridge',
+  'OptimismMintableERC20Factory', 'OptimismMintableERC721Factory',
+  'L1Block', 'GasPriceOracle',
+  'SequencerFeeVault', 'BaseFeeVault', 'L1FeeVault',
+  'EAS', 'SchemaRegistry',
 ];
 
 const DEFI_PREDEPLOYS = [
@@ -95,19 +98,18 @@ describe('PSET-02: Backup', () => {
 
 describe('PSET-03: Infrastructure config', () => {
   it.each(['general', 'defi', 'gaming', 'full'] as const)(
-    '%s has estimatedTime for both local and aws',
+    '%s has estimatedTime with deploy and fundingWait keys',
     (presetId) => {
       const et = presets[presetId].estimatedTime;
-      expect(et).toHaveProperty('local');
-      expect(et).toHaveProperty('aws');
+      expect(et).toHaveProperty('deploy');
+      expect(et).toHaveProperty('fundingWait');
     },
   );
 
-  it('registerCandidate is false for general/defi/gaming, true for full', () => {
-    expect(presets.general.chainDefaults.registerCandidate).toBe(false);
-    expect(presets.defi.chainDefaults.registerCandidate).toBe(false);
-    expect(presets.gaming.chainDefaults.registerCandidate).toBe(false);
-    expect(presets.full.chainDefaults.registerCandidate).toBe(true);
+  it('registerCandidate is false for all presets', () => {
+    for (const id of ['general', 'defi', 'gaming', 'full'] as const) {
+      expect(presets[id].chainDefaults.registerCandidate).toBe(false);
+    }
   });
 });
 
