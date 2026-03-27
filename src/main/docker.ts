@@ -381,6 +381,12 @@ function imageExistsLocally(image: string): Promise<boolean> {
 }
 
 export async function pullImages(onProgress: (progress: PullProgress) => void): Promise<void> {
+  if (process.env.SKIP_PULL === 'true') {
+    emitLog('SKIP_PULL=true: skipping image pull, using local images');
+    onProgress({ service: '', status: 'Skipped (SKIP_PULL=true)' });
+    return;
+  }
+
   const composePath = getComposePath();
 
   return new Promise((resolve, reject) => {

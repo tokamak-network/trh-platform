@@ -20,7 +20,7 @@ services:
       - postgres
     restart: unless-stopped
     volumes:
-      - backend_storage:/app/storage
+      - trh_backend_storage:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
 
   ui:
@@ -35,4 +35,5 @@ services:
 
 volumes:
   postgres_data:
-  backend_storage:
+  trh_backend_storage:
+    external: true

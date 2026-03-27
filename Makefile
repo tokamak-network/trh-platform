@@ -1,4 +1,4 @@
-.PHONY: help up update down setup clean logs status config ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
+.PHONY: help up update down setup clean logs status config dev-build-backend dev-build-frontend ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
 
 # Default target
 help:
@@ -13,6 +13,10 @@ help:
 	@echo "  make status  - Show status of running containers"
 	@echo "  make clean   - Stop services and remove volumes"
 	@echo "  make config  - Configure environment variables interactively"
+	@echo ""
+	@echo "🛠️  Local Dev Commands (skip registry push/pull):"
+	@echo "  make dev-build-backend   - Build backend image locally and restart container"
+	@echo "  make dev-build-frontend  - Build frontend image locally and restart container"
 	@echo ""
 	@echo "☁️  EC2 Commands:"
 	@echo "  make ec2-deploy  - Deploy EC2 infrastructure with automatic TRH Platform setup"
@@ -78,6 +82,22 @@ clean:
 	@echo "🧹 Cleaning up TRH services..."
 	docker compose --env-file config/.env.docker down -v
 	@echo "✅ Cleanup completed!"
+
+# Build backend image locally and restart container (skip registry push/pull)
+dev-build-backend:
+	@echo "🔨 Building backend image locally..."
+	cd ../trh-backend && docker build -t tokamaknetwork/trh-backend:latest .
+	@echo "🔄 Restarting backend container..."
+	docker compose -f resources/docker-compose.yml restart backend
+	@echo "✅ Backend updated!"
+
+# Build frontend image locally and restart container (skip registry push/pull)
+dev-build-frontend:
+	@echo "🔨 Building frontend image locally..."
+	cd ../trh-platform-ui && docker build -t tokamaknetwork/trh-platform-ui:latest .
+	@echo "🔄 Restarting frontend container..."
+	docker compose -f resources/docker-compose.yml restart platform-ui
+	@echo "✅ Frontend updated!"
 
 # Configure environment variables interactively
 config:
