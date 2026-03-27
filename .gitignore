@@ -37,3 +37,13 @@ crash.*.log
 *.ppk
 id_rsa*
 id_ed25519*
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/worktrees/
+
+# Test artifacts
+test-results/
+
+# Daily reports (contain sensitive info: IPs, costs)
+docs/daily-reports/

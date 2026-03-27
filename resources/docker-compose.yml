@@ -40,6 +40,7 @@ services:
       - trh_backend_logs:/app/logs
       - trh_backend_storage:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["/bin/sh", "-c", "ARCH=$$(uname -m); if ! command -v docker > /dev/null 2>&1; then curl -fsSL https://download.docker.com/linux/static/stable/$${ARCH}/docker-27.5.1.tgz | tar -xz -C /usr/local/bin --strip-components=1 docker/docker; fi; if ! docker compose version > /dev/null 2>&1; then mkdir -p /usr/local/lib/docker/cli-plugins && curl -fsSL https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-$${ARCH} -o /usr/local/lib/docker/cli-plugins/docker-compose && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose; fi && exec ./main"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
