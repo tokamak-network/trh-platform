@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 03-ipc-integration-02-PLAN.md
-last_updated: "2026-03-27T03:48:00.425Z"
+stopped_at: Completed 03-ipc-integration-01-PLAN.md
+last_updated: "2026-03-27T03:48:24.977Z"
 last_activity: 2026-03-27 -- Phase 02 completed (9 tests passing)
 progress:
   total_phases: 4
@@ -55,6 +55,7 @@ Progress: [█████░░░░░] 50%
 | Phase 01 P01 | 2min | 2 tasks | 7 files |
 | Phase 01 P03 | 3min | 1 tasks | 1 files |
 | Phase 03-ipc-integration P02 | 5 | 2 tasks | 3 files |
+| Phase 03-ipc-integration P01 | 5 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 01]: All 4 presets use Go source values, not PROJECT.md comparison table
 - [Phase 01]: Test derives BIP44 addresses directly via ethers HDNodeWallet, avoiding electron mock
 - [Phase 03-ipc-integration]: Go binding:required tag maps to Zod required; optional fields use .optional()
+- [Phase 03-ipc-integration]: PullProgress.progress is optional string not number — matched actual preload.ts interface
+- [Phase 03-ipc-integration]: PortCheckResult uses available/conflicts shape, BackendDependencies uses boolean fields — both matched actual preload.ts interfaces
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T03:48:00.421Z
-Stopped at: Completed 03-ipc-integration-02-PLAN.md
+Last session: 2026-03-27T03:48:18.332Z
+Stopped at: Completed 03-ipc-integration-01-PLAN.md
 Resume file: None
