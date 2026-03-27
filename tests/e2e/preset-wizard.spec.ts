@@ -55,13 +55,13 @@ async function completeStep1And2(
   // Step 1: Select preset card
   await page.getByText(presetName, { exact: false }).first().click();
   await expect(page.getByText('Preset selected')).toBeVisible();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
 
   // Step 2: Fill basic info
   await expect(page.getByText('Infrastructure Provider')).toBeVisible({ timeout: 10000 });
 
-  // Select Local Docker
-  await page.getByText('Local Docker').click();
+  // Select Local Docker (target the card button, not the description paragraph)
+  await page.getByRole('button', { name: /Local Docker/ }).click();
 
   // Fill chain name
   await page.locator('#chainName').fill(`test-${presetId}`);
@@ -73,7 +73,7 @@ async function completeStep1And2(
   await fillSeedPhrase(page);
 
   // Click Next to go to step 3
-  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
 }
 
 // ---------------------------------------------------------------------------
