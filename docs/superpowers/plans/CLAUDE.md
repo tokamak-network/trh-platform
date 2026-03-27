@@ -7,5 +7,7 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #10307 | 9:26 PM | ⚖️ | Lazy Tool Installation Implementation Plan | ~879 |
+| #10305 | " | ✅ | Fixed kubectl Version Check Arguments in Implementation Plan | ~316 |
 | #10304 | 9:25 PM | 🟣 | Implementation plan created with 8 tasks and checkbox-based progress tracking | ~1043 |
 </claude-mem-context>

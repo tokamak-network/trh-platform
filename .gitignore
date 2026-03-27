@@ -38,9 +38,9 @@ crash.*.log
 id_rsa*
 id_ed25519*
 
-# Claude Code local settings
-.claude/settings.local.json
-.claude/worktrees/
+# Claude Code / GSD workflow artifacts
+.claude/
+.planning/
 
 # Test artifacts
 test-results/
