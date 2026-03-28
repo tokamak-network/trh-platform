@@ -26,7 +26,16 @@ jobs:
 
       - name: Set version
         shell: bash
-        run: npm version "${{ github.event.inputs.version }}" --no-git-tag-version
+        run: |
+          npm version "${{ github.event.inputs.version }}" --no-git-tag-version
+          ACTUAL=$(node -p "require('./package.json').version")
+          EXPECTED="${{ github.event.inputs.version }}"
+          EXPECTED="${EXPECTED#v}"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "Version mismatch: expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "Version set to $ACTUAL"
 
       - name: Install dependencies
         run: npm ci
@@ -58,7 +67,16 @@ jobs:
 
       - name: Set version
         shell: bash
-        run: npm version "${{ github.event.inputs.version }}" --no-git-tag-version
+        run: |
+          npm version "${{ github.event.inputs.version }}" --no-git-tag-version
+          ACTUAL=$(node -p "require('./package.json').version")
+          EXPECTED="${{ github.event.inputs.version }}"
+          EXPECTED="${EXPECTED#v}"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "Version mismatch: expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "Version set to $ACTUAL"
 
       - name: Install dependencies
         run: npm ci
@@ -90,7 +108,16 @@ jobs:
 
       - name: Set version
         shell: bash
-        run: npm version "${{ github.event.inputs.version }}" --no-git-tag-version
+        run: |
+          npm version "${{ github.event.inputs.version }}" --no-git-tag-version
+          ACTUAL=$(node -p "require('./package.json').version")
+          EXPECTED="${{ github.event.inputs.version }}"
+          EXPECTED="${EXPECTED#v}"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "Version mismatch: expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "Version set to $ACTUAL"
 
       - name: Install dependencies
         run: npm ci
