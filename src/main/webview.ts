@@ -20,7 +20,7 @@ const BACKEND_API_URL = 'http://localhost:8000';
 let platformView: WebContentsView | null = null;
 let hostWindow: BrowserWindow | null = null;
 let adminCredentials: { email: string; password: string } | null = null;
-let autoLoginDone = false;
+let autoLoginAttemptedAt = 0;
 
 /**
  * Returns the content bounds for the WebContentsView, filling the entire window.
@@ -315,13 +315,18 @@ async function injectKeystoreAccounts(): Promise<void> {
  * so the user doesn't need to re-enter credentials on the platform UI login page.
  */
 async function injectAutoLogin(): Promise<void> {
-  if (!platformView || !adminCredentials || autoLoginDone) return;
+  if (!platformView || !adminCredentials) return;
 
   // Only inject on the login/auth page to avoid unnecessary API calls
   const currentUrl = platformView.webContents.getURL();
   const isLoginPage = currentUrl.includes('/auth') || currentUrl === PLATFORM_UI_URL + '/' || currentUrl === PLATFORM_UI_URL;
 
   if (!isLoginPage) return;
+
+  // Debounce: skip if attempted within the last 5 seconds (prevents rapid retries on failure)
+  const now = Date.now();
+  if (now - autoLoginAttemptedAt < 5000) return;
+  autoLoginAttemptedAt = now;
 
   try {
     const response = await fetch(`${BACKEND_API_URL}/api/v1/auth/login`, {
@@ -337,8 +342,6 @@ async function injectAutoLogin(): Promise<void> {
 
     const data = await response.json() as { token?: string };
     if (!data.token) return;
-
-    autoLoginDone = true;
 
     // Store token in localStorage and cookie, then redirect to dashboard
     await platformView.webContents.executeJavaScript(`
@@ -389,7 +392,7 @@ export function destroyPlatformView(): void {
     platformView = null;
   }
   hostWindow = null;
-  autoLoginDone = false;
+  autoLoginAttemptedAt = 0;
 }
 
 /**
