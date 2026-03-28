@@ -35,6 +35,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-trh-desktop-jwt-secret-change-in-production}
       DEFAULT_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gmail.com}
       DEFAULT_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - trh_backend_data:/app/data
       - trh_backend_logs:/app/logs
