@@ -181,5 +181,10 @@ jobs:
 
             ### macOS Note
 
-            On first launch, macOS may show an "unidentified developer" warning.
-            Right-click the app and select **Open** to bypass it.
+            If macOS shows **"damaged and can't be opened"**, run this in Terminal:
+
+            ```bash
+            xattr -cr /Applications/TRH\ Desktop.app
+            ```
+
+            Then launch the app again.
