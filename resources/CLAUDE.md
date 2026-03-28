@@ -23,4 +23,10 @@
 | #11011 | 2:48 PM | 🔴 | Fixed Variable Escaping in Docker Compose Entrypoint | ~361 |
 | #11010 | 2:25 PM | 🟣 | Made Docker CLI Installation Cross-Platform Compatible | ~470 |
 | #10930 | 11:59 AM | 🔵 | Docker Deployment Architecture for Electron App | ~423 |
+
+### Mar 28, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #11338 | 11:23 PM | ✅ | Committed Docker host mapping configuration for backend container | ~416 |
 </claude-mem-context>
