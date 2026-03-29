@@ -85,10 +85,10 @@ function getPublicPath(filename: string): string {
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: 1440,
+    height: 1024,
     minWidth: 800,
-    minHeight: 600,
+    minHeight: 700,
     show: false,
     icon: getPublicPath('icon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
