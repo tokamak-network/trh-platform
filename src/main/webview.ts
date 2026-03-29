@@ -8,7 +8,7 @@
  */
 
 import * as path from 'path';
-import { BrowserWindow, WebContentsView, ipcMain } from 'electron';
+import { BrowserWindow, WebContentsView, ipcMain, shell } from 'electron';
 import { hasSeedPhrase, getAddresses, deriveKeysToEnv, getSeedWords } from './keystore';
 import type { KeyRole } from './keystore';
 import { getCredentials as getAwsCredentials } from './aws-auth';
@@ -73,6 +73,13 @@ export function showPlatformView(win: BrowserWindow): void {
 
   win.contentView.addChildView(platformView);
   platformView.setBounds(getViewBounds(win));
+
+  // Open all window.open() calls in the system browser so MetaMask and other
+  // extensions are available. Electron sub-windows don't support browser extensions.
+  platformView.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 
   // Allow localhost certificate errors (self-signed dev setups)
   platformView.webContents.on('certificate-error', (event, url, _error, _cert, callback) => {
