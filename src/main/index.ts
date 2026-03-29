@@ -87,8 +87,8 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    minWidth: 1024,
-    minHeight: 700,
+    minWidth: 800,
+    minHeight: 600,
     show: false,
     icon: getPublicPath('icon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
@@ -103,6 +103,22 @@ function createWindow(): void {
   });
 
   mainWindow.once('ready-to-show', () => mainWindow?.show());
+
+  mainWindow.webContents.setWindowOpenHandler(() => ({
+    action: 'allow',
+    overrideBrowserWindowOptions: {
+      width: 1200,
+      height: 800,
+      minWidth: 600,
+      minHeight: 400,
+      resizable: true,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
+      }
+    }
+  }));
 
   mainWindow.on('close', (event) => {
     if (!isQuitting && process.platform === 'darwin') {
