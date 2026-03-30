@@ -101,10 +101,12 @@ None yet.
 | 260330-nev | AA paymaster post-setup state verification (3 eth_call checks) | 2026-03-30 | 169ddb2 | [260330-nev-aa-userop-bridge-withdrawal-with-usdc-fe](.planning/quick/260330-nev-aa-userop-bridge-withdrawal-with-usdc-fe/) |
 | 260330-o0l | Add ensureDockerTools pre-check for local stack termination | 2026-03-30 | a1b7cf3 | [260330-o0l-local-l2-terminate-destroy-all-locally-d](.planning/quick/260330-o0l-local-l2-terminate-destroy-all-locally-d/) |
 | 260330-o60 | EIP-7702 bundler implementation for USDC fee token AA | 2026-03-30 | tokamak-thanos@4efcb38/trh-sdk@de8cbfc | [260330-o60-eip-7702-bundler-implementation-for-usdc](.planning/quick/260330-o60-eip-7702-bundler-implementation-for-usdc/) |
+| 260330-pih | Add Uninstall Platform button to Electron app webapp overlay | 2026-03-30 | 1bb0457 | [260330-pih-uninstall-platform-button](.planning/quick/260330-pih-uninstall-platform-button/) |
+| 260330-pob | tokamak-thanos-geth EIP-7702 support: port Isthmus execution logic from op-geth | 2026-03-30 | 361443e | [260330-pob-tokamak-thanos-geth-eip-7702-support-por](.planning/quick/260330-pob-tokamak-thanos-geth-eip-7702-support-por/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-o60: EIP-7702 bundler implementation for USDC AA infrastructure
-Last session: 2026-03-30T09:30:00Z
-Stopped at: Completed quick-260330-o60
+Last activity: 2026-03-30 - Completed quick task 260330-pob: tokamak-thanos-geth EIP-7702 support
+Last session: 2026-03-30T10:00:00Z
+Stopped at: Completed quick-260330-pih
 Resume file: None
