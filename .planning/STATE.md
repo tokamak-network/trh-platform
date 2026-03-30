@@ -1,0 +1,107 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: completed
+stopped_at: "Completed 04-02-PLAN.md (checkpoint:human-verify pending)"
+last_updated: "2026-03-27T05:49:31.092Z"
+last_activity: 2026-03-27
+progress:
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
+---
+
+# Project State
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-03-26)
+
+**Core value:** 각 Preset이 올바른 genesis config, predeploys, 모듈 구성, 체인 파라미터를 생성하는지 자동으로 검증
+**Current focus:** Phase 01 — foundation-preset-logic
+
+## Current Position
+
+Phase: 04
+Plan: Not started
+Status: All phases complete — 11/11 E2E tests pass
+Last activity: 2026-03-27
+
+Progress: [██████████] 100%
+
+## Performance Metrics
+
+**Velocity:**
+
+- Total plans completed: 0
+- Average duration: -
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:**
+
+- Last 5 plans: -
+- Trend: -
+
+*Updated after each plan completion*
+| Phase 01 P01 | 2min | 2 tasks | 7 files |
+| Phase 01 P03 | 3min | 1 tasks | 1 files |
+| Phase 04 P02 | 3min | 2 tasks | 3 files |
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 5 added: electron app에서 fault proof 선택 지원 구현
+
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [Roadmap]: Coarse granularity -- 4 phases (Foundation -> Docker/Deploy -> IPC -> E2E)
+- [Roadmap]: Phase 2/3 are parallel-capable (both depend on Phase 1 only)
+- [Phase 01]: Zod schema validates fixture at load time via PresetsFixtureSchema.parse()
+- [Phase 01]: Funding thresholds use bigint for wei precision (0.5 ETH testnet, 2.0 ETH mainnet)
+- [Phase 01]: All 4 presets use Go source values, not PROJECT.md comparison table
+- [Phase 01]: Test derives BIP44 addresses directly via ethers HDNodeWallet, avoiding electron mock
+- [Phase 04]: Seed phrase fill uses paste-all-12-words approach via first input multi-word paste handler
+- [Phase 04]: page.route() used for funded scenario override instead of MSW handler mutation
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+- msw v2 handler patterns for Electron context need research at Phase 3
+- Playwright _electron.launch() config needs experimentation at Phase 4
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260327-ph5 | commit and push current changes | 2026-03-27 | 5cd5a06 | [260327-ph5-commit-and-push-current-changes](.planning/quick/260327-ph5-commit-and-push-current-changes/) |
+| 260327-w9w | preset deployment code vs spec analysis | 2026-03-27 | aa1b410 | [260327-w9w-preset](.planning/quick/260327-w9w-preset/) |
+| 260328-i5z | trh-backend go.mod trh-sdk main update | 2026-03-28 | 07eca07 | [260328-i5z-trh-backend-go-mod-trh-sdk-main](.planning/quick/260328-i5z-trh-backend-go-mod-trh-sdk-main/) |
+| 260328-ttd | release workflow npm version validation | 2026-03-28 | 786fe1a | [260328-ttd-release-workflow-npm-version](.planning/quick/260328-ttd-release-workflow-npm-version/) |
+| 260328-twf | bump version to 1.1.10 | 2026-03-28 | dfac1e6 | [260328-twf-bump-version-to-1-1-10](.planning/quick/260328-twf-bump-version-to-1-1-10/) |
+| 260330-jc0 | Fix silent AnchorStateRegistry anchor init failures in trh-sdk | 2026-03-30 | 530f678 | [260330-jc0-anchorstateregistry-forge-cache-invalida](.planning/quick/260330-jc0-anchorstateregistry-forge-cache-invalida/) |
+| 260330-l0r | Gaming preset AA paymaster decimal scaling and balance pre-check | 2026-03-30 | 5e4822b | [260330-l0r-gaming-preset-aa-setupaapaymaster-admin-](.planning/quick/260330-l0r-gaming-preset-aa-setupaapaymaster-admin-/) |
+| 260330-lal | USDC FiatTokenV2_2 predeploy genesis injection for all presets | 2026-03-30 | dffcebd | [260330-lal-usdc-predeploy-genesis-inclusion-and-mul](.planning/quick/260330-lal-usdc-predeploy-genesis-inclusion-and-mul/) |
+| 260330-n17 | Enable AA paymaster setup for General and DeFi presets | 2026-03-30 | 4b6053b/64ce52a | [260330-n17-enable-aa-paymaster-setup-for-general-an](.planning/quick/260330-n17-enable-aa-paymaster-setup-for-general-an/) |
+
+## Session Continuity
+
+Last activity: 2026-03-30 - Completed quick task 260330-n17: Enable AA paymaster for all presets
+Last session: 2026-03-30T07:38:25Z
+Stopped at: Completed quick-260330-n17
+Resume file: None
