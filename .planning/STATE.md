@@ -98,10 +98,13 @@ None yet.
 | 260330-l0r | Gaming preset AA paymaster decimal scaling and balance pre-check | 2026-03-30 | 5e4822b | [260330-l0r-gaming-preset-aa-setupaapaymaster-admin-](.planning/quick/260330-l0r-gaming-preset-aa-setupaapaymaster-admin-/) |
 | 260330-lal | USDC FiatTokenV2_2 predeploy genesis injection for all presets | 2026-03-30 | dffcebd | [260330-lal-usdc-predeploy-genesis-inclusion-and-mul](.planning/quick/260330-lal-usdc-predeploy-genesis-inclusion-and-mul/) |
 | 260330-n17 | Enable AA paymaster setup for General and DeFi presets | 2026-03-30 | 4b6053b/64ce52a | [260330-n17-enable-aa-paymaster-setup-for-general-an](.planning/quick/260330-n17-enable-aa-paymaster-setup-for-general-an/) |
+| 260330-nev | AA paymaster post-setup state verification (3 eth_call checks) | 2026-03-30 | 169ddb2 | [260330-nev-aa-userop-bridge-withdrawal-with-usdc-fe](.planning/quick/260330-nev-aa-userop-bridge-withdrawal-with-usdc-fe/) |
+| 260330-o0l | Add ensureDockerTools pre-check for local stack termination | 2026-03-30 | a1b7cf3 | [260330-o0l-local-l2-terminate-destroy-all-locally-d](.planning/quick/260330-o0l-local-l2-terminate-destroy-all-locally-d/) |
+| 260330-o60 | EIP-7702 bundler implementation for USDC fee token AA | 2026-03-30 | tokamak-thanos@4efcb38/trh-sdk@de8cbfc | [260330-o60-eip-7702-bundler-implementation-for-usdc](.planning/quick/260330-o60-eip-7702-bundler-implementation-for-usdc/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-n17: Enable AA paymaster for all presets
-Last session: 2026-03-30T07:38:25Z
-Stopped at: Completed quick-260330-n17
+Last activity: 2026-03-30 - Completed quick task 260330-o60: EIP-7702 bundler implementation for USDC AA infrastructure
+Last session: 2026-03-30T09:30:00Z
+Stopped at: Completed quick-260330-o60
 Resume file: None
