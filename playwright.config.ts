@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: 'http://localhost:3009',
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,8 +18,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'NEXT_PUBLIC_MSW=true npm run dev -- -p 3001',
-    url: 'http://localhost:3001',
+    command: 'NEXT_PUBLIC_MSW=true npm run dev -- -p 3009',
+    url: 'http://localhost:3009',
     cwd: '../trh-platform-ui',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
