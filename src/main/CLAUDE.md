@@ -26,4 +26,14 @@
 | #10937 | 12:35 PM | 🔵 | PullProgress Interface Structure | ~252 |
 | #10934 | 12:33 PM | 🟣 | Added SKIP_PULL Environment Variable to Bypass Image Pulling | ~306 |
 | #10933 | 12:31 PM | 🔵 | Electron App Docker Image Pull Implementation | ~281 |
+
+### Mar 30, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #11948 | 7:54 PM | ⚖️ | Login Screen Removal Strategy Defined | ~434 |
+| #11943 | 7:52 PM | 🔵 | Electron app hardcodes localhost backend URL with no remote server configuration option | ~437 |
+| #11885 | 6:48 PM | 🔵 | WebContentsView bounds management in Electron main process | ~357 |
+| #11845 | 6:34 PM | 🟣 | Planned Uninstall Platform button for Electron app | ~393 |
+| #11836 | 6:31 PM | 🔵 | Electron app platform cleanup functions | ~311 |
 </claude-mem-context>

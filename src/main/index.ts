@@ -132,6 +132,54 @@ function createWindow(): void {
   });
 }
 
+function setupApplicationMenu(): void {
+  const isMac = process.platform === 'darwin';
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' as const },
+        { type: 'separator' as const },
+        { role: 'services' as const },
+        { type: 'separator' as const },
+        { role: 'hide' as const },
+        { role: 'hideOthers' as const },
+        { role: 'unhide' as const },
+        { type: 'separator' as const },
+        { role: 'quit' as const },
+      ]
+    }] : []),
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Uninstall Platform...',
+          click: () => {
+            mainWindow?.webContents.send('menu:uninstall');
+          }
+        },
+        { type: 'separator' as const },
+        isMac ? { role: 'close' as const } : { role: 'quit' as const },
+      ]
+    },
+    { role: 'editMenu' as const },
+    { role: 'viewMenu' as const },
+    { role: 'windowMenu' as const },
+    {
+      role: 'help' as const,
+      submenu: [
+        {
+          label: 'Learn More',
+          click: async () => { await shell.openExternal('https://tokamak.network'); }
+        }
+      ]
+    }
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function buildTrayMenu(): Electron.Menu {
   const template: Electron.MenuItemConstructorOptions[] = [];
 
@@ -628,6 +676,7 @@ app.whenReady().then(async () => {
 
   setupIpcHandlers();
   initNetworkGuard(session.defaultSession);
+  setupApplicationMenu();
   createWindow();
   if (mainWindow) {
     setMainWindowId(mainWindow.webContents.id);

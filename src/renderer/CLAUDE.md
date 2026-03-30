@@ -14,4 +14,11 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #10284 | 9:06 PM | 🔵 | checkBackendDeps API Surface Mapped Across Electron App | ~428 |
+
+### Mar 30, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #11895 | 7:27 PM | 🟣 | Uninstall Platform button implemented in webapp overlay | ~381 |
+| #11845 | 6:34 PM | 🟣 | Planned Uninstall Platform button for Electron app | ~393 |
 </claude-mem-context>

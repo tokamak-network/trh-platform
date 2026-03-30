@@ -67,3 +67,118 @@ body {
   font-size: 11px;
   color: var(--gray-400);
 }
+
+/* ── Uninstall modal ──────────────────────────────────── */
+.uninstall-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uninstall-modal {
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 28px 32px;
+  width: 440px;
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.uninstall-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.uninstall-warning {
+  font-size: 13px;
+  color: var(--gray-400);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.uninstall-label {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+.uninstall-input {
+  background: #2c2c2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.uninstall-input:focus {
+  border-color: var(--error);
+}
+
+.uninstall-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.uninstall-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.uninstall-cancel-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+.uninstall-cancel-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.uninstall-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uninstall-confirm-btn {
+  background: var(--error);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+.uninstall-confirm-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.uninstall-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

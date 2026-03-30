@@ -91,7 +91,12 @@ const electronAPI = {
   app: {
     loadPlatform: (config?: { adminEmail?: string; adminPassword?: string }): Promise<void> => ipcRenderer.invoke('app:load-platform', config),
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:open-external', url),
-    getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version')
+    getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
+    onMenuUninstall: (callback: () => void): (() => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('menu:uninstall', handler);
+      return () => ipcRenderer.removeListener('menu:uninstall', handler);
+    }
   },
 
   notifications: {
