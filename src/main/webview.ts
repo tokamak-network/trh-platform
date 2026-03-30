@@ -117,6 +117,7 @@ export function showPlatformView(win: BrowserWindow): void {
     }
     injectKeystoreAccounts();
     injectAwsCredentials();
+    injectAutoLogin();
   });
 
   platformView.webContents.on('did-fail-load', (_event, errorCode, errorDescription, failedUrl) => {
