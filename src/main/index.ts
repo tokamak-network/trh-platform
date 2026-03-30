@@ -16,6 +16,7 @@ import {
   getPortConflicts,
   killPortProcesses,
   cleanupStaleContainers,
+  cleanPlatform,
   startDockerDaemon,
   pruneDockerDisk,
   checkForUpdates,
@@ -378,6 +379,18 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('docker:cleanup', async () => {
     await cleanupStaleContainers();
+  });
+
+  ipcMain.handle('docker:clean-platform', async () => {
+    if (dockerOperationInProgress) {
+      throw new Error('Docker operation already in progress');
+    }
+    dockerOperationInProgress = true;
+    try {
+      await cleanPlatform();
+    } finally {
+      dockerOperationInProgress = false;
+    }
   });
 
   ipcMain.handle('docker:start-daemon', async () => {
