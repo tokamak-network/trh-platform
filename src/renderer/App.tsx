@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react';
-import ConfigPage from './pages/ConfigPage';
 import SetupPage from './pages/SetupPage';
 import NotificationPage from './pages/NotificationPage';
 
-type ViewMode = 'config' | 'setup' | 'webapp' | 'notifications';
+type ViewMode = 'setup' | 'webapp' | 'notifications';
+
+const ADMIN_EMAIL = 'admin@gmail.com';
+const ADMIN_PASSWORD = 'admin';
 
 const api = window.electronAPI;
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<ViewMode>('config');
+  const [viewMode, setViewMode] = useState<ViewMode>('setup');
   const [version, setVersion] = useState('');
-  const [credentials, setCredentials] = useState({
-    email: 'admin@gmail.com',
-    password: 'admin',
-  });
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [dockerHealthy, setDockerHealthy] = useState(false);
   const [gearOpen, setGearOpen] = useState(false);
   const [uninstallOpen, setUninstallOpen] = useState(false);
   const [uninstallInput, setUninstallInput] = useState('');
@@ -33,10 +30,11 @@ export default function App() {
       try {
         const status = await api.docker.getStatus();
         if (status.healthy) {
-          setDockerHealthy(true);
+          await api.app.loadPlatform({ adminEmail: ADMIN_EMAIL, adminPassword: ADMIN_PASSWORD });
+          setViewMode('webapp');
         }
       } catch {
-        // Docker not available — proceed to config page
+        // Docker not available — stay on setup page
       }
     })();
 
@@ -63,18 +61,8 @@ export default function App() {
     return cleanup;
   }, [viewMode]);
 
-  const handleConfigDone = async (email: string, password: string) => {
-    setCredentials({ email, password });
-    if (dockerHealthy) {
-      await api.app.loadPlatform({ adminEmail: email, adminPassword: password });
-      setViewMode('webapp');
-    } else {
-      setViewMode('setup');
-    }
-  };
-
   const handleSetupDone = async () => {
-    await api.app.loadPlatform({ adminEmail: credentials.email, adminPassword: credentials.password });
+    await api.app.loadPlatform({ adminEmail: ADMIN_EMAIL, adminPassword: ADMIN_PASSWORD });
     setViewMode('webapp');
   };
 
@@ -96,7 +84,7 @@ export default function App() {
       setUninstallInput('');
       setGearOpen(false);
       await api.webview.hide();
-      setViewMode('config');
+      setViewMode('setup');
     }
   };
 
@@ -200,14 +188,11 @@ export default function App() {
       return (
         <>
           <div className="titlebar-drag" />
-          {viewMode === 'config' && <ConfigPage onContinue={handleConfigDone} />}
-          {viewMode === 'setup' && (
-            <SetupPage
-              adminEmail={credentials.email}
-              adminPassword={credentials.password}
-              onComplete={handleSetupDone}
-            />
-          )}
+          <SetupPage
+            adminEmail={ADMIN_EMAIL}
+            adminPassword={ADMIN_PASSWORD}
+            onComplete={handleSetupDone}
+          />
           {version && <div className="version">v{version}</div>}
         </>
       );
