@@ -19,6 +19,8 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #11970 | 8:00 PM | 🟣 | ConfigPage Login Screen Removed - Full Single-User Auto-Login Implemented | ~491 |
+| #11959 | 7:57 PM | 🟣 | Removed login configuration screen and implemented automatic authentication | ~598 |
 | #11895 | 7:27 PM | 🟣 | Uninstall Platform button implemented in webapp overlay | ~381 |
 | #11845 | 6:34 PM | 🟣 | Planned Uninstall Platform button for Electron app | ~393 |
 </claude-mem-context>
