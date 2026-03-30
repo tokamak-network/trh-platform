@@ -52,6 +52,7 @@ const electronAPI = {
     installDocker: (): Promise<{ requiresRelogin: boolean }> => ipcRenderer.invoke('docker:install-docker'),
     checkBackendDeps: (): Promise<BackendDependencies> => ipcRenderer.invoke('docker:check-backend-deps'),
     installBackendDeps: (): Promise<void> => ipcRenderer.invoke('docker:install-backend-deps'),
+    cleanPlatform: (): Promise<void> => ipcRenderer.invoke('docker:clean-platform'),
 
     onPullProgress: (callback: (progress: PullProgress) => void): (() => void) => {
       const handler = (_event: Electron.IpcRendererEvent, progress: PullProgress) => callback(progress);
