@@ -105,6 +105,7 @@ export function showPlatformView(win: BrowserWindow): void {
     }
     injectKeystoreAccounts();
     injectAwsCredentials();
+    injectAutoLogin();
   });
 
   platformView.webContents.on('did-navigate-in-page', (_event, navigationUrl) => {
@@ -327,13 +328,17 @@ async function injectAutoLogin(): Promise<void> {
 
   // Only inject on the login/auth page to avoid unnecessary API calls
   const currentUrl = platformView.webContents.getURL();
-  const isLoginPage = currentUrl.includes('/auth') || currentUrl === PLATFORM_UI_URL + '/' || currentUrl === PLATFORM_UI_URL;
+  const parsed = (() => { try { return new URL(currentUrl); } catch { return null; } })();
+  const isLoginPage = parsed !== null && (
+    parsed.pathname === '/' ||
+    parsed.pathname.startsWith('/auth')
+  );
 
   if (!isLoginPage) return;
 
-  // Debounce: skip if attempted within the last 5 seconds (prevents rapid retries on failure)
+  // Debounce: skip if attempted within the last 2 seconds (prevents rapid retries on failure)
   const now = Date.now();
-  if (now - autoLoginAttemptedAt < 5000) return;
+  if (now - autoLoginAttemptedAt < 2000) return;
   autoLoginAttemptedAt = now;
 
   try {
