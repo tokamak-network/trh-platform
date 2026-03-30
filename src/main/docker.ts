@@ -801,3 +801,45 @@ export async function installBackendDependencies(onProgress?: (status: string) =
     install.on('error', reject);
   });
 }
+
+export async function cleanPlatform(): Promise<void> {
+  const composePath = getComposePath();
+
+  emitLog('Removing all platform containers, volumes, and networks...');
+
+  await new Promise<void>((resolve) => {
+    const down = spawn(DOCKER_BIN, [
+      'compose', '-f', composePath, 'down',
+      '--volumes', '--remove-orphans'
+    ], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, PATH: EXTENDED_PATH }
+    });
+
+    activeProcesses.add(down);
+    const timeout = setTimeout(() => {
+      down.kill('SIGTERM');
+      resolve();
+    }, 60000);
+
+    down.stdout.on('data', (data: Buffer) => {
+      data.toString().split('\n').filter(Boolean).forEach((line: string) => emitLog(line));
+    });
+    down.stderr.on('data', (data: Buffer) => {
+      data.toString().split('\n').filter(Boolean).forEach((line: string) => emitLog(line));
+    });
+
+    down.on('close', () => {
+      clearTimeout(timeout);
+      activeProcesses.delete(down);
+      resolve();
+    });
+    down.on('error', () => {
+      clearTimeout(timeout);
+      activeProcesses.delete(down);
+      resolve();
+    });
+  });
+
+  emitLog('Platform cleanup complete');
+}
