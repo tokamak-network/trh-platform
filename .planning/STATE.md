@@ -109,10 +109,12 @@ None yet.
 | 260330-s6r | MultiTokenPaymaster paymasterAndData offset [20:40]→[52:72], genesis bytecode injection, 72-byte SDK format | 2026-03-30 | tokamak-thanos@4aef7ac112+47d76875d0/trh-sdk@84f1d8d | [260330-s6r-multitokenpaymaster-paymasteranddata-off](.planning/quick/260330-s6r-multitokenpaymaster-paymasteranddata-off/) |
 | 260330-ub2 | AA paymaster end-to-end smoke test (4 test cases, LocalNet Gaming) | 2026-03-30 | 4bca779 | [260330-ub2-aa-paymaster-end-to-end-smoke-test-local](.planning/quick/260330-ub2-aa-paymaster-end-to-end-smoke-test-local/) |
 | 260331-le1 | Playwright screenshot capture script for 12 UI states | 2026-03-31 | 17571cb/498e1bc | [260331-le1-playwright-electron](.planning/quick/260331-le1-playwright-electron/) |
+| 260401-29s | Electron 앱 빌드 후 실제 L2 배포 전 과정 스크린샷 촬영 스크립트 작성 | 2026-04-01 | 31a4c41 | [260401-29s-electron-l2](.planning/quick/260401-29s-electron-l2/) |
+| 260401-scr | 22개 스크린샷 캡처 완료 (A+B+D+E 시리즈, WIZARD_ONLY 모드 추가) | 2026-04-01 | - | - |
 
 ## Session Continuity
 
-Last activity: 2026-03-31 - Completed quick task 260331-le1: Playwright screenshot capture script
+Last activity: 2026-04-01 - Completed quick task 260401-29s: L2 배포 전 과정 스크린샷 촬영 스크립트 작성
 Last session: 2026-03-31T06:30:00Z
 Stopped at: Completed quick-260331-le1
 Resume file: None
