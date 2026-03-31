@@ -16,7 +16,9 @@ import type { ElectronAPI, DockerStatus, BackendDependencies, PortCheckResult, A
 const params = new URLSearchParams(window.location.search);
 const SCENARIO = params.get('scenario') ?? 'fresh';
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// Fast delays for screenshot scenarios
+const isScreenshotMode = SCENARIO.startsWith('keysetup-') || SCENARIO.startsWith('screenshot-') || SCENARIO === 'healthy-update';
+const delay = (ms: number) => new Promise((r) => setTimeout(r, isScreenshotMode ? 10 : ms));
 
 // Simulate pull progress
 function simulatePull(callback: (p: { service: string; status: string; progress?: string }) => void): Promise<void> {
@@ -77,13 +79,17 @@ export const mockElectronAPI: ElectronAPI = {
 
     checkRunning: async () => {
       await delay(300);
-      return SCENARIO === 'healthy';
+      return SCENARIO === 'healthy' || SCENARIO === 'healthy-update' || SCENARIO.startsWith('keysetup-');
     },
 
     getStatus: async (): Promise<DockerStatus> => {
       await delay(200);
-      if (SCENARIO === 'healthy') {
+      if (SCENARIO === 'healthy' || SCENARIO === 'healthy-update') {
         return { installed: true, running: true, containersUp: true, healthy: true };
+      }
+      // keysetup scenarios: not healthy initially (so SetupPage runs), but all steps succeed fast
+      if (SCENARIO.startsWith('keysetup-')) {
+        return { installed: true, running: false, containersUp: false, healthy: false };
       }
       return { installed: true, running: false, containersUp: false, healthy: false };
     },
@@ -171,11 +177,20 @@ export const mockElectronAPI: ElectronAPI = {
       emit(logListeners, 'All dependencies installed.');
     },
 
+    cleanPlatform: async () => { await delay(500); },
+
     onPullProgress: (cb) => { pullListeners.push(cb); return () => pullListeners.splice(pullListeners.indexOf(cb), 1); },
     onStatusUpdate: (cb) => { statusListeners.push(cb); return () => statusListeners.splice(statusListeners.indexOf(cb), 1); },
     onInstallProgress: (cb) => { statusListeners.push(cb); return () => statusListeners.splice(statusListeners.indexOf(cb), 1); },
     onLog: (cb) => { logListeners.push(cb); return () => logListeners.splice(logListeners.indexOf(cb), 1); },
-    onUpdateAvailable: (cb) => { updateListeners.push(cb); return () => updateListeners.splice(updateListeners.indexOf(cb), 1); },
+    onUpdateAvailable: (cb) => {
+      updateListeners.push(cb);
+      // Trigger update notification for healthy-update scenario
+      if (SCENARIO === 'healthy-update') {
+        setTimeout(() => cb(true), 500);
+      }
+      return () => updateListeners.splice(updateListeners.indexOf(cb), 1);
+    },
     removeAllListeners: () => { pullListeners.length = 0; statusListeners.length = 0; logListeners.length = 0; },
   },
 
@@ -228,7 +243,7 @@ export const mockElectronAPI: ElectronAPI = {
 
   keystore: {
     store: async () => { await delay(500); },
-    has: async () => false,
+    has: async () => SCENARIO === 'keysetup-stored',
     isAvailable: async () => true,
     getAddresses: async () => ({ admin: '0x0000000000000000000000000000000000000001', proposer: '0x0000000000000000000000000000000000000002', batcher: '0x0000000000000000000000000000000000000003', challenger: '0x0000000000000000000000000000000000000004', sequencer: '0x0000000000000000000000000000000000000005' }),
     previewAddresses: async () => ({ admin: '0x0000000000000000000000000000000000000001', proposer: '0x0000000000000000000000000000000000000002', batcher: '0x0000000000000000000000000000000000000003', challenger: '0x0000000000000000000000000000000000000004', sequencer: '0x0000000000000000000000000000000000000005' }),
@@ -252,6 +267,15 @@ export const mockElectronAPI: ElectronAPI = {
       sessionToken: 'FwoGZXIvYXdzEBYaDH...',
       source: 'sso:dev',
       expiresAt: Date.now() + 3600000,
+    }),
+    ssoLoginDirect: async () => {},
+    ssoListAccounts: async () => [],
+    ssoListRoles: async () => [],
+    ssoAssumeRole: async () => ({
+      accessKeyId: 'ASIAIOSFODNN7EXAMPLE',
+      secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+      sessionToken: 'FwoGZXIvYXdzEBYaDH...',
+      source: 'sso-role:dev',
     }),
     getCredentials: async () => null,
     clear: async () => {},

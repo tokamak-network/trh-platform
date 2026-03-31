@@ -125,6 +125,7 @@ export interface ElectronAPI {
     onInstallProgress: (callback: (status: string) => void) => () => void;
     onLog: (callback: (line: string) => void) => () => void;
     onUpdateAvailable: (callback: (available: boolean) => void) => () => void;
+    cleanPlatform: () => Promise<void>;
     removeAllListeners: () => void;
   };
   app: {
