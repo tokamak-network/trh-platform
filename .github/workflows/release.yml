@@ -166,6 +166,25 @@ jobs:
           body: |
             ## TRH Desktop ${{ steps.version.outputs.tag }}
 
+            ### Changelog
+
+            #### Features
+            - **Uninstall Platform**: Added gear menu (⚙) in webapp view with dropdown and confirmation modal to cleanly remove the platform
+            - **Native macOS menu**: Replaced gear overlay button with native macOS context menu for uninstall action
+            - **Streamlined startup**: Removed ConfigPage — app now auto-detects Docker status and goes directly to the platform view at startup
+            - **Auto-login reliability**: Strengthened auto-login flow in webview to handle edge cases and reconnection scenarios
+
+            #### Bug Fixes
+            - Auto-login now correctly triggers on SPA navigation to `/auth`
+            - External links now open in the system browser instead of a sub-window
+            - Default window size increased to 1440×1024 to prevent key setup UI clipping
+            - Window now allows free resize
+            - Docker backend container now has `host.docker.internal` host mapping
+            - Auto-login re-enabled correctly after backend restart during setup
+            - Backend entrypoint simplified to use `./main` directly
+
+            ---
+
             ### Downloads
 
             | Platform | File | Architecture |
