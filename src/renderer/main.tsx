@@ -3,8 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './app.css';
 
-// In browser dev mode (no Electron), inject mock ElectronAPI
-if (import.meta.env.VITE_MOCK_ELECTRON === 'true' || !window.electronAPI) {
+// In browser dev mode (no Electron), inject mock ElectronAPI.
+// Only inject if real Electron API isn't already present (contextBridge property is non-writable in strict mode).
+if (!window.electronAPI) {
   const { mockElectronAPI } = await import('./mock/electronAPI');
   window.electronAPI = mockElectronAPI;
   console.info('[dev] Mock ElectronAPI injected. Use ?scenario=<name> to change scenario.');
