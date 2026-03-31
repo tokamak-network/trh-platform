@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AppNotification } from '../types';
 import './NotificationPage.css';
 
-const api = window.electronAPI;
-
 function getRelativeTime(timestamp: number): string {
   const diff = Date.now() - timestamp;
   const seconds = Math.floor(diff / 1000);
@@ -89,6 +87,7 @@ interface Props {
 }
 
 export default function NotificationPage({ onBack }: Props) {
+  const api = window.electronAPI;
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   const loadNotifications = useCallback(async () => {

@@ -8,8 +8,6 @@ import logo from '../assets/logo/logo.svg';
 import tokamakLogo from '../assets/logo/tokamak.svg';
 import rollupHubLogo from '../assets/logo/rolluphub.svg';
 
-const api = window.electronAPI;
-
 interface SetupPageProps {
   adminEmail: string;
   adminPassword: string;
@@ -27,6 +25,7 @@ type PortModalState =
   | { open: true; conflicts: PortConflict[]; resolve: (action: 'confirm' | 'cancel') => void };
 
 export default function SetupPage({ adminEmail, adminPassword, onComplete }: SetupPageProps) {
+  const api = window.electronAPI;
   const [steps, setSteps] = useState<Record<string, StepState>>({
     docker: { status: 'pending', detail: 'Waiting...' },
     images: { status: 'pending', detail: 'Waiting...' },

@@ -7,9 +7,8 @@ type ViewMode = 'setup' | 'webapp' | 'notifications';
 const ADMIN_EMAIL = 'admin@gmail.com';
 const ADMIN_PASSWORD = 'admin';
 
-const api = window.electronAPI;
-
 export default function App() {
+  const api = window.electronAPI;
   const [viewMode, setViewMode] = useState<ViewMode>('setup');
   const [version, setVersion] = useState('');
   const [updateAvailable, setUpdateAvailable] = useState(false);

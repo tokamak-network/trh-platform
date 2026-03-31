@@ -3,8 +3,6 @@ import './ReadyPage.css';
 import trhCenter from '../assets/trh-center.svg';
 import nextIcon from '../assets/icon/next-icon.svg';
 
-const api = window.electronAPI;
-
 const planets = [
   { label: 'App Chain', className: 'planet-1' },
   { label: 'Ecosystem', className: 'planet-2' },
@@ -20,6 +18,7 @@ interface ReadyPageProps {
 }
 
 export default function ReadyPage({ updateAvailable, onUpdate }: ReadyPageProps) {
+  const api = window.electronAPI;
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
