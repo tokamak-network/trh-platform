@@ -42,7 +42,8 @@
     "test:watch": "vitest",
     "sync-fixtures": "node scripts/sync-presets-fixture.mjs",
     "sync-fixtures:dry": "node scripts/sync-presets-fixture.mjs --dry-run",
-    "preflight": "npm run sync-fixtures:dry && npm test && npm run test:e2e"
+    "preflight": "npm run sync-fixtures:dry && npm test && npm run test:e2e",
+    "capture-real": "tsx scripts/capture-real-deployment.ts"
   },
   "build": {
     "appId": "network.tokamak.trh-platform-desktop",
