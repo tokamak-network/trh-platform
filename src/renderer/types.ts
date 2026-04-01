@@ -132,6 +132,7 @@ export interface ElectronAPI {
     loadPlatform: (config?: { adminEmail?: string; adminPassword?: string }) => Promise<void>;
     openExternal: (url: string) => Promise<void>;
     getVersion: () => Promise<string>;
+    relaunch: () => Promise<void>;
   };
   webview: {
     goBack: () => void;

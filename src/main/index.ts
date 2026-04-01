@@ -60,6 +60,7 @@ import {
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
+let isRelaunching = false;
 let dockerOperationInProgress = false;
 let updateAvailable = false;
 let updateCheckInterval: ReturnType<typeof setInterval> | null = null;
@@ -254,6 +255,14 @@ function buildTrayMenu(): Electron.Menu {
         } finally {
           dockerOperationInProgress = false;
         }
+      }
+    },
+    {
+      label: 'Restart App',
+      click: () => {
+        isRelaunching = true;
+        app.relaunch();
+        app.quit();
       }
     },
     {
@@ -585,6 +594,11 @@ function setupIpcHandlers(): void {
   });
 
   ipcMain.handle('app:get-version', () => app.getVersion());
+  ipcMain.handle('app:relaunch', () => {
+    isRelaunching = true;
+    app.relaunch();
+    app.quit();
+  });
 
   // Notification IPC handlers
   ipcMain.handle('notifications:get-all', () => NotificationStore.getAll());
@@ -716,10 +730,12 @@ app.on('before-quit', async (event) => {
   event.preventDefault();
   destroyPlatformView();
   cleanupProcesses();
-  try {
-    await stopContainers();
-  } catch (error) {
-    console.error('Failed to stop containers on quit:', error);
+  if (!isRelaunching) {
+    try {
+      await stopContainers();
+    } catch (error) {
+      console.error('Failed to stop containers on quit:', error);
+    }
   }
   app.exit(0);
 });
