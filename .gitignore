@@ -47,6 +47,3 @@ test-results/
 
 # Daily reports (contain sensitive info: IPs, costs)
 docs/daily-reports/
-
-# Demo screenshots (generated, not tracked)
-docs/screenshots-demo/*.png
