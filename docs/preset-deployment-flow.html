@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -475,7 +475,7 @@
 
 <header>
   <h1>TRH Platform — Preset Deployment Flow</h1>
-  <p>4개 롤업 프리셋(General · DeFi · Gaming · Full)의 배포 흐름 및 구성 비교</p>
+  <p>Deployment flow and configuration comparison for 4 rollup presets (General · DeFi · Gaming · Full)</p>
 </header>
 
 <div class="container">
@@ -504,7 +504,7 @@
 
   <!-- ── Shared Flow ── -->
   <div class="shared-flow">
-    <div class="section-title">공통 배포 흐름</div>
+    <div class="section-title">Shared Deployment Flow</div>
 
     <div class="flow-row" style="margin-bottom:8px;">
       <div class="flow-node">
@@ -568,50 +568,50 @@
           Modules
           <div class="node-sub">Helm · Kubernetes</div>
         </div>
-        <span class="node-label">서비스 설치</span>
+        <span class="node-label">Module Install</span>
       </div>
     </div>
   </div>
 
   <!-- ── Wizard Steps ── -->
   <div style="margin-bottom: 48px;">
-    <div class="section-title">Platform UI — 3단계 Preset Wizard</div>
+    <div class="section-title">Platform UI — 3-Step Preset Wizard</div>
     <div class="wizard-steps">
       <div class="wizard-step">
         <span class="step-badge step1">Step 1</span>
-        <h3>프리셋 선택</h3>
+        <h3>Preset Selection</h3>
         <ul>
           <li>General / DeFi / Gaming / Full</li>
-          <li>모듈 구성 미리보기</li>
-          <li>예상 배포 시간 안내</li>
+          <li>Module configuration preview</li>
+          <li>Estimated deploy time display</li>
         </ul>
       </div>
       <div class="wizard-step">
         <span class="step-badge step2">Step 2</span>
-        <h3>기본 정보 입력</h3>
+        <h3>Basic Configuration</h3>
         <ul>
           <li>Chain Name · Network (testnet/mainnet)</li>
           <li>Fee Token (TON / ETH / USDT / USDC)</li>
           <li>L1 RPC URL · Beacon URL</li>
-          <li>Seed Phrase (BIP44 키 파생)</li>
-          <li>AWS Credentials (Helm 배포용)</li>
+          <li>Seed Phrase (BIP44 key derivation)</li>
+          <li>AWS Credentials (for Helm deployment)</li>
         </ul>
       </div>
       <div class="wizard-step">
         <span class="step-badge step3">Step 3</span>
-        <h3>검토 &amp; 펀딩 확인</h3>
+        <h3>Review &amp; Funding Check</h3>
         <ul>
-          <li>ConfigReview — 설정 최종 확인</li>
-          <li>FundingStatus — L1 지갑 잔액 실시간</li>
-          <li>sequencer / batcher / proposer 주소 표시</li>
-          <li>최소 잔액 충족 시 배포 버튼 활성화</li>
+          <li>ConfigReview — final configuration review</li>
+          <li>FundingStatus — real-time L1 wallet balance</li>
+          <li>sequencer / batcher / proposer address display</li>
+          <li>Deploy button enabled when minimum balance met</li>
         </ul>
       </div>
     </div>
   </div>
 
   <!-- ── Preset Cards ── -->
-  <div class="section-title">프리셋별 구성</div>
+  <div class="section-title">Preset Configuration</div>
   <div class="preset-grid">
 
     <!-- General -->
@@ -620,25 +620,24 @@
         <div class="preset-header">
           <div class="preset-badge">General</div>
           <div class="preset-name">General Purpose</div>
-          <div class="preset-desc">표준 워크로드를 위한 기본 롤업 프리셋</div>
+          <div class="preset-desc">Baseline rollup preset for standard application workloads</div>
         </div>
         <div class="preset-body">
           <div class="preset-section">
-            <div class="ps-title">배포 시간</div>
+            <div class="ps-title">Deploy Time</div>
             <span class="time-badge">⏱ 20–30 min</span>
           </div>
           <div class="preset-section">
-            <div class="ps-title">모듈</div>
+            <div class="ps-title">Modules</div>
             <div class="module-list">
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Bridge</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Block Explorer</span></div>
               <div class="module-item"><div class="module-dot mod-off"></div><span class="mod-text-off">Monitoring</span></div>
-              <div class="module-item"><div class="module-dot mod-off"></div><span class="mod-text-off">Cross Trade</span></div>
               <div class="module-item"><div class="module-dot mod-off"></div><span class="mod-text-off">Uptime Service</span></div>
             </div>
           </div>
           <div class="preset-section">
-            <div class="ps-title">체인 설정</div>
+            <div class="ps-title">Chain Config</div>
             <div class="config-grid">
               <span class="cfg-key">BatchFreq</span><span class="cfg-val">1800s</span>
               <span class="cfg-key">OutputFreq</span><span class="cfg-val">1800s</span>
@@ -667,25 +666,24 @@
         <div class="preset-header">
           <div class="preset-badge">DeFi</div>
           <div class="preset-name">DeFi</div>
-          <div class="preset-desc">거래소, 유동성, 결제 워크로드 최적화</div>
+          <div class="preset-desc">Preset for exchange, liquidity, and settlement-heavy workloads</div>
         </div>
         <div class="preset-body">
           <div class="preset-section">
-            <div class="ps-title">배포 시간</div>
+            <div class="ps-title">Deploy Time</div>
             <span class="time-badge">⏱ 30–40 min</span>
           </div>
           <div class="preset-section">
-            <div class="ps-title">모듈</div>
+            <div class="ps-title">Modules</div>
             <div class="module-list">
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Bridge</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Block Explorer</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Monitoring</span></div>
-              <div class="module-item"><div class="module-dot mod-off"></div><span class="mod-text-off">Cross Trade</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Uptime Service</span></div>
             </div>
           </div>
           <div class="preset-section">
-            <div class="ps-title">체인 설정</div>
+            <div class="ps-title">Chain Config</div>
             <div class="config-grid">
               <span class="cfg-key">BatchFreq</span><span class="cfg-val">900s</span>
               <span class="cfg-key">OutputFreq</span><span class="cfg-val">900s</span>
@@ -715,25 +713,24 @@
         <div class="preset-header">
           <div class="preset-badge">Gaming</div>
           <div class="preset-name">Gaming</div>
-          <div class="preset-desc">높은 처리량과 게임 특화 기능 최적화</div>
+          <div class="preset-desc">Preset optimized for higher throughput and player-facing observability</div>
         </div>
         <div class="preset-body">
           <div class="preset-section">
-            <div class="ps-title">배포 시간</div>
+            <div class="ps-title">Deploy Time</div>
             <span class="time-badge">⏱ 35–45 min</span>
           </div>
           <div class="preset-section">
-            <div class="ps-title">모듈</div>
+            <div class="ps-title">Modules</div>
             <div class="module-list">
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Bridge</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Block Explorer</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Monitoring</span></div>
-              <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Cross Trade</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Uptime Service</span></div>
             </div>
           </div>
           <div class="preset-section">
-            <div class="ps-title">체인 설정</div>
+            <div class="ps-title">Chain Config</div>
             <div class="config-grid">
               <span class="cfg-key">BatchFreq</span><span class="cfg-val" style="color:#fb923c">300s</span>
               <span class="cfg-key">OutputFreq</span><span class="cfg-val">600s</span>
@@ -762,31 +759,30 @@
         <div class="preset-header">
           <div class="preset-badge">Full Suite</div>
           <div class="preset-name">Full Suite</div>
-          <div class="preset-desc">데모, 스테이징, 관리형 환경을 위한 전체 구성</div>
+          <div class="preset-desc">All recommended modules enabled for demos, staging, or managed environments</div>
         </div>
         <div class="preset-body">
           <div class="preset-section">
-            <div class="ps-title">배포 시간</div>
+            <div class="ps-title">Deploy Time</div>
             <span class="time-badge">⏱ 40–50 min</span>
           </div>
           <div class="preset-section">
-            <div class="ps-title">모듈</div>
+            <div class="ps-title">Modules</div>
             <div class="module-list">
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Bridge</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Block Explorer</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Monitoring</span></div>
-              <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Cross Trade</span></div>
               <div class="module-item"><div class="module-dot mod-on"></div><span class="mod-text-on">Uptime Service</span></div>
             </div>
           </div>
           <div class="preset-section">
-            <div class="ps-title">체인 설정</div>
+            <div class="ps-title">Chain Config</div>
             <div class="config-grid">
               <span class="cfg-key">BatchFreq</span><span class="cfg-val">600s</span>
               <span class="cfg-key">OutputFreq</span><span class="cfg-val">600s</span>
               <span class="cfg-key">ChallengePeriod</span><span class="cfg-val">86400s</span>
               <span class="cfg-key">Backup</span><span class="cfg-val" style="color:#c084fc">on</span>
-              <span class="cfg-key">RegisterCandidate</span><span class="cfg-val" style="color:#c084fc">on</span>
+              <span class="cfg-key">RegisterCandidate</span><span class="cfg-val">off</span>
             </div>
           </div>
           <div class="preset-section">
@@ -811,7 +807,7 @@
 
   <!-- ── Deployment Sequence ── -->
   <div class="sequence">
-    <div class="section-title">배포 순서 — Backend → SDK 상세 흐름</div>
+    <div class="section-title">Deployment Sequence — Backend → SDK Detail</div>
 
     <div class="seq-track">
 
@@ -833,10 +829,10 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-backend">Backend</span>
-            BIP44 키 파생 (seed phrase → 4개 계정)
+            BIP44 Key Derivation (seed phrase → 5 accounts)
           </div>
           <div class="seq-box-sub">
-            admin · sequencer · batcher · proposer — 각각 m/44'/60'/0'/0/{0-3} 경로
+            admin · proposer · batcher · challenger · sequencer — paths m/44'/60'/0'/0/{0-4}
           </div>
         </div>
       </div>
@@ -846,10 +842,10 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-backend">Backend</span>
-            L1 펀딩 상태 확인
+            L1 Funding Status Check
           </div>
           <div class="seq-box-sub">
-            sequencer / batcher / proposer 잔액 폴링 — testnet: 0.5 ETH · mainnet: 2 ETH 이상 필요
+            Poll sequencer / batcher / proposer balances — testnet: 0.5 ETH · mainnet: 2 ETH minimum
           </div>
         </div>
       </div>
@@ -859,7 +855,7 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-backend">Backend</span>
-            trh-sdk 호출
+            trh-sdk Invocation
           </div>
           <div class="seq-box-sub">
             thanos deploy --preset &lt;id&gt; --fee-token &lt;token&gt; --network &lt;net&gt; --chain-name &lt;name&gt; ...
@@ -872,10 +868,10 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-sdk">trh-sdk</span>
-            Deploy Config 초기화 (프리셋별 오버라이드)
+            Deploy Config Initialization (preset-specific overrides)
           </div>
           <div class="seq-box-sub">
-            batchSubmissionFrequency · outputRootFrequency · l2BlockTime 등 프리셋 기본값 적용
+            Apply preset defaults for batchSubmissionFrequency · outputRootFrequency · l2BlockTime
           </div>
         </div>
       </div>
@@ -885,7 +881,7 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-sdk">trh-sdk</span>
-            L1 컨트랙트 배포
+            L1 Contract Deployment
           </div>
           <div class="seq-box-sub">
             OptimismPortal · L1CrossDomainMessenger · L1StandardBridge · L2OutputOracle · SystemConfig
@@ -898,10 +894,10 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-sdk">trh-sdk</span>
-            L2 Genesis 생성 + 체인 기동
+            L2 Genesis + Chain Bootstrap
           </div>
           <div class="seq-box-sub">
-            GenesisPredeploys 삽입 (프리셋별 상이) → Sequencer · Batcher · Proposer 시작 → Helm 배포
+            Insert GenesisPredeploys (preset-specific) → Start Sequencer · Batcher · Proposer → Helm deploy
           </div>
         </div>
       </div>
@@ -911,11 +907,11 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-sdk">trh-sdk</span>
-            프리셋 모듈 자동 설치
+            Preset Module Auto-Install
           </div>
           <div class="seq-box-sub">
-            PresetModules 맵 기준 — bridge · blockExplorer · monitoring · crossTrade · uptimeService
-            (uptimeService는 자동, 나머지는 배포 후 Integration 탭에서 설정)
+            Based on PresetModules map — bridge · blockExplorer · monitoring · uptimeService
+            (uptimeService installs automatically; others configurable in the Integration tab post-deploy)
           </div>
         </div>
       </div>
@@ -925,10 +921,10 @@
         <div class="seq-box">
           <div class="seq-box-title">
             <span class="seq-layer ly-backend">Backend</span>
-            배포 결과 저장 + 상태 응답
+            Save Deployment Result + Status Response
           </div>
           <div class="seq-box-sub">
-            deploymentId, stackId, rollupRpcUrl, explorerUrl, bridgeUrl, crossTradeUrl 반환
+            Returns deploymentId, stackId, rollupRpcUrl, explorerUrl, bridgeUrl
           </div>
         </div>
       </div>
@@ -940,11 +936,11 @@
 
   <!-- ── Comparison Table ── -->
   <div style="margin-bottom: 48px;">
-    <div class="section-title">프리셋 비교</div>
+    <div class="section-title">Preset Comparison</div>
     <table class="compare-table">
       <thead>
         <tr>
-          <th>항목</th>
+          <th>Parameter</th>
           <th class="th-general">General</th>
           <th class="th-defi">DeFi</th>
           <th class="th-gaming">Gaming</th>
@@ -953,21 +949,21 @@
       </thead>
       <tbody>
         <tr>
-          <td class="td-key">예상 배포 시간</td>
+          <td class="td-key">Est. Deploy Time</td>
           <td>20–30 min</td>
           <td>30–40 min</td>
           <td>35–45 min</td>
           <td>40–50 min</td>
         </tr>
         <tr>
-          <td class="td-key">Batch 주기</td>
+          <td class="td-key">Batch Frequency</td>
           <td>1800s</td>
           <td>900s</td>
           <td style="color:#fb923c;font-weight:600">300s</td>
           <td>600s</td>
         </tr>
         <tr>
-          <td class="td-key">Output Root 주기</td>
+          <td class="td-key">Output Root Frequency</td>
           <td>1800s</td>
           <td>900s</td>
           <td>600s</td>
@@ -995,13 +991,6 @@
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
-          <td class="td-key">Cross Trade</td>
-          <td><span class="cross">—</span></td>
-          <td><span class="cross">—</span></td>
-          <td><span class="check">✓</span></td>
-          <td><span class="check">✓</span></td>
-        </tr>
-        <tr>
           <td class="td-key">Uptime Service</td>
           <td><span class="cross">—</span></td>
           <td><span class="check">✓</span></td>
@@ -1020,7 +1009,7 @@
           <td><span class="cross">—</span></td>
           <td><span class="cross">—</span></td>
           <td><span class="cross">—</span></td>
-          <td><span class="check" style="color:#c084fc">✓</span></td>
+          <td><span class="cross">—</span></td>
         </tr>
         <tr>
           <td class="td-key">DeFi Predeploys</td>
@@ -1037,18 +1026,18 @@
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
-          <td class="td-key">가용 Fee Token</td>
-          <td>TON, ETH</td>
+          <td class="td-key">Available Fee Tokens</td>
+          <td>TON, ETH, USDT, USDC</td>
           <td>TON, ETH, USDT, USDC</td>
           <td>TON, ETH, USDT, USDC</td>
           <td>TON, ETH, USDT, USDC</td>
         </tr>
         <tr>
-          <td class="td-key">수정 가능 필드</td>
-          <td>batchFreq, outputFreq, challengePeriod</td>
+          <td class="td-key">Overridable Fields</td>
+          <td>l2BlockTime, batchFreq, outputFreq, challengePeriod, backupEnabled</td>
           <td>batchFreq, outputFreq, challengePeriod</td>
           <td>l2BlockTime, batchFreq, outputFreq</td>
-          <td>전체 (+ registerCandidate)</td>
+          <td>l2BlockTime, batchFreq, outputFreq, challengePeriod</td>
         </tr>
       </tbody>
     </table>
