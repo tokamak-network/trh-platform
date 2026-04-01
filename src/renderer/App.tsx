@@ -123,6 +123,15 @@ export default function App() {
                     className="gear-uninstall-btn"
                     onClick={() => {
                       setGearOpen(false);
+                      api.app.relaunch();
+                    }}
+                  >
+                    Restart App
+                  </button>
+                  <button
+                    className="gear-uninstall-btn"
+                    onClick={() => {
+                      setGearOpen(false);
                       setUninstallInput('');
                       setUninstallOpen(true);
                     }}

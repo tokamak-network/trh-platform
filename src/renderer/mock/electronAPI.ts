@@ -204,6 +204,7 @@ export const mockElectronAPI: ElectronAPI = {
     },
     openExternal: async (url) => { window.open(url, '_blank'); },
     getVersion: async () => '1.1.4-mock',
+    relaunch: async () => { console.log('[mock] App relaunch requested'); },
   },
 
   webview: {
