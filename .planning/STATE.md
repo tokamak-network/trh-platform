@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 Phase: 04
 Plan: Not started
 Status: All phases complete — 11/11 E2E tests pass
-Last activity: 2026-03-27
+Last activity: 2026-04-01 - Completed quick task 260401-wr8: Account Selection 각 Account에 복사 버튼 추가
 
 Progress: [██████████] 100%
 
@@ -113,6 +113,7 @@ None yet.
 | 260401-q1j | Fix alto-bundler starting before admin has L2 funds (aa profile gating) | 2026-04-01 | 1dd3c80/b9bba3e | [260401-q1j-fix-alto-bundler-starts-before-admin-has](.planning/quick/260401-q1j-fix-alto-bundler-starts-before-admin-has/) |
 | 260401-s7d | Use PAT instead of GITHUB_TOKEN in trh-backend update-trh-sdk workflow | 2026-04-01 | trh-backend@1f24dd3 | [260401-s7d-use-pat-instead-of-github-token-in-trh-b](.planning/quick/260401-s7d-use-pat-instead-of-github-token-in-trh-b/) |
 | 260401-wht | Remove balance inject executeJavaScript block from webview.ts | 2026-04-01 | 204ed23 | [260401-wht-webview-ts-balance-inject](.planning/quick/260401-wht-webview-ts-balance-inject/) |
+| 260401-wr8 | Account Selection 각 Account에 복사 버튼 추가 | 2026-04-01 | 5e6fa14 | [260401-wr8-account-selection-account](.planning/quick/260401-wr8-account-selection-account/) |
 
 ## Session Continuity
 
