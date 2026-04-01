@@ -111,10 +111,11 @@ None yet.
 | 260401-mb9 | WebContentsView macOS title bar overlap fix (52px y-offset) | 2026-04-01 | 3416824 | [260401-mb9-webcontentsview-titlebar-overlap-fix](.planning/quick/260401-mb9-webcontentsview-titlebar-overlap-fix/) |
 | 260401-mn3 | Restart App — container-preserving Electron relaunch via isRelaunching flag | 2026-04-01 | 19948da | [260401-mn3-electron-app](.planning/quick/260401-mn3-electron-app/) |
 | 260401-q1j | Fix alto-bundler starting before admin has L2 funds (aa profile gating) | 2026-04-01 | 1dd3c80/b9bba3e | [260401-q1j-fix-alto-bundler-starts-before-admin-has](.planning/quick/260401-q1j-fix-alto-bundler-starts-before-admin-has/) |
+| 260401-s7d | Use PAT instead of GITHUB_TOKEN in trh-backend update-trh-sdk workflow | 2026-04-01 | trh-backend@1f24dd3 | [260401-s7d-use-pat-instead-of-github-token-in-trh-b](.planning/quick/260401-s7d-use-pat-instead-of-github-token-in-trh-b/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-q1j: alto-bundler aa profile gating
-Last session: 2026-04-01T09:47:04Z
-Stopped at: Completed quick-260401-q1j
+Last activity: 2026-04-01 - Completed quick task 260401-s7d: PAT auth in update-trh-sdk workflow
+Last session: 2026-04-01T11:20:37Z
+Stopped at: Completed quick-260401-s7d
 Resume file: None
