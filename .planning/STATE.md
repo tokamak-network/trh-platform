@@ -108,10 +108,11 @@ None yet.
 | 260330-rx9 | Fix paymasterAndData to 52 bytes and UserOp signature to raw ECDSA | 2026-03-30 | tokamak-thanos@44ee2b0eb2 | [260330-rx9-paymasteranddata-format-and-userop-signa](.planning/quick/260330-rx9-paymasteranddata-format-and-userop-signa/) |
 | 260330-s6r | MultiTokenPaymaster paymasterAndData offset [20:40]→[52:72], genesis bytecode injection, 72-byte SDK format | 2026-03-30 | tokamak-thanos@4aef7ac112+47d76875d0/trh-sdk@84f1d8d | [260330-s6r-multitokenpaymaster-paymasteranddata-off](.planning/quick/260330-s6r-multitokenpaymaster-paymasteranddata-off/) |
 | 260330-ub2 | AA paymaster end-to-end smoke test (4 test cases, LocalNet Gaming) | 2026-03-30 | 4bca779 | [260330-ub2-aa-paymaster-end-to-end-smoke-test-local](.planning/quick/260330-ub2-aa-paymaster-end-to-end-smoke-test-local/) |
+| 260401-mb9 | WebContentsView macOS title bar overlap fix (52px y-offset) | 2026-04-01 | 3416824 | [260401-mb9-webcontentsview-titlebar-overlap-fix](.planning/quick/260401-mb9-webcontentsview-titlebar-overlap-fix/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-ub2: AA paymaster E2E smoke test
-Last session: 2026-03-30T13:04:00Z
+Last activity: 2026-04-01 - Completed quick task 260401-mb9: WebContentsView title bar overlap fix
+Last session: 2026-04-01T07:07:13Z
 Stopped at: Completed quick-260330-ub2
 Resume file: None
