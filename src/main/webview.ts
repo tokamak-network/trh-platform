@@ -17,6 +17,9 @@ import { addAllowedHost } from './network-guard';
 const PLATFORM_UI_URL = 'http://localhost:3000';
 const BACKEND_API_URL = 'http://localhost:8000';
 
+// Height of the macOS hiddenInset title bar area (trafficLightPosition y:16 + button height + padding)
+const MACOS_TITLEBAR_HEIGHT = 52;
+
 let platformView: WebContentsView | null = null;
 let hostWindow: BrowserWindow | null = null;
 let adminCredentials: { email: string; password: string } | null = null;
@@ -28,6 +31,9 @@ let cachedAuthToken: string | null = null;
  */
 function getViewBounds(win: BrowserWindow): Electron.Rectangle {
   const [width, height] = win.getContentSize();
+  if (process.platform === 'darwin') {
+    return { x: 0, y: MACOS_TITLEBAR_HEIGHT, width, height: height - MACOS_TITLEBAR_HEIGHT };
+  }
   return { x: 0, y: 0, width, height };
 }
 
