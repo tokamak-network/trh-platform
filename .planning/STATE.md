@@ -115,10 +115,12 @@ None yet.
 | 260401-wht | Remove balance inject executeJavaScript block from webview.ts | 2026-04-01 | 204ed23 | [260401-wht-webview-ts-balance-inject](.planning/quick/260401-wht-webview-ts-balance-inject/) |
 | 260401-wr8 | Account Selection 각 Account에 복사 버튼 추가 | 2026-04-01 | 5e6fa14 | [260401-wr8-account-selection-account](.planning/quick/260401-wr8-account-selection-account/) |
 | 260402-0b2 | aa_bridge.go L1 RPC 429 rate limit retry with exponential backoff | 2026-04-02 | trh-sdk@6988386 | [260402-0b2-aa-bridge-go-l1-rpc-429-rate-limit-retry](.planning/quick/260402-0b2-aa-bridge-go-l1-rpc-429-rate-limit-retry/) |
+| 260402-ist | Isthmus L1 info support in tokamak-thanos-geth (176-byte calldata) | 2026-04-02 | tokamak-thanos-geth@cb69272 | [260402-isthmus-l1info-op-geth](.planning/quick/260402-isthmus-l1info-op-geth/) |
+| 260402-1yh | trh-backend route fix + trh-sdk AA profile deferral | 2026-04-02 | trh-backend@5958e16/trh-sdk@2c5a274 | [260402-1yh-trh-backend-route-and-trh-sdk-aa-profile](.planning/quick/260402-1yh-trh-backend-route-and-trh-sdk-aa-profile/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-wht: Remove balance inject from webview.ts
-Last session: 2026-04-01T14:26:42Z
-Stopped at: Completed quick-260401-wht
+Last activity: 2026-04-02 - Completed quick task 260402-1yh: trh-backend route and trh-sdk AA profile fix
+Last session: 2026-04-02T14:00:00Z
+Stopped at: Completed quick-260402-1yh
 Resume file: None
