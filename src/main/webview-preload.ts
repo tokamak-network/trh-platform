@@ -5,6 +5,16 @@
  */
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Inject auth token synchronously before page scripts run.
+// This prevents the login screen from appearing since React finds the token already in localStorage.
+const authToken = ipcRenderer.sendSync('desktop:get-auth-token-sync') as string;
+if (authToken) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = globalThis as any;
+  try { g.localStorage?.setItem('accessToken', authToken); } catch { /* ignore */ }
+  try { if (g.document) g.document.cookie = `auth-token=${authToken}; path=/`; } catch { /* ignore */ }
+}
+
 contextBridge.exposeInMainWorld('__TRH_DESKTOP__', {
   // AWS SSO flow
   awsSsoLoginDirect: (startUrl: string, region: string): Promise<void> =>

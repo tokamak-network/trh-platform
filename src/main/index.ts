@@ -559,7 +559,7 @@ function setupIpcHandlers(): void {
         clearTimeout(timeoutId);
 
         if (response.ok) {
-          showPlatformView(mainWindow);
+          await showPlatformView(mainWindow);
           return;
         }
       } catch {
