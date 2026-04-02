@@ -117,10 +117,11 @@ None yet.
 | 260402-0b2 | aa_bridge.go L1 RPC 429 rate limit retry with exponential backoff | 2026-04-02 | trh-sdk@6988386 | [260402-0b2-aa-bridge-go-l1-rpc-429-rate-limit-retry](.planning/quick/260402-0b2-aa-bridge-go-l1-rpc-429-rate-limit-retry/) |
 | 260402-ist | Isthmus L1 info support in tokamak-thanos-geth (176-byte calldata) | 2026-04-02 | tokamak-thanos-geth@cb69272 | [260402-isthmus-l1info-op-geth](.planning/quick/260402-isthmus-l1info-op-geth/) |
 | 260402-1yh | trh-backend route fix + trh-sdk AA profile deferral | 2026-04-02 | trh-backend@5958e16/trh-sdk@2c5a274 | [260402-1yh-trh-backend-route-and-trh-sdk-aa-profile](.planning/quick/260402-1yh-trh-backend-route-and-trh-sdk-aa-profile/) |
+| 260402-hwa | Rebuild v1.1.12 release with latest main branch code | 2026-04-02 | CI release | [260402-hwa-v1-1-12](.planning/quick/260402-hwa-v1-1-12/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-1yh: trh-backend route and trh-sdk AA profile fix
-Last session: 2026-04-02T14:00:00Z
-Stopped at: Completed quick-260402-1yh
+Last activity: 2026-04-02 - Completed quick task 260402-hwa: rebuild v1.1.12 release with latest binaries
+Last session: 2026-04-02T15:00:00Z
+Stopped at: Completed quick-260402-hwa
 Resume file: None
