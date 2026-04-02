@@ -12,7 +12,6 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('setup');
   const [version, setVersion] = useState('');
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [gearOpen, setGearOpen] = useState(false);
   const [uninstallOpen, setUninstallOpen] = useState(false);
   const [uninstallInput, setUninstallInput] = useState('');
   const [uninstalling, setUninstalling] = useState(false);
@@ -100,48 +99,6 @@ export default function App() {
             </div>
           )}
           {version && <div className="version">v{version}</div>}
-
-          {/* Gear button */}
-          <div className="gear-menu">
-            <button
-              className="gear-btn"
-              onClick={() => setGearOpen((prev) => !prev)}
-              aria-label="Platform settings"
-            >
-              ⚙
-            </button>
-
-            {gearOpen && (
-              <>
-                {/* Click-outside overlay */}
-                <div className="gear-backdrop" onClick={() => setGearOpen(false)} />
-                <div className="gear-dropdown">
-                  {version && (
-                    <div className="gear-version">TRH Platform v{version}</div>
-                  )}
-                  <button
-                    className="gear-uninstall-btn"
-                    onClick={() => {
-                      setGearOpen(false);
-                      api.app.relaunch();
-                    }}
-                  >
-                    Restart App
-                  </button>
-                  <button
-                    className="gear-uninstall-btn"
-                    onClick={() => {
-                      setGearOpen(false);
-                      setUninstallInput('');
-                      setUninstallOpen(true);
-                    }}
-                  >
-                    Uninstall
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
 
           {/* Uninstall confirmation modal */}
           {uninstallOpen && (

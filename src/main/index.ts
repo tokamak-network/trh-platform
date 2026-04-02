@@ -155,6 +155,15 @@ function setupApplicationMenu(): void {
       label: 'File',
       submenu: [
         {
+          label: 'Restart App',
+          click: () => {
+            isRelaunching = true;
+            app.relaunch();
+            app.quit();
+          }
+        },
+        { type: 'separator' as const },
+        {
           label: 'Uninstall Platform...',
           click: () => {
             mainWindow?.webContents.send('menu:uninstall');
