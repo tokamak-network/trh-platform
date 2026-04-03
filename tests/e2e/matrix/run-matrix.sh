@@ -17,8 +17,21 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 # -- Flags -----------------------------------------------------------------
 
 DRY_RUN="false"
-if [[ "${1:-}" == "--dry-run" ]]; then
-  DRY_RUN="true"
+FULL_CYCLE="false"
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run)    DRY_RUN="true" ;;
+    --full-cycle) FULL_CYCLE="true" ;;
+  esac
+done
+
+# Test target: full-cycle deploys+verifies+teardowns, default runs health checks only
+if [[ "$FULL_CYCLE" == "true" ]]; then
+  TEST_TARGET="tests/e2e/matrix/full-cycle.live.spec.ts"
+  echo "Mode: full-cycle (deploy → verify → teardown)"
+else
+  TEST_TARGET="tests/e2e/matrix/"
+  echo "Mode: health-check only (assumes stack already deployed)"
 fi
 
 # -- P0 Matrix definition --------------------------------------------------
@@ -45,7 +58,7 @@ for combo in "${MATRIX[@]}"; do
   label="${preset}/${fee_token} (${chain_name})"
 
   if [[ "$DRY_RUN" == "true" ]]; then
-    echo "[DRY-RUN] LIVE_PRESET=${preset} LIVE_FEE_TOKEN=${fee_token} LIVE_CHAIN_NAME=${chain_name} npx playwright test --config playwright.live.config.ts tests/e2e/matrix/"
+    echo "[DRY-RUN] LIVE_PRESET=${preset} LIVE_FEE_TOKEN=${fee_token} LIVE_CHAIN_NAME=${chain_name} npx playwright test --config playwright.live.config.ts ${TEST_TARGET}"
     RESULTS+=("${label}: DRY-RUN")
     continue
   fi
@@ -56,7 +69,7 @@ for combo in "${MATRIX[@]}"; do
   echo "=========================================="
 
   if LIVE_PRESET="${preset}" LIVE_FEE_TOKEN="${fee_token}" LIVE_CHAIN_NAME="${chain_name}" \
-     npx playwright test --config playwright.live.config.ts tests/e2e/matrix/; then
+     npx playwright test --config playwright.live.config.ts ${TEST_TARGET}; then
     RESULTS+=("${label}: PASS")
     ((PASSED++))
   else

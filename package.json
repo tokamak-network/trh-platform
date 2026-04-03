@@ -43,7 +43,8 @@
     "sync-fixtures": "node scripts/sync-presets-fixture.mjs",
     "sync-fixtures:dry": "node scripts/sync-presets-fixture.mjs --dry-run",
     "preflight": "npm run sync-fixtures:dry && npm test && npm run test:e2e",
-    "test:matrix": "bash tests/e2e/matrix/run-matrix.sh"
+    "test:matrix": "bash tests/e2e/matrix/run-matrix.sh",
+    "test:matrix:full": "bash tests/e2e/matrix/run-matrix.sh --full-cycle"
   },
   "build": {
     "appId": "network.tokamak.trh-platform-desktop",
