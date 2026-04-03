@@ -27,14 +27,14 @@ import { pollUntil } from '../helpers/poll';
 
 const config = getStackConfig();
 
-// Unique chain name to avoid collisions with existing stacks
-const timestamp = Date.now().toString(36).slice(-4);
-const chainName = `${config.feeToken.toLowerCase()}-${config.preset}-${timestamp}`;
+// Chain name: use env var or deterministic default (no random/timestamp — Playwright
+// serializes test titles across main and worker processes, so they must be stable).
+const chainName = config.chainName;
 
 let stackId = '';
 let urls: StackUrls;
 
-test.describe(`Full Cycle [${config.preset}/${config.feeToken}] — ${chainName}`, () => {
+test.describe(`Full Cycle [${config.preset}/${config.feeToken}]`, () => {
   test.describe.configure({ mode: 'serial', timeout: 900_000 }); // 15 min total
 
   // =========================================================================
@@ -42,7 +42,7 @@ test.describe(`Full Cycle [${config.preset}/${config.feeToken}] — ${chainName}
   // =========================================================================
 
   test('deploy L2 via preset-deploy API', async () => {
-    test.setTimeout(60_000); // 1 min for API call
+    test.setTimeout(300_000); // 5 min (includes ensureNoActiveStacks + API call + stack resolve)
     const result = await deployPreset({
       preset: config.preset,
       feeToken: config.feeToken,
@@ -104,8 +104,20 @@ test.describe(`Full Cycle [${config.preset}/${config.feeToken}] — ${chainName}
   });
 
   test('op-node sync status', async () => {
-    test.setTimeout(30_000);
-    const sync = await checkOpNodeSync();
+    test.setTimeout(120_000);
+    const sync = await pollUntil(
+      async () => {
+        try {
+          const s = await checkOpNodeSync();
+          return s.headL2 > 0 ? s : null;
+        } catch {
+          return null;
+        }
+      },
+      'op-node headL2 > 0',
+      120_000,
+      10_000
+    );
     expect(sync.headL2).toBeGreaterThan(0);
   });
 

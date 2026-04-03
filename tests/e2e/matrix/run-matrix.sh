@@ -54,7 +54,8 @@ RESULTS=()
 
 for combo in "${MATRIX[@]}"; do
   IFS=':' read -r preset fee_token <<< "$combo"
-  chain_name="${fee_token,,}-${preset}"   # lowercase fee token
+  ts=$(date +%s | tail -c 5)
+  chain_name="${fee_token,,}-${preset}-${ts}"   # lowercase fee token + timestamp suffix
   label="${preset}/${fee_token} (${chain_name})"
 
   if [[ "$DRY_RUN" == "true" ]]; then

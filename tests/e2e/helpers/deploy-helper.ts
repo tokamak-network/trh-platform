@@ -14,15 +14,19 @@ import type { Preset, FeeToken } from './matrix-config';
 // Types
 // ---------------------------------------------------------------------------
 
+/** Matches backend PresetDeployRequest DTO (json field names). */
 export interface DeployRequest {
-  preset: Preset;
-  feeToken: FeeToken;
+  presetId: string;
   chainName: string;
-  network?: string;
-  infraProvider?: string;
+  network: string;
   seedPhrase: string;
+  infraProvider: string;
   l1RpcUrl: string;
-  l1BeaconUrl?: string;
+  l1BeaconUrl: string;
+  feeToken: string;
+  awsAccessKey?: string;
+  awsSecretKey?: string;
+  awsRegion?: string;
 }
 
 export interface DeployResult {
@@ -74,7 +78,66 @@ function getSeedPhrase(): string {
 // ---------------------------------------------------------------------------
 
 /**
+ * Ensure no active (non-Terminated) stacks exist before deploying.
+ * Local Docker uses fixed ports, so concurrent stacks cause conflicts.
+ */
+export async function ensureNoActiveStacks(): Promise<void> {
+  const backendUrl = getBackendUrl();
+  const token = await loginBackend(backendUrl);
+
+  const resp = await fetch(`${backendUrl}/api/v1/stacks/thanos`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!resp.ok) return; // can't check — proceed anyway
+
+  const body = await resp.json() as Record<string, unknown>;
+  const data = (body.data ?? body) as Record<string, unknown>;
+  const stacks = (data.stacks as Record<string, unknown>[]) ?? [];
+
+  const active = stacks.filter(
+    (s) => !['Terminated', 'FailedToDeploy'].includes(s.status as string)
+  );
+
+  if (active.length === 0) {
+    console.log('[deploy] No active stacks — safe to deploy');
+    return;
+  }
+
+  console.log(`[deploy] Found ${active.length} active stack(s), terminating...`);
+  for (const stack of active) {
+    const id = stack.id as string;
+    console.log(`[deploy] Terminating ${id} (status: ${stack.status})...`);
+    await fetch(`${backendUrl}/api/v1/stacks/thanos/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  // Wait for all to terminate
+  await pollUntil(
+    async () => {
+      const checkResp = await fetch(`${backendUrl}/api/v1/stacks/thanos`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!checkResp.ok) return null;
+      const checkBody = await checkResp.json() as Record<string, unknown>;
+      const checkData = (checkBody.data ?? checkBody) as Record<string, unknown>;
+      const remaining = ((checkData.stacks as Record<string, unknown>[]) ?? []).filter(
+        (s) => !['Terminated', 'FailedToDeploy'].includes(s.status as string)
+      );
+      return remaining.length === 0 ? true : null;
+    },
+    'all stacks to terminate',
+    TEARDOWN_TIMEOUT_MS,
+    TEARDOWN_POLL_INTERVAL_MS
+  );
+
+  console.log('[deploy] All stacks terminated — safe to deploy');
+}
+
+/**
  * Deploy an L2 stack via the preset-deploy API.
+ * Automatically ensures no active stacks exist before deploying.
  *
  * @param config - Deployment configuration (preset, feeToken, chainName)
  * @returns Stack ID and deployment ID from the API response
@@ -84,18 +147,21 @@ export async function deployPreset(config: {
   feeToken: FeeToken;
   chainName: string;
 }): Promise<DeployResult> {
+  // Ensure no active stacks (local Docker has fixed ports)
+  await ensureNoActiveStacks();
+
   const backendUrl = getBackendUrl();
   const token = await loginBackend(backendUrl);
 
   const body: DeployRequest = {
-    preset: config.preset,
-    feeToken: config.feeToken,
+    presetId: config.preset,
     chainName: config.chainName,
-    network: 'local_devnet',
-    infraProvider: 'local',
+    network: process.env.LIVE_NETWORK ?? 'Testnet',
+    infraProvider: process.env.LIVE_INFRA_PROVIDER ?? 'local',
     seedPhrase: getSeedPhrase(),
     l1RpcUrl: getL1RpcUrl(),
     l1BeaconUrl: getL1BeaconUrl(),
+    feeToken: config.feeToken,
   };
 
   console.log(`[deploy] Starting preset-deploy: ${config.preset}/${config.feeToken} as "${config.chainName}"`);
@@ -119,15 +185,41 @@ export async function deployPreset(config: {
   const result = await resp.json() as Record<string, unknown>;
   const data = (result.data ?? result) as Record<string, unknown>;
 
-  const stackId = (data.stackId ?? data.stack_id ?? data.id ?? '') as string;
   const deploymentId = (data.deploymentId ?? data.deployment_id ?? '') as string;
+  const directStackId = (data.stackId ?? data.stack_id ?? data.id ?? '') as string;
 
-  if (!stackId && !deploymentId) {
+  if (!deploymentId && !directStackId) {
     throw new Error(`preset-deploy returned no IDs: ${JSON.stringify(result)}`);
   }
 
-  console.log(`[deploy] Initiated: stackId=${stackId}, deploymentId=${deploymentId}`);
-  return { stackId, deploymentId };
+  // Resolve actual stackId by finding the stack with matching chainName
+  let resolvedStackId = directStackId;
+  if (!resolvedStackId) {
+    console.log(`[deploy] deploymentId=${deploymentId}, resolving stackId by chainName="${config.chainName}"...`);
+    const stacksResp = await fetch(`${backendUrl}/api/v1/stacks/thanos`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (stacksResp.ok) {
+      const stacksBody = await stacksResp.json() as Record<string, unknown>;
+      const stacksData = (stacksBody.data ?? stacksBody) as Record<string, unknown>;
+      const stacks = (stacksData.stacks as Record<string, unknown>[]) ?? [];
+      const match = stacks.find(
+        (s) => (s.config as Record<string, unknown>)?.chainName === config.chainName
+      );
+      if (match) {
+        resolvedStackId = match.id as string;
+      }
+    }
+  }
+
+  if (!resolvedStackId) {
+    throw new Error(
+      `Could not resolve stackId for chainName="${config.chainName}". deploymentId=${deploymentId}`
+    );
+  }
+
+  console.log(`[deploy] Initiated: stackId=${resolvedStackId}, deploymentId=${deploymentId}`);
+  return { stackId: resolvedStackId, deploymentId };
 }
 
 /**
