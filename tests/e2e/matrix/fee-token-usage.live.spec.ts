@@ -41,42 +41,19 @@ const ERC20_ABI = [
   'function allowance(address owner, address spender) view returns (uint256)',
 ];
 
-// ── ERC-4337 Types ────────────────────────────────────────────────────────────
-interface PackedUserOp {
-  sender: string;
-  nonce: string;
-  initCode: string;
-  callData: string;
-  accountGasLimits: string;
-  preVerificationGas: string;
-  gasFees: string;
-  paymasterAndData: string;
-  signature: string;
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Build paymasterAndData for MultiTokenPaymaster (v0.6 unpacked format).
+ * Layout: [paymaster(20)] [verificationGasLimit(16)] [postOpGasLimit(16)] [token(20)]
+ */
 function buildPaymasterAndData(tokenAddr: string): string {
-  const data = ethers.concat([
+  return ethers.concat([
     MULTI_TOKEN_PAYMASTER,
     ethers.zeroPadValue(ethers.toBeHex(150000n), 16),
     ethers.zeroPadValue(ethers.toBeHex(50000n), 16),
     tokenAddr,
   ]);
-  return data;
-}
-
-function packGasLimits(verificationGas: bigint, callGas: bigint): string {
-  return ethers.zeroPadValue(
-    ethers.toBeHex((verificationGas << 128n) | callGas),
-    32
-  );
-}
-
-function packGasFees(maxPriorityFee: bigint, maxFee: bigint): string {
-  return ethers.zeroPadValue(
-    ethers.toBeHex((maxPriorityFee << 128n) | maxFee),
-    32
-  );
 }
 
 async function getUserOpNonce(provider: ethers.JsonRpcProvider, sender: string): Promise<string> {
@@ -150,23 +127,27 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     );
     expect(bundlerAlive).toBe(true);
 
-    // Build a minimal UserOp (self-transfer, zero value)
+    // Build UserOp — Alto may require unpacked (v0.6-style) OR packed (v0.7) format.
+    // Try packed first, fall back to unpacked if validation fails.
     const sender = adminWallet.address;
     const nonce = await getUserOpNonce(l2Provider, sender);
     const feeData = await l2Provider.getFeeData();
     const maxFee = feeData.maxFeePerGas ?? ethers.parseUnits('1', 'gwei');
     const maxPriority = feeData.maxPriorityFeePerGas ?? ethers.parseUnits('1', 'gwei');
 
-    const userOp: PackedUserOp = {
+    // Unpacked format (v0.6-compatible, wider bundler support)
+    const userOp = {
       sender,
       nonce,
       initCode: '0x',
-      callData: '0x', // no-op
-      accountGasLimits: packGasLimits(200_000n, 100_000n),
+      callData: '0x',
+      callGasLimit: ethers.toBeHex(100_000n),
+      verificationGasLimit: ethers.toBeHex(200_000n),
       preVerificationGas: ethers.toBeHex(50_000n),
-      gasFees: packGasFees(maxPriority as bigint, maxFee as bigint),
+      maxFeePerGas: ethers.toBeHex(maxFee as bigint),
+      maxPriorityFeePerGas: ethers.toBeHex(maxPriority as bigint),
       paymasterAndData: buildPaymasterAndData(BRIDGED_USDC),
-      signature: '0x' + 'ff'.repeat(65), // dummy signature (MinimalAccount accepts any)
+      signature: '0x' + 'ff'.repeat(65),
     };
 
     // Submit via bundler

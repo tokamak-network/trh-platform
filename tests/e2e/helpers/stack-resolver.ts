@@ -88,6 +88,7 @@ export async function resolveContractAddresses(stackId: string, token?: string):
   systemConfigProxy: string;
   optimismPortalProxy: string;
   disputeGameFactoryProxy: string;
+  l1UsdcBridgeProxy: string;
 }> {
   const backendUrl = getBackendUrl();
   const jwt = token ?? await loginBackend(backendUrl);
@@ -123,6 +124,7 @@ export async function resolveContractAddresses(stackId: string, token?: string):
       systemConfigProxy: deployJson.SystemConfigProxy ?? '',
       optimismPortalProxy: deployJson.OptimismPortalProxy ?? '',
       disputeGameFactoryProxy: deployJson.DisputeGameFactoryProxy ?? '',
+      l1UsdcBridgeProxy: deployJson.L1UsdcBridgeProxy ?? '',
     };
   } catch (err) {
     throw new Error(

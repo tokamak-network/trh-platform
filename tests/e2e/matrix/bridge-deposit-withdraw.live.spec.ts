@@ -240,17 +240,27 @@ test.describe(`Bridge Deposit & Withdraw [${config.preset}/${config.feeToken}]`,
     const l2UsdcBefore = await l2Usdc.balanceOf(adminAddress) as bigint;
     console.log(`[bridge] Admin L2 USDC before: ${Number(l2UsdcBefore) / 1e6}`);
 
-    // Approve bridge
-    const approveTx = await l1Usdc.approve(contracts.l1StandardBridgeProxy, depositAmount);
-    await approveTx.wait(1);
-    console.log(`[bridge] USDC approve confirmed`);
+    // USDC uses dedicated L1UsdcBridge (NOT L1StandardBridge).
+    // L2 USDC (FiatTokenV2_2) is minted by L2UsdcBridge via MasterMinter.
+    const usdcBridgeAddr = contracts.l1UsdcBridgeProxy;
+    if (!usdcBridgeAddr) {
+      console.warn('[bridge] No L1UsdcBridgeProxy found — skipping USDC deposit');
+      test.skip();
+      return;
+    }
+    console.log(`[bridge] L1UsdcBridge: ${usdcBridgeAddr}`);
 
-    // Bridge ERC20: bridgeERC20To(localToken, remoteToken, to, amount, minGasLimit, extraData)
-    const BRIDGE_ERC20_ABI = [
+    // Approve L1UsdcBridge (not StandardBridge)
+    const approveTx = await l1Usdc.approve(usdcBridgeAddr, depositAmount);
+    await approveTx.wait(1);
+    console.log(`[bridge] USDC approve confirmed for L1UsdcBridge`);
+
+    // L1UsdcBridge.bridgeERC20To(localToken, remoteToken, to, amount, minGasLimit, extraData)
+    const USDC_BRIDGE_ABI = [
       'function bridgeERC20To(address _localToken, address _remoteToken, address _to, uint256 _amount, uint32 _minGasLimit, bytes calldata _extraData) external',
     ];
-    const bridge = new ethers.Contract(contracts.l1StandardBridgeProxy, BRIDGE_ERC20_ABI, l1Wallet);
-    const bridgeTx = await bridge.bridgeERC20To(
+    const usdcBridge = new ethers.Contract(usdcBridgeAddr, USDC_BRIDGE_ABI, l1Wallet);
+    const bridgeTx = await usdcBridge.bridgeERC20To(
       L1_USDC, L2_USDC, adminAddress, depositAmount, 200_000, '0x',
       { gasLimit: 800_000 }
     );
