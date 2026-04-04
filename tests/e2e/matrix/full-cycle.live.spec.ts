@@ -104,22 +104,22 @@ test.describe(`Full Cycle [${config.preset}/${config.feeToken}]`, () => {
   });
 
   test('op-node sync status', async () => {
-    // op-node sync depends on L1 finality (~15min Sepolia). On fresh local
-    // devnet deploys, headL2 may remain 0 for extended periods.
-    // Use soft assertion: log result but don't fail the serial chain.
-    test.setTimeout(60_000);
-    try {
-      const sync = await checkOpNodeSync();
-      console.log(`[full-cycle] op-node sync: headL2=${sync.headL2}, safeL2=${sync.safeL2}, currentL1=${sync.currentL1}`);
-      if (sync.headL2 === 0) {
-        console.warn('[full-cycle] op-node headL2 is 0 — L1 sync not yet started (expected on fresh deploy)');
-      }
-      // Soft check: pass as long as the RPC endpoint responds
-      expect(sync).toBeTruthy();
-    } catch (err) {
-      console.warn(`[full-cycle] op-node unreachable: ${err instanceof Error ? err.message : String(err)}`);
-      // Don't fail — op-node may still be starting up
-    }
+    test.setTimeout(120_000);
+    // Field names were fixed: unsafe_l2 (not head_l2_block), safe_l2 (not safe_l2_block)
+    const sync = await pollUntil(
+      async () => {
+        try {
+          const s = await checkOpNodeSync();
+          return s.headL2 > 0 ? s : null;
+        } catch {
+          return null;
+        }
+      },
+      'op-node headL2 > 0',
+      90_000,
+      10_000
+    );
+    expect(sync.headL2).toBeGreaterThan(0);
   });
 
   // =========================================================================

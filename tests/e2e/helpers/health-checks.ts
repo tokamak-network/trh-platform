@@ -79,8 +79,8 @@ export async function checkOpNodeSync(
   }
 
   const currentL1 = (result.current_l1 as Record<string, unknown> | undefined);
-  const headL2 = (result.head_l2_block as Record<string, unknown> | undefined);
-  const safeL2 = (result.safe_l2_block as Record<string, unknown> | undefined);
+  const headL2 = (result.unsafe_l2 as Record<string, unknown> | undefined);
+  const safeL2 = (result.safe_l2 as Record<string, unknown> | undefined);
 
   return {
     currentL1: (currentL1?.number as number) ?? 0,
