@@ -28,7 +28,10 @@ const ADMIN_KEY = process.env.ADMIN_KEY ?? '679d88a9fb565707c0aff9434f9c141fee0b
 
 const MULTI_TOKEN_PAYMASTER = '0x4200000000000000000000000000000000000067';
 const ENTRYPOINT_V08 = '0x4200000000000000000000000000000000000063';
-const WUSDC_ADDRESS = '0x4200000000000000000000000000000000000006'; // Wrapped Native USDC (18 decimals)
+// Bridged USDC predeploy (6 decimals) — L1 USDC bridged to L2
+const BRIDGED_USDC = '0x4200000000000000000000000000000000000778';
+// Wrapped TON (18 decimals) — used as paymaster fee token in paymasterAndData
+const WUSDC_ADDRESS = '0x4200000000000000000000000000000000000006';
 const SIMPLE_7702_ACCOUNT = '0x4200000000000000000000000000000000000068';
 const MINIMAL_ACCOUNT = '0xb1c622dc91a3768d8e406A9460E85D59D30f7910';
 
@@ -105,27 +108,28 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
   test('verify USDC deducted from user, TON unchanged', async () => {
     test.setTimeout(180_000);
 
-    const wusdc = new ethers.Contract(WUSDC_ADDRESS, ERC20_ABI, adminWallet);
+    // Use Bridged USDC (6 decimals) as the fee token the user pays with
+    const usdc = new ethers.Contract(BRIDGED_USDC, ERC20_ABI, adminWallet);
 
-    // Pre-check: WUSDC balance and TON balance
-    const usdcBefore = await wusdc.balanceOf(adminWallet.address) as bigint;
+    // Pre-check: USDC balance and TON balance
+    const usdcBefore = await usdc.balanceOf(adminWallet.address) as bigint;
     const tonBefore = await l2Provider.getBalance(adminWallet.address);
 
-    console.log(`[fee-token] WUSDC before: ${ethers.formatEther(usdcBefore)}`);
+    console.log(`[fee-token] Bridged USDC before: ${Number(usdcBefore) / 1e6} USDC`);
     console.log(`[fee-token] TON before: ${ethers.formatEther(tonBefore)}`);
 
     if (usdcBefore === 0n) {
-      console.warn('[fee-token] Admin has 0 WUSDC — cannot test fee deduction. Skipping.');
+      console.warn('[fee-token] Admin has 0 Bridged USDC — run bridge-deposit-withdraw first. Skipping.');
       test.skip();
       return;
     }
 
-    // Ensure WUSDC approved for paymaster
-    const allowance = await wusdc.allowance(adminWallet.address, MULTI_TOKEN_PAYMASTER) as bigint;
-    if (allowance < ethers.parseEther('100')) {
-      const approveTx = await wusdc.approve(MULTI_TOKEN_PAYMASTER, ethers.MaxUint256);
+    // Ensure USDC approved for paymaster
+    const allowance = await usdc.allowance(adminWallet.address, MULTI_TOKEN_PAYMASTER) as bigint;
+    if (allowance < 10_000_000n) { // 10 USDC
+      const approveTx = await usdc.approve(MULTI_TOKEN_PAYMASTER, ethers.MaxUint256);
       await approveTx.wait();
-      console.log('[fee-token] WUSDC approved for paymaster');
+      console.log('[fee-token] Bridged USDC approved for paymaster');
     }
 
     // Check bundler is running
@@ -161,7 +165,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
       accountGasLimits: packGasLimits(200_000n, 100_000n),
       preVerificationGas: ethers.toBeHex(50_000n),
       gasFees: packGasFees(maxPriority as bigint, maxFee as bigint),
-      paymasterAndData: buildPaymasterAndData(WUSDC_ADDRESS),
+      paymasterAndData: buildPaymasterAndData(BRIDGED_USDC),
       signature: '0x' + 'ff'.repeat(65), // dummy signature (MinimalAccount accepts any)
     };
 
@@ -183,7 +187,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
       const errMsg = (bundlerBody.error as Record<string, string>).message ?? '';
       console.warn(`[fee-token] UserOp failed: ${errMsg}`);
       // If UserOp fails, verify balances didn't change
-      const usdcAfterFail = await wusdc.balanceOf(adminWallet.address) as bigint;
+      const usdcAfterFail = await usdc.balanceOf(adminWallet.address) as bigint;
       expect(usdcAfterFail).toBe(usdcBefore);
       test.skip();
       return;
@@ -218,16 +222,16 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     console.log(`[fee-token] UserOp executed, success: ${(receipt as Record<string, unknown>).success}`);
 
     // Verify: USDC decreased, TON unchanged
-    const usdcAfter = await wusdc.balanceOf(adminWallet.address) as bigint;
+    const usdcAfter = await usdc.balanceOf(adminWallet.address) as bigint;
     const tonAfter = await l2Provider.getBalance(adminWallet.address);
 
-    console.log(`[fee-token] WUSDC after: ${ethers.formatEther(usdcAfter)}`);
+    console.log(`[fee-token] Bridged USDC after: ${Number(usdcAfter) / 1e6} USDC`);
     console.log(`[fee-token] TON after: ${ethers.formatEther(tonAfter)}`);
 
     // USDC should decrease (fee paid to paymaster)
     expect(usdcAfter).toBeLessThan(usdcBefore);
     const usdcDeducted = usdcBefore - usdcAfter;
-    console.log(`[fee-token] USDC deducted: ${ethers.formatEther(usdcDeducted)}`);
+    console.log(`[fee-token] USDC deducted: ${Number(usdcDeducted) / 1e6} USDC`);
 
     // TON should NOT decrease (paymaster pays gas)
     expect(tonAfter).toBeGreaterThanOrEqual(tonBefore);

@@ -214,4 +214,61 @@ test.describe(`Bridge Deposit & Withdraw [${config.preset}/${config.feeToken}]`,
     expect(withdrawal).toBeTruthy();
     console.log(`[bridge] TON withdrawal found in Blockscout`);
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USDC Deposit L1 → L2 (via L1StandardBridge.depositERC20To)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  test('USDC deposit L1→L2', async () => {
+    test.setTimeout(300_000);
+
+    // Sepolia USDC (6 decimals)
+    const L1_USDC = '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238';
+    // L2 Bridged USDC predeploy (6 decimals)
+    const L2_USDC = '0x4200000000000000000000000000000000000778';
+
+    const l1Usdc = new ethers.Contract(L1_USDC, ERC20_ABI, l1Wallet);
+    const l2Usdc = new ethers.Contract(L2_USDC, ERC20_ABI, l2Wallet);
+    const depositAmount = 5_000_000n; // 5 USDC (6 decimals)
+
+    // Check L1 USDC balance
+    const l1UsdcBalance = await l1Usdc.balanceOf(adminAddress) as bigint;
+    console.log(`[bridge] Admin L1 USDC: ${Number(l1UsdcBalance) / 1e6}`);
+    expect(l1UsdcBalance).toBeGreaterThan(depositAmount);
+
+    // L2 USDC balance before
+    const l2UsdcBefore = await l2Usdc.balanceOf(adminAddress) as bigint;
+    console.log(`[bridge] Admin L2 USDC before: ${Number(l2UsdcBefore) / 1e6}`);
+
+    // Approve bridge
+    const approveTx = await l1Usdc.approve(contracts.l1StandardBridgeProxy, depositAmount);
+    await approveTx.wait(1);
+    console.log(`[bridge] USDC approve confirmed`);
+
+    // Bridge ERC20: bridgeERC20To(localToken, remoteToken, to, amount, minGasLimit, extraData)
+    const BRIDGE_ERC20_ABI = [
+      'function bridgeERC20To(address _localToken, address _remoteToken, address _to, uint256 _amount, uint32 _minGasLimit, bytes calldata _extraData) external',
+    ];
+    const bridge = new ethers.Contract(contracts.l1StandardBridgeProxy, BRIDGE_ERC20_ABI, l1Wallet);
+    const bridgeTx = await bridge.bridgeERC20To(
+      L1_USDC, L2_USDC, adminAddress, depositAmount, 200_000, '0x',
+      { gasLimit: 800_000 }
+    );
+    console.log(`[bridge] USDC deposit tx: ${bridgeTx.hash}`);
+    await bridgeTx.wait(1);
+    console.log(`[bridge] USDC deposit confirmed on L1`);
+
+    // Wait for L2 USDC balance to increase
+    const l2UsdcAfter = await pollUntil(
+      async () => {
+        const bal = await l2Usdc.balanceOf(adminAddress) as bigint;
+        return bal > l2UsdcBefore ? bal : null;
+      },
+      'L2 USDC balance increase after deposit',
+      300_000,
+      10_000
+    );
+    console.log(`[bridge] L2 USDC: ${Number(l2UsdcBefore) / 1e6} → ${Number(l2UsdcAfter) / 1e6}`);
+    expect(l2UsdcAfter).toBeGreaterThan(l2UsdcBefore);
+  });
 });
