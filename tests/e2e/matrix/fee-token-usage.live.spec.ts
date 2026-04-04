@@ -3,9 +3,9 @@
  *
  * Self-contained test that:
  *   1. Deploys a MinimalAccount (IAccount that always validates)
- *   2. Constructor calls WUSDC.approve(paymaster, maxUint)
- *   3. Wraps admin TON → WUSDC, transfers to MinimalAccount
- *   4. Executes UserOp via handleOps → verifies WUSDC deducted from sender
+ *   2. Constructor calls BridgedUSDC.approve(paymaster, maxUint)
+ *   3. Wraps admin TON → BridgedUSDC, transfers to MinimalAccount
+ *   4. Executes UserOp via handleOps → verifies BridgedUSDC deducted from sender
  *
  * Usage:
  *   LIVE_CHAIN_NAME=usdc-full-e2e2 npx playwright test \
@@ -22,7 +22,9 @@ const ADMIN_KEY = process.env.ADMIN_KEY ?? '679d88a9fb565707c0aff9434f9c141fee0b
 
 const MULTI_TOKEN_PAYMASTER = '0x4200000000000000000000000000000000000067';
 const ENTRYPOINT_V08 = '0x4200000000000000000000000000000000000063';
-const WUSDC_ADDRESS = '0x4200000000000000000000000000000000000006';
+// BridgedUSDC — the actual fee token registered with MultiTokenPaymaster (6 decimals)
+const FEE_TOKEN = '0x4200000000000000000000000000000000000778';
+const FEE_TOKEN_DECIMALS = 6;
 
 interface PackedUserOp {
   sender: string;
@@ -70,10 +72,10 @@ function signUserOpRaw(wallet: ethers.Wallet, hash: string): string {
 }
 
 /**
- * Build MinimalAccount bytecode with constructor that calls WUSDC.approve(paymaster, max).
+ * Build MinimalAccount bytecode with constructor that calls BridgedUSDC.approve(paymaster, max).
  *
  * Runtime: validateUserOp always returns 0, receive() accepts ETH.
- * Constructor: calls WUSDC.approve(PAYMASTER, type(uint256).max).
+ * Constructor: calls BridgedUSDC.approve(PAYMASTER, type(uint256).max).
  *
  * We use ethers ContractFactory with inline ABI + bytecode from Solidity:
  *
@@ -109,13 +111,13 @@ function buildMinimalAccountFactory(): ethers.ContractFactory {
 
   const runtimeLen = ethers.dataLength(runtime);
 
-  // Constructor: call WUSDC.approve(paymaster, maxUint), then return runtime
+  // Constructor: call BridgedUSDC.approve(paymaster, maxUint), then return runtime
   // Constructor args are ABI-encoded at the end of initCode by ContractFactory.
-  // We use a simpler approach: hardcode WUSDC and PAYMASTER addresses.
+  // We use a simpler approach: hardcode BridgedUSDC and PAYMASTER addresses.
 
   // Constructor bytecode that:
   // 1. Builds approve(paymaster, maxUint) calldata in memory
-  // 2. CALL to WUSDC
+  // 2. CALL to BridgedUSDC
   // 3. Returns runtime code
 
   // approve(address,uint256) selector = 0x095ea7b3
@@ -126,7 +128,7 @@ function buildMinimalAccountFactory(): ethers.ContractFactory {
 
   // Constructor pseudocode:
   // MSTORE approve calldata at memory[0..67]
-  // CALL(gas, WUSDC, 0, 0, 68, 0, 0)
+  // CALL(gas, BridgedUSDC, 0, 0, 68, 0, 0)
   // CODECOPY runtime to memory
   // RETURN runtime
 
@@ -139,7 +141,7 @@ function buildMinimalAccountFactory(): ethers.ContractFactory {
 
   // We'll skip hand-crafting and use a deployment that inlines the approve.
   // The most reliable approach: deploy via CREATE, then call approve separately
-  // using admin as msg.sender to the WUSDC contract on behalf of the new account.
+  // using admin as msg.sender to the BridgedUSDC contract on behalf of the new account.
   // But we can't call approve FROM the new contract without the contract calling it.
 
   // REAL solution: use the runtime code that includes execute(), and call it after deploy.
@@ -174,26 +176,28 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     adminWallet = new ethers.Wallet(ADMIN_KEY, l2Provider);
   });
 
-  test('setup: deploy account + approve + seed WUSDC', async () => {
+  test('setup: deploy account + approve + seed BridgedUSDC', async () => {
     test.setTimeout(120_000);
     const adminAddress = adminWallet.address;
 
-    // 1. Wrap TON → WUSDC for admin
-    const wusdc = new ethers.Contract(WUSDC_ADDRESS, [
+    // 1. Check admin BridgedUSDC balance (from prior bridge deposit)
+    const feeToken = new ethers.Contract(FEE_TOKEN, [
       'function balanceOf(address) view returns (uint256)',
-      'function deposit() payable',
       'function transfer(address,uint256) returns (bool)',
       'function approve(address,uint256) returns (bool)',
       'function allowance(address,address) view returns (uint256)',
+      'function decimals() view returns (uint8)',
     ], adminWallet);
 
-    let adminWusdcBal = await wusdc.balanceOf(adminAddress) as bigint;
-    if (adminWusdcBal < ethers.parseEther('2')) {
-      const wrapTx = await wusdc.deposit({ value: ethers.parseEther('3'), gasLimit: 100_000 });
-      await wrapTx.wait();
-      adminWusdcBal = await wusdc.balanceOf(adminAddress) as bigint;
+    const adminFeeBalance = await feeToken.balanceOf(adminAddress) as bigint;
+    const unit = 10n ** BigInt(FEE_TOKEN_DECIMALS);
+    console.log(`[fee-token] Admin BridgedUSDC: ${Number(adminFeeBalance) / Number(unit)} USDC`);
+
+    if (adminFeeBalance < unit) { // < 1 USDC
+      console.warn('[fee-token] Admin has < 1 BridgedUSDC — run bridge-deposit-withdraw first');
+      test.skip();
+      return;
     }
-    console.log(`[fee-token] Admin WUSDC: ${ethers.formatEther(adminWusdcBal)}`);
 
     // 2. Deploy MinimalAccount via CREATE
     // Simple runtime: returns 0 for any call (validateUserOp returns 0)
@@ -234,8 +238,8 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     console.log(`[fee-token] Code length: ${ethers.dataLength(code)} bytes`);
     expect(ethers.dataLength(code)).toBeGreaterThan(0);
 
-    // 3. Admin approves paymaster to spend WUSDC FROM admin address
-    //    (we'll use admin as the WUSDC source and do transferFrom in a workaround)
+    // 3. Admin approves paymaster to spend BridgedUSDC FROM admin address
+    //    (we'll use admin as the BridgedUSDC source and do transferFrom in a workaround)
     //
     //    Actually, since we can't call approve from MinimalAccount (no execute),
     //    we need a different approach for the allowance.
@@ -245,8 +249,8 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     //    Since we can't call approve from MinimalAccount, we use a trick:
     //    Deploy the account via CREATE2 with a constructor that calls approve.
 
-    // Rebuild with constructor that calls WUSDC.approve(paymaster, max):
-    // Constructor does: WUSDC.call(approve(paymaster, maxUint256))
+    // Rebuild with constructor that calls BridgedUSDC.approve(paymaster, max):
+    // Constructor does: BridgedUSDC.call(approve(paymaster, maxUint256))
 
     // approve calldata (68 bytes)
     const approveCd = ethers.concat([
@@ -258,7 +262,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
 
     // Constructor that:
     // 1. Stores approve calldata in memory
-    // 2. CALL(gas, WUSDC, 0, memOffset, 68, 0, 0)
+    // 2. CALL(gas, BridgedUSDC, 0, memOffset, 68, 0, 0)
     // 3. Returns runtime code
 
     // Store calldata: PUSH32 first32bytes PUSH1 0 MSTORE, PUSH32 next32bytes PUSH1 0x20 MSTORE, PUSH4 last4bytes PUSH1 0x40 MSTORE
@@ -266,7 +270,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     const cd1 = approveCdHex.slice(64, 128); // 32 bytes
     const cd2 = approveCdHex.slice(128);     // 4 bytes (padded to 32)
 
-    const wusdcAddrHex = WUSDC_ADDRESS.slice(2).toLowerCase();
+    const feeTokenAddrHex = FEE_TOKEN.slice(2).toLowerCase();
 
     // Build constructor bytecode manually
     const constructorOps = [
@@ -275,13 +279,13 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
       `7f${cd1}`, '6020', '52',             // MSTORE memory[32] = next 32 bytes
       `7f${cd2.padEnd(64, '0')}`, '6040', '52', // MSTORE memory[64] = last 4 bytes (padded)
 
-      // CALL(gas, WUSDC, 0, 0, 68, 0, 0)
+      // CALL(gas, BridgedUSDC, 0, 0, 68, 0, 0)
       '6000',                                // retSize = 0
       '6000',                                // retOffset = 0
       '6044',                                // argSize = 68
       '6000',                                // argOffset = 0
       '6000',                                // value = 0
-      `73${wusdcAddrHex}`,                   // PUSH20 WUSDC address
+      `73${feeTokenAddrHex}`,                   // PUSH20 BridgedUSDC address
       '5a',                                  // GAS
       'f1',                                  // CALL
       '50',                                  // POP result
@@ -316,7 +320,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
       `7f${cd0}`, '6000', '52',
       `7f${cd1}`, '6020', '52',
       `7f${cd2.padEnd(64, '0')}`, '6040', '52',
-      '6000', '6000', '6044', '6000', '6000', `73${wusdcAddrHex}`, '5a', 'f1', '50',
+      '6000', '6000', '6044', '6000', '6000', `73${feeTokenAddrHex}`, '5a', 'f1', '50',
     ].join('');
 
     // Now: CODECOPY + RETURN
@@ -338,7 +342,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
       'f3' +                                                          // RETURN
       runtimeHex;
 
-    // Deploy this account (constructor approves WUSDC for paymaster)
+    // Deploy this account (constructor approves BridgedUSDC for paymaster)
     const deploy2Tx = await adminWallet.sendTransaction({ data: fullInitCode, gasLimit: 500_000 });
     const deploy2Receipt = await deploy2Tx.wait();
     senderAddress = deploy2Receipt!.contractAddress!;
@@ -349,32 +353,33 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     expect(ethers.dataLength(code2)).toBe(runtimeLen);
 
     // Verify allowance
-    const allowance = await wusdc.allowance(senderAddress, MULTI_TOKEN_PAYMASTER) as bigint;
+    const allowance = await feeToken.allowance(senderAddress, MULTI_TOKEN_PAYMASTER) as bigint;
     console.log(`[fee-token] Allowance: ${allowance > 0n ? 'SET ✅' : 'MISSING ❌'}`);
     expect(allowance).toBeGreaterThan(0n);
 
-    // 4. Transfer WUSDC to the account
-    const transferTx = await wusdc.transfer(senderAddress, ethers.parseEther('1'));
+    // 4. Transfer BridgedUSDC to the account (1 USDC = 1_000_000 in 6 decimals)
+    const transferAmount = 1_000_000n; // 1 USDC
+    const transferTx = await feeToken.transfer(senderAddress, transferAmount);
     await transferTx.wait();
-    const senderBal = await wusdc.balanceOf(senderAddress) as bigint;
-    console.log(`[fee-token] Account WUSDC: ${ethers.formatEther(senderBal)}`);
+    const senderBal = await feeToken.balanceOf(senderAddress) as bigint;
+    console.log(`[fee-token] Account BridgedUSDC: ${Number(senderBal) / 1e6} USDC`);
     expect(senderBal).toBeGreaterThan(0n);
   });
 
-  test('verify WUSDC deducted, TON used only for gas', async () => {
+  test('verify BridgedUSDC deducted, TON used only for gas', async () => {
     test.setTimeout(180_000);
     expect(senderAddress).toBeTruthy();
 
     const adminAddress = adminWallet.address;
-    const wusdcIface = new ethers.Interface(['function balanceOf(address) view returns (uint256)']);
+    const feeTokenIface = new ethers.Interface(['function balanceOf(address) view returns (uint256)']);
 
     // Snapshot before
     const wusdcBefore = ethers.AbiCoder.defaultAbiCoder().decode(
       ['uint256'],
-      await l2Provider.call({ to: WUSDC_ADDRESS, data: wusdcIface.encodeFunctionData('balanceOf', [senderAddress]) })
+      await l2Provider.call({ to: FEE_TOKEN, data: feeTokenIface.encodeFunctionData('balanceOf', [senderAddress]) })
     )[0] as bigint;
     const adminTonBefore = await l2Provider.getBalance(adminAddress);
-    console.log(`[fee-token] Sender WUSDC before: ${ethers.formatEther(wusdcBefore)}`);
+    console.log(`[fee-token] Sender BridgedUSDC before: ${ethers.formatEther(wusdcBefore)}`);
 
     // Nonce
     const epIface = new ethers.Interface(['function getNonce(address, uint192) view returns (uint256)']);
@@ -396,7 +401,7 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
       accountGasLimits: packUint128x2(100000n, 50000n),
       preVerificationGas: ethers.toBeHex(50000n),
       gasFees: packUint128x2(0n, gasPrice),
-      paymasterAndData: buildPaymasterAndData(WUSDC_ADDRESS),
+      paymasterAndData: buildPaymasterAndData(FEE_TOKEN),
       signature: '0x',
     };
 
@@ -443,15 +448,15 @@ test.describe(`Fee Token Usage [${config.preset}/${config.feeToken}]`, () => {
     // Verify
     const wusdcAfter = ethers.AbiCoder.defaultAbiCoder().decode(
       ['uint256'],
-      await l2Provider.call({ to: WUSDC_ADDRESS, data: wusdcIface.encodeFunctionData('balanceOf', [senderAddress]) })
+      await l2Provider.call({ to: FEE_TOKEN, data: feeTokenIface.encodeFunctionData('balanceOf', [senderAddress]) })
     )[0] as bigint;
     const adminTonAfter = await l2Provider.getBalance(adminAddress);
 
-    console.log(`[fee-token] Sender WUSDC after: ${ethers.formatEther(wusdcAfter)}`);
-    console.log(`[fee-token] WUSDC fee: ${ethers.formatEther(wusdcBefore - wusdcAfter)}`);
+    console.log(`[fee-token] Sender BridgedUSDC after: ${ethers.formatEther(wusdcAfter)}`);
+    console.log(`[fee-token] BridgedUSDC fee: ${ethers.formatEther(wusdcBefore - wusdcAfter)}`);
     console.log(`[fee-token] Admin TON gas: ${ethers.formatEther(adminTonBefore - adminTonAfter)}`);
 
     expect(wusdcAfter).toBeLessThan(wusdcBefore);
-    console.log(`[fee-token] ✅ WUSDC deducted from sender, TON used only for gas`);
+    console.log(`[fee-token] ✅ BridgedUSDC deducted from sender, TON used only for gas`);
   });
 });
