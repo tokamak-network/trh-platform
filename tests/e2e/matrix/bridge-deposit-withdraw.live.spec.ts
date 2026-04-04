@@ -18,7 +18,7 @@
 import { test, expect } from '@playwright/test';
 import { ethers } from 'ethers';
 import { getStackConfig } from '../helpers/matrix-config';
-import { resolveStackUrls, loginBackend, StackUrls } from '../helpers/stack-resolver';
+import { resolveStackUrls, resolveContractAddresses, StackUrls } from '../helpers/stack-resolver';
 import { pollUntil } from '../helpers/poll';
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -57,29 +57,11 @@ let l2Provider: ethers.JsonRpcProvider;
 let l1Wallet: ethers.Wallet;
 let l2Wallet: ethers.Wallet;
 let adminAddress: string;
-let contracts: { l1StandardBridgeProxy: string; systemConfigProxy: string; optimismPortalProxy: string };
+let contracts: { l1StandardBridgeProxy: string; systemConfigProxy: string; optimismPortalProxy: string; disputeGameFactoryProxy: string };
 let nativeTokenAddr: string;
 
 let tonDepositTxHash: string;
 let tonWithdrawTxHash: string;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-async function getDeploymentContracts(stackId: string): Promise<Record<string, string>> {
-  const token = await loginBackend();
-  const backendUrl = process.env.LIVE_BACKEND_URL ?? 'http://localhost:8000';
-  const resp = await fetch(`${backendUrl}/api/v1/stacks/thanos/${stackId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const body = await resp.json() as Record<string, unknown>;
-  const data = (body.data ?? body) as Record<string, unknown>;
-  const stack = (data.stack ?? data) as Record<string, unknown>;
-  const meta = (stack.metadata ?? {}) as Record<string, unknown>;
-  return {
-    l1StandardBridgeProxy: (meta.l1StandardBridgeProxy as string) ?? '',
-    systemConfigProxy: (meta.systemConfigProxy as string) ?? '',
-    optimismPortalProxy: (meta.optimismPortalProxy as string) ?? '',
-  };
-}
 
 async function readNativeTokenAddress(l1: ethers.JsonRpcProvider, sysConfigAddr: string): Promise<string> {
   const selector = ethers.id('nativeTokenAddress()').slice(0, 10);
@@ -99,8 +81,8 @@ test.describe(`Bridge Deposit & Withdraw [${config.preset}/${config.feeToken}]`,
     l2Wallet = new ethers.Wallet(ADMIN_KEY, l2Provider);
     adminAddress = l1Wallet.address;
 
-    // Read contract addresses from stack metadata
-    contracts = await getDeploymentContracts(urls.stackId) as typeof contracts;
+    // Read contract addresses from deployment JSON inside backend container
+    contracts = await resolveContractAddresses(urls.stackId);
     console.log(`[bridge] L1StandardBridge: ${contracts.l1StandardBridgeProxy}`);
     console.log(`[bridge] SystemConfig: ${contracts.systemConfigProxy}`);
 

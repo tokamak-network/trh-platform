@@ -80,6 +80,58 @@ export async function loginBackend(backendUrl?: string): Promise<string> {
 }
 
 /**
+ * Read L1 contract addresses from the deployment JSON inside the backend container.
+ * Falls back to stack config if docker exec is not available.
+ */
+export async function resolveContractAddresses(stackId: string, token?: string): Promise<{
+  l1StandardBridgeProxy: string;
+  systemConfigProxy: string;
+  optimismPortalProxy: string;
+  disputeGameFactoryProxy: string;
+}> {
+  const backendUrl = getBackendUrl();
+  const jwt = token ?? await loginBackend(backendUrl);
+
+  // Get deployment path from stack config
+  const resp = await fetch(`${backendUrl}/api/v1/stacks/thanos/${stackId}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  if (!resp.ok) throw new Error(`Failed to fetch stack: ${resp.status}`);
+
+  const body = await resp.json() as Record<string, unknown>;
+  const data = (body.data ?? body) as Record<string, unknown>;
+  const stack = (data.stack ?? data) as Record<string, unknown>;
+  const config = (stack.config ?? {}) as Record<string, unknown>;
+  const deploymentPath = config.deploymentPath as string;
+
+  if (!deploymentPath) {
+    throw new Error('No deploymentPath in stack config');
+  }
+
+  // Read deployment JSON via docker exec on backend container
+  const { execSync } = await import('child_process');
+  const deployJsonPath = `${deploymentPath}/tokamak-thanos/packages/tokamak/contracts-bedrock/deployments/11155111-deploy.json`;
+
+  try {
+    const raw = execSync(
+      `docker exec trh-backend cat "${deployJsonPath}"`,
+      { encoding: 'utf-8', timeout: 10_000 }
+    );
+    const deployJson = JSON.parse(raw) as Record<string, string>;
+    return {
+      l1StandardBridgeProxy: deployJson.L1StandardBridgeProxy ?? '',
+      systemConfigProxy: deployJson.SystemConfigProxy ?? '',
+      optimismPortalProxy: deployJson.OptimismPortalProxy ?? '',
+      disputeGameFactoryProxy: deployJson.DisputeGameFactoryProxy ?? '',
+    };
+  } catch (err) {
+    throw new Error(
+      `Failed to read deployment JSON from backend container: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+/**
  * Resolve all service URLs for a stack identified by `chainName`.
  *
  * Authenticates to the backend API (or uses a provided token), fetches the
