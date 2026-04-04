@@ -104,7 +104,9 @@ test.describe(`Full Cycle [${config.preset}/${config.feeToken}]`, () => {
   });
 
   test('op-node sync status', async () => {
-    test.setTimeout(120_000);
+    // op-node needs time to sync with L1 (Sepolia finality ~15min).
+    // headL2 may stay 0 for several minutes after deploy.
+    test.setTimeout(600_000);
     const sync = await pollUntil(
       async () => {
         try {
@@ -115,8 +117,8 @@ test.describe(`Full Cycle [${config.preset}/${config.feeToken}]`, () => {
         }
       },
       'op-node headL2 > 0',
-      120_000,
-      10_000
+      540_000,
+      15_000
     );
     expect(sync.headL2).toBeGreaterThan(0);
   });
