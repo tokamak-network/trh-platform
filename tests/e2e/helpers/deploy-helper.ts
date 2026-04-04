@@ -48,7 +48,7 @@ export interface StackStatus {
 const DEFAULT_TEST_MNEMONIC =
   'test test test test test test test test test test test junk';
 
-const DEPLOY_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+const DEPLOY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes (Sepolia L1 contract deploy varies)
 const DEPLOY_POLL_INTERVAL_MS = 15_000;    // 15 seconds
 const TEARDOWN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const TEARDOWN_POLL_INTERVAL_MS = 10_000;  // 10 seconds

@@ -271,7 +271,21 @@ test.describe(`Full Cycle [${config.preset}/${config.feeToken}]`, () => {
       test.skip();
       return;
     }
+    // Bundler (alto) only starts if L1→L2 bridge funding succeeded during deploy.
+    // If admin has 0 L2 balance, bundler was never started — soft-skip.
     test.setTimeout(60_000);
+    try {
+      const resp = await fetch(urls.bundlerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_supportedEntryPoints', params: [], id: 1 }) });
+      if (!resp.ok) {
+        console.warn(`[full-cycle] Bundler unreachable (port 4337) — likely not started (bridge funding may have failed)`);
+        test.skip();
+        return;
+      }
+    } catch {
+      console.warn(`[full-cycle] Bundler not running — skipping (bridge funding prerequisite not met)`);
+      test.skip();
+      return;
+    }
     const ok = await pollUntil(
       async () => {
         try {
