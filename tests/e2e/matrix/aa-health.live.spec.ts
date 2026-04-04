@@ -15,6 +15,7 @@
 import { test, expect } from '@playwright/test';
 import { getStackConfig, needsAASetup } from '../helpers/matrix-config';
 import { resolveStackUrls, StackUrls } from '../helpers/stack-resolver';
+import { pollUntil } from '../helpers/poll';
 import { ethers } from 'ethers';
 
 const PAYMASTER = '0x4200000000000000000000000000000000000067';
@@ -44,38 +45,24 @@ test.describe(`AA Health [${config.preset}/${config.feeToken}]`, () => {
   });
 
   test('Bundler alive (eth_supportedEntryPoints)', async () => {
-    // Bundler (alto) only starts if L1→L2 bridge funding succeeded during deploy.
-    // Quick reachability check before full assertion.
-    try {
-      const probe = await fetch(urls.bundlerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'web3_clientVersion', params: [], id: 0 }) });
-      if (!probe.ok) {
-        console.warn('[aa-health] Bundler not reachable — likely not started (bridge funding prerequisite)');
-        test.skip();
-        return;
-      }
-    } catch {
-      console.warn('[aa-health] Bundler not running — skipping');
-      test.skip();
-      return;
-    }
+    // Bundler (alto) starts after bridge funding + AA setup. May take 1-2 min.
+    // Poll instead of single-shot check.
+    test.setTimeout(120_000);
+    const result = await pollUntil(
+      async () => {
+        try {
+          const r = await fetch(urls.bundlerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_supportedEntryPoints', params: [], id: 1 }) });
+          if (!r.ok) return null;
+          const b = await r.json() as { result?: string[] };
+          return b.result && b.result.length > 0 ? b.result : null;
+        } catch { return null; }
+      },
+      'bundler eth_supportedEntryPoints',
+      90_000,
+      10_000
+    );
 
-    const resp = await fetch(urls.bundlerUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'eth_supportedEntryPoints',
-        params: [],
-        id: 1,
-      }),
-    });
-
-    expect(resp.ok).toBe(true);
-
-    const body = await resp.json() as { result?: string[] };
-    expect(body.result).toBeDefined();
-    expect(
-      body.result!.map((addr: string) => addr.toLowerCase())
-    ).toContain(ENTRYPOINT_V08.toLowerCase());
+    expect(result).toBeDefined();
+    expect(result!.map((a: string) => a.toLowerCase())).toContain(ENTRYPOINT_V08.toLowerCase());
   });
 });
