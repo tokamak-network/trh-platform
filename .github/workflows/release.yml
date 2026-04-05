@@ -169,12 +169,14 @@ jobs:
             ### Changelog
 
             #### Features
-            - **Uninstall Platform**: Added gear menu (⚙) in webapp view with dropdown and confirmation modal to cleanly remove the platform
-            - **Native macOS menu**: Replaced gear overlay button with native macOS context menu for uninstall action
+            - **Uninstall Platform**: Native macOS tray menu with confirmation modal to cleanly remove the platform
+            - **Restart App**: Tray menu item to relaunch the application
             - **Streamlined startup**: Removed ConfigPage — app now auto-detects Docker status and goes directly to the platform view at startup
-            - **Auto-login reliability**: Strengthened auto-login flow in webview to handle edge cases and reconnection scenarios
+            - **Token-based auto-login**: Preload-based token injection bypasses login screen entirely
+            - **E2E test suite**: Matrix health specs, AA paymaster smoke test, bridge deposit/withdraw, fee-token usage tests
 
             #### Bug Fixes
+            - Gear overlay button removed — actions moved to native Tray menu
             - Auto-login now correctly triggers on SPA navigation to `/auth`
             - External links now open in the system browser instead of a sub-window
             - Default window size increased to 1440×1024 to prevent key setup UI clipping
@@ -182,6 +184,7 @@ jobs:
             - Docker backend container now has `host.docker.internal` host mapping
             - Auto-login re-enabled correctly after backend restart during setup
             - Backend entrypoint simplified to use `./main` directly
+            - macOS title bar offset applied to WebContentsView bounds
 
             ---
 
