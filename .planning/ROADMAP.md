@@ -30,10 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 각 Deposit Tx 후 L2 receipt status==1을 확인하여 배포 성공을 검증한다
   4. DeployCrossTradeLocalOutput 구조체가 4개 컨트랙트 주소를 정확히 반환한다
   5. OptimismPortal ABI 바인딩이 abigen으로 생성되어 Go 코드에서 사용 가능하다
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 01-01-PLAN.md — ABI 추출, abigen 바인딩 생성, 타입 정의 스캐폴드
+- [x] 01-01-PLAN.md — ABI 추출, abigen 바인딩 생성, 타입 정의 스캐폴드
 - [ ] 01-02-PLAN.md — Deposit Tx 헬퍼 함수 + L2CrossTrade 쌍 7-step 배포 시퀀스
 - [ ] 01-03-PLAN.md — L2toL2CrossTrade 쌍 배포 + DeployCrossTradeLocal 전체 조립
 
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. SDK L1 Deposit Tx Deployment | 0/3 | Planning complete | - |
+| 1. SDK L1 Deposit Tx Deployment | 1/3 | In Progress|  |
 | 2. Preset Alignment | 0/2 | Not started | - |
 | 3. Backend Auto-Install Pipeline | 0/3 | Not started | - |
 | 4. Platform & UI Integration | 0/3 | Not started | - |
