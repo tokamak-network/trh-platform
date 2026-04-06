@@ -1,8 +1,8 @@
-# Roadmap: TRH Preset Deployment Test Harness
+# Roadmap: CrossTrade TRH Integration
 
 ## Overview
 
-Preset 배포 흐름의 mock 기반 테스트 suite를 bottom-up으로 구축한다. 먼저 테스트 인프라와 fixture를 세우고 Preset/Funding 핵심 로직을 unit test로 검증한 뒤, Docker/Deploy Target 스키마 validation, IPC 통합 테스트, 마지막으로 Playwright E2E 시나리오 순서로 진행한다. 모든 외부 의존성은 mock/stub으로 대체하며, 4개 Preset x 2개 인프라(Local Docker, AWS EC2) 조합을 파라메트릭하게 커버한다.
+DeFi/Full Preset L2 배포에 CrossTrade 프로토콜 자동 통합을 구현한다. SDK에서 L1 Deposit Tx 기반 L2 컨트랙트 배포를 구현하고, Backend에서 auto-install 파이프라인과 L1 setChainInfo 등록을 처리하며, Platform/UI에서 dApp 컨테이너와 상태 카드를 추가한 뒤, Sepolia E2E 검증으로 마무리한다. 4개 레포(trh-sdk, trh-backend, trh-platform, trh-platform-ui) 순차 작업이며, 기존 AWS CrossTrade 코드는 수정하지 않고 새 파일로 병존한다.
 
 ## Phases
 
@@ -12,91 +12,102 @@ Preset 배포 흐름의 mock 기반 테스트 suite를 bottom-up으로 구축한
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Preset Logic** - Test infra setup, fixture data, Preset config/Funding unit tests
-- [ ] **Phase 2: Docker Stack & Deploy Target** - Docker compose schema validation and deployment path verification
-- [ ] **Phase 3: IPC Integration** - Electron IPC and Backend API contract integration tests
-- [ ] **Phase 4: E2E Wizard Scenarios** - Playwright full-flow preset deployment scenarios
+- [ ] **Phase 1: SDK L1 Deposit Tx Deployment** - L1 OptimismPortal을 통한 CrossTrade L2 컨트랙트 4개 배포 함수 구현
+- [ ] **Phase 2: Preset Alignment** - SDK/Backend/UI 전체에서 DeFi=crossTrade true, Gaming=false 정합성 확보
+- [ ] **Phase 3: Backend Auto-Install Pipeline** - 로컬 배포 시 CrossTrade 자동 설치 (SDK 호출 -> setChainInfo -> dApp 시작)
+- [ ] **Phase 4: Platform & UI Integration** - Docker Compose dApp 서비스 추가 및 CrossTrade 상태 카드 UI
+- [ ] **Phase 5: E2E Sepolia Validation** - Sepolia에서 전체 CrossTrade 플로우 검증
 
 ## Phase Details
 
-### Phase 1: Foundation & Preset Logic
-**Goal**: 테스트 인프라가 구축되고, 4개 Preset의 config/funding 핵심 로직이 unit test로 검증된 상태
+### Phase 1: SDK L1 Deposit Tx Deployment
+**Goal**: DeployCrossTradeLocal() 함수가 L1 Deposit Tx 12-14단계를 통해 CrossTrade L2 컨트랙트 4개를 배포하고 주소를 반환한다
 **Depends on**: Nothing (first phase)
-**Requirements**: INFR-01, INFR-02, INFR-03, INFR-04, PSET-01, PSET-02, PSET-03, PSET-04, PSET-05, PSET-06, PSET-07, FUND-01, FUND-02, FUND-03, FUND-04
+**Requirements**: SDK-01, SDK-02, SDK-03, SDK-04, SDK-05, SDK-06, SDK-07
 **Success Criteria** (what must be TRUE):
-  1. `npm test` 실행 시 Vitest가 tests/ 디렉토리의 unit test를 발견하고 실행할 수 있다
-  2. 4개 Preset(General, DeFi, Gaming, Full)에 대해 BatchFreq, OutputFreq, Backup, Predeploys, Module, FeeToken이 기대값과 일치하는 테스트가 통과한다
-  3. BIP44 seed phrase에서 4개 계정(admin/sequencer/batcher/proposer) 주소가 올바르게 파생되는 테스트가 통과한다
-  4. Testnet 0.5 ETH / Mainnet 2 ETH 잔액 기준과 미달 시 차단 로직 테스트가 통과한다
-  5. 4 Preset x 2 인프라(Local/AWS) 파라메트릭 cross-regression matrix가 모두 통과한다
-**Plans**: 3 plans
+  1. cross_trade_local.go의 DeployCrossTradeLocal()이 L1 OptimismPortal.depositTransaction()을 호출하여 L2CrossTrade impl+proxy를 배포할 수 있다
+  2. L2toL2CrossTradeL2 impl+proxy도 동일한 패턴으로 배포할 수 있다
+  3. 각 Deposit Tx 후 L2 receipt status==1을 확인하여 배포 성공을 검증한다
+  4. DeployCrossTradeLocalOutput 구조체가 4개 컨트랙트 주소를 정확히 반환한다
+  5. OptimismPortal ABI 바인딩이 abigen으로 생성되어 Go 코드에서 사용 가능하다
+**Plans:** 3 plans
 
 Plans:
-- [x] 01-01-PLAN.md — Test infra setup: Vitest config, zod, golden JSON fixture, schemas, helpers
-- [ ] 01-02-PLAN.md — Preset config unit tests (PSET-01~07): chain params, modules, predeploys, fee tokens, matrix
-- [x] 01-03-PLAN.md — Funding flow unit tests (FUND-01~04): BIP44 derivation, balance thresholds, blocking logic
+- [ ] 01-01-PLAN.md — ABI 추출, abigen 바인딩 생성, 타입 정의 스캐폴드
+- [ ] 01-02-PLAN.md — Deposit Tx 헬퍼 함수 + L2CrossTrade 쌍 7-step 배포 시퀀스
+- [ ] 01-03-PLAN.md — L2toL2CrossTrade 쌍 배포 + DeployCrossTradeLocal 전체 조립
 
-### Phase 2: Docker Stack & Deploy Target
-**Goal**: Docker compose 스키마와 Local/AWS 배포 경로의 명령 시퀀스가 검증된 상태
-**Depends on**: Phase 1
-**Requirements**: DOCK-01, DOCK-02, DOCK-03, DOCK-04, DTGT-01, DTGT-02, DTGT-03, DTGT-04
+### Phase 2: Preset Alignment
+**Goal**: DeFi/Full preset에 crossTrade=true, Gaming에 crossTrade=false가 SDK, Backend, UI 전체에서 일관되게 설정된다
+**Depends on**: Nothing (Phase 1과 독립적, preset 설정은 배포 함수와 별개)
+**Requirements**: SDK-08, SDK-09, SDK-10, BE-01, BE-02
 **Success Criteria** (what must be TRUE):
-  1. docker-compose.yml이 Zod 스키마 validation을 통과하고 services/volumes/networks 구조가 유효하다
-  2. 컨테이너 의존성 순서(postgres -> backend -> frontend)와 health check 설정이 올바른 테스트가 통과한다
-  3. Local Docker 경로의 docker compose 명령 시퀀스와 AWS EC2 경로의 Terraform init/plan/apply 시퀀스가 mock 검증을 통과한다
-  4. Local/AWS 공통 로직과 인프라별 분기 로직이 올바르게 분리되어 있음을 검증하는 테스트가 통과한다
+  1. SDK PresetModules에서 DeFi=crossTrade true, Gaming=crossTrade removed/false, Full=crossTrade true가 설정된다
+  2. Backend stack_lifecycle.go의 localUnsupported에서 crossTrade 항목이 제거되어 로컬 배포가 허용된다
+  3. 로컬 infra에서 DeFi/Full preset 배포 시 CrossTrade integration entity가 생성된다
 **Plans**: TBD
 
 Plans:
 - [ ] 02-01: TBD
+- [ ] 02-02: TBD
 
-### Phase 3: IPC Integration
-**Goal**: Electron IPC 채널과 Backend API contract이 올바른 payload로 통신하는 것이 검증된 상태
-**Depends on**: Phase 1
-**Requirements**: IPC-01, IPC-02, IPC-03, IPC-04, IPC-05
+### Phase 3: Backend Auto-Install Pipeline
+**Goal**: 로컬 DeFi/Full preset 배포 시 CrossTrade가 자동으로 설치된다 (SDK 호출, L1 setChainInfo, dApp 시작까지)
+**Depends on**: Phase 1 (SDK DeployCrossTradeLocal 함수 필요), Phase 2 (localUnsupported 해제 및 preset 설정 필요)
+**Requirements**: BE-03, BE-04, BE-05, BE-06, BE-07, BE-08, BE-09, BE-10, BE-11
 **Success Criteria** (what must be TRUE):
-  1. Electron IPC 채널명이 main/renderer 간 일치하는 것을 채널 레지스트리 기반으로 검증하는 테스트가 통과한다
-  2. keystore/Docker 관련 IPC payload 형태가 Zod 스키마와 일치하는 테스트가 통과한다
-  3. POST /preset-deploy 요청/응답 스키마가 Backend API contract과 일치하는 테스트가 통과한다
-  4. WebView credential injection(window.__TRH_DESKTOP_ACCOUNTS__, window.__TRH_AWS_CREDENTIALS__)이 올바른 형태로 주입되는 테스트가 통과한다
+  1. deployment.go의 auto-install 블록에서 CrossTrade 활성화 preset일 때 SDK DeployCrossTradeLocal()을 호출한다
+  2. SDK 배포 완료 후 L1 CrossTradeProxy.setChainInfo()와 L2toL2CrossTradeL1.setChainInfo()가 자동 실행된다
+  3. setChainInfo 실패 시 최대 3회 재시도가 동작한다
+  4. config/.env.crosstrade 파일이 자동 생성되고 CrossTrade dApp Docker 컨테이너가 시작된다
+  5. integration metadata에 배포된 컨트랙트 주소와 dApp URL이 저장된다
 **Plans**: TBD
 
 Plans:
 - [ ] 03-01: TBD
+- [ ] 03-02: TBD
+- [ ] 03-03: TBD
 
-### Phase 4: E2E Wizard Scenarios
-**Goal**: Playwright로 Preset 선택부터 배포 시작까지 전체 사용자 흐름이 검증된 상태
-**Depends on**: Phase 2, Phase 3
-**Requirements**: E2E-01, E2E-02, E2E-03, E2E-04
+### Phase 4: Platform & UI Integration
+**Goal**: CrossTrade dApp이 Docker Compose로 관리되고, Platform UI에서 CrossTrade 상태를 확인할 수 있다
+**Depends on**: Phase 2 (preset 정합성 필요), Phase 3과는 독립적으로 병행 가능하나 순차 실행 모드에서는 Phase 3 이후
+**Requirements**: PLT-01, PLT-02, UI-01, UI-02, UI-03, UI-04
 **Success Criteria** (what must be TRUE):
-  1. Playwright가 Preset 선택 -> 기본 정보 입력 -> 검토 화면까지 3-step wizard를 자동으로 완주한다
-  2. 각 Preset 선택 시 올바른 모듈 미리보기와 예상 배포 시간이 표시되는 것을 검증한다
-  3. 잔액 미달 시 배포 버튼이 비활성화되고, 잔액 충분 시 활성화되는 것을 검증한다
-  4. 배포 시작 후 진행 상태 업데이트가 올바르게 표시되는 것을 검증한다
+  1. docker-compose에 CrossTrade dApp 서비스가 port 3004로 정의되어 있다
+  2. CrossTrade dApp 서비스는 DeFi/Full preset에서만 시작된다
+  3. Platform UI의 preset.ts에서 DeFi crossTrade=true, Gaming crossTrade=false가 설정된다
+  4. Rollup Detail Components 탭에 CrossTrade 상태 카드가 dApp URL 링크(localhost:3004)와 함께 표시된다
 **Plans**: TBD
 **UI hint**: yes
 
 Plans:
-- [x] 04-01: TBD
+- [ ] 04-01: TBD
+- [ ] 04-02: TBD
+- [ ] 04-03: TBD
+
+### Phase 5: E2E Sepolia Validation
+**Goal**: Sepolia 테스트넷에서 CrossTrade 전체 플로우가 검증된다
+**Depends on**: Phase 3, Phase 4 (전체 파이프라인 완성 필요)
+**Requirements**: E2E-01, E2E-02, E2E-03
+**Success Criteria** (what must be TRUE):
+  1. DeFi preset으로 Sepolia L2 배포 후 CrossTrade L2 컨트랙트 4개가 정상 배포된다
+  2. L1 setChainInfo가 성공적으로 호출되어 CrossTrade 사용 가능 상태가 된다
+  3. CrossTrade dApp이 http://localhost:3004에서 접근 가능하다
+**Plans**: TBD
+
+Plans:
+- [ ] 05-01: TBD
+- [ ] 05-02: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Preset Logic | 0/3 | Planning complete | - |
-| 2. Docker Stack & Deploy Target | 0/1 | Not started | - |
-| 3. IPC Integration | 0/1 | Not started | - |
-| 4. E2E Wizard Scenarios | 0/1 | Not started | - |
-
-### Phase 5: electron app에서 fault proof 선택 지원 구현
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 4
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 5 to break down)
+| 1. SDK L1 Deposit Tx Deployment | 0/3 | Planning complete | - |
+| 2. Preset Alignment | 0/2 | Not started | - |
+| 3. Backend Auto-Install Pipeline | 0/3 | Not started | - |
+| 4. Platform & UI Integration | 0/3 | Not started | - |
+| 5. E2E Sepolia Validation | 0/2 | Not started | - |
