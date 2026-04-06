@@ -12,7 +12,7 @@ DeFi/Full Preset L2 배포에 CrossTrade 프로토콜 자동 통합을 구현한
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: SDK L1 Deposit Tx Deployment** - L1 OptimismPortal을 통한 CrossTrade L2 컨트랙트 4개 배포 함수 구현
+- [x] **Phase 1: SDK L1 Deposit Tx Deployment** - L1 OptimismPortal을 통한 CrossTrade L2 컨트랙트 4개 배포 함수 구현 (completed 2026-04-06)
 - [ ] **Phase 2: Preset Alignment** - SDK/Backend/UI 전체에서 DeFi=crossTrade true, Gaming=false 정합성 확보
 - [ ] **Phase 3: Backend Auto-Install Pipeline** - 로컬 배포 시 CrossTrade 자동 설치 (SDK 호출 -> setChainInfo -> dApp 시작)
 - [ ] **Phase 4: Platform & UI Integration** - Docker Compose dApp 서비스 추가 및 CrossTrade 상태 카드 UI
@@ -30,12 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 각 Deposit Tx 후 L2 receipt status==1을 확인하여 배포 성공을 검증한다
   4. DeployCrossTradeLocalOutput 구조체가 4개 컨트랙트 주소를 정확히 반환한다
   5. OptimismPortal ABI 바인딩이 abigen으로 생성되어 Go 코드에서 사용 가능하다
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 01-01-PLAN.md — ABI 추출, abigen 바인딩 생성, 타입 정의 스캐폴드
-- [ ] 01-02-PLAN.md — Deposit Tx 헬퍼 함수 + L2CrossTrade 쌍 7-step 배포 시퀀스
-- [ ] 01-03-PLAN.md — L2toL2CrossTrade 쌍 배포 + DeployCrossTradeLocal 전체 조립
+- [x] 01-02-PLAN.md — Deposit Tx 헬퍼 함수 + L2CrossTrade 쌍 7-step 배포 시퀀스
+- [x] 01-03-PLAN.md — L2toL2CrossTrade 쌍 배포 + DeployCrossTradeLocal 전체 조립
 
 ### Phase 2: Preset Alignment
 **Goal**: DeFi/Full preset에 crossTrade=true, Gaming에 crossTrade=false가 SDK, Backend, UI 전체에서 일관되게 설정된다
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. SDK L1 Deposit Tx Deployment | 1/3 | In Progress|  |
+| 1. SDK L1 Deposit Tx Deployment | 3/3 | Complete   | 2026-04-06 |
 | 2. Preset Alignment | 0/2 | Not started | - |
 | 3. Backend Auto-Install Pipeline | 0/3 | Not started | - |
 | 4. Platform & UI Integration | 0/3 | Not started | - |

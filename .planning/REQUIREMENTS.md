@@ -9,12 +9,12 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 
 ### SDK — L1 Deposit Tx Deployment
 
-- [ ] **SDK-01**: DeployCrossTradeLocal() 함수가 L1 OptimismPortal.depositTransaction()을 통해 L2CrossTrade(impl) 컨트랙트를 생성할 수 있다
-- [ ] **SDK-02**: DeployCrossTradeLocal() 함수가 L2CrossTradeProxy 컨트랙트를 생성하고 ADMIN_ROLE이 deployer에게 부여된다
-- [ ] **SDK-03**: DeployCrossTradeLocal() 함수가 proxy.setSelectorImplementations2()로 impl 연결, initialize()로 CrossDomainMessenger 설정, setChainInfo()로 L1 연결, registerToken()으로 ETH 토큰 쌍을 등록할 수 있다
-- [ ] **SDK-04**: DeployCrossTradeLocal() 함수가 L2toL2CrossTradeL2(impl) + L2toL2CrossTradeProxy도 동일한 6-step으로 배포할 수 있다
+- [x] **SDK-01**: DeployCrossTradeLocal() 함수가 L1 OptimismPortal.depositTransaction()을 통해 L2CrossTrade(impl) 컨트랙트를 생성할 수 있다
+- [x] **SDK-02**: DeployCrossTradeLocal() 함수가 L2CrossTradeProxy 컨트랙트를 생성하고 ADMIN_ROLE이 deployer에게 부여된다
+- [x] **SDK-03**: DeployCrossTradeLocal() 함수가 proxy.setSelectorImplementations2()로 impl 연결, initialize()로 CrossDomainMessenger 설정, setChainInfo()로 L1 연결, registerToken()으로 ETH 토큰 쌍을 등록할 수 있다
+- [x] **SDK-04**: DeployCrossTradeLocal() 함수가 L2toL2CrossTradeL2(impl) + L2toL2CrossTradeProxy도 동일한 6-step으로 배포할 수 있다
 - [x] **SDK-05**: OptimismPortal ABI 바인딩이 abigen으로 생성되어 Go 코드에서 사용 가능하다
-- [ ] **SDK-06**: 각 L1 Deposit Tx의 L2 receipt를 확인하여 배포 성공 여부를 검증한다
+- [x] **SDK-06**: 각 L1 Deposit Tx의 L2 receipt를 확인하여 배포 성공 여부를 검증한다
 - [x] **SDK-07**: DeployCrossTradeLocalOutput 구조체가 배포된 4개 컨트랙트 주소를 정확히 반환한다
 
 ### SDK — Preset Configuration
@@ -98,12 +98,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SDK-01 | Phase 1 | Pending |
-| SDK-02 | Phase 1 | Pending |
-| SDK-03 | Phase 1 | Pending |
-| SDK-04 | Phase 1 | Pending |
+| SDK-01 | Phase 1 | Complete |
+| SDK-02 | Phase 1 | Complete |
+| SDK-03 | Phase 1 | Complete |
+| SDK-04 | Phase 1 | Complete |
 | SDK-05 | Phase 1 | Complete |
-| SDK-06 | Phase 1 | Pending |
+| SDK-06 | Phase 1 | Complete |
 | SDK-07 | Phase 1 | Complete |
 | SDK-08 | Phase 2 | Pending |
 | SDK-09 | Phase 2 | Pending |

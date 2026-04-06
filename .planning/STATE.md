@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-06T17:16:00.642Z"
+status: verifying
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-04-06T17:29:23.206Z"
 last_activity: 2026-04-06
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 3
   percent: 0
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 01 (sdk-l1-deposit-tx-deployment) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
+Plan: 3 of 3
+Status: Phase complete — ready for verification
 Last activity: 2026-04-06
 
 Progress: [..........] 0%
@@ -53,6 +53,8 @@ Progress: [..........] 0%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 3min | 2 tasks | 8 files |
+| Phase 01 P02 | 15min | 2 tasks | 1 files |
+| Phase 01 P03 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -67,6 +69,12 @@ Recent decisions affecting current work:
 - 기존 cross_trade.go 수정 금지, 새 파일로 병존
 - [Phase 01]: ABI source: crossTrade L2toL2Implementation branch hardhat artifacts (not forge out/)
 - [Phase 01]: Bytecode stored in separate constants file to keep Input struct clean per PRD v2.1
+- [Phase 01]: L2 getCode polling max 60 attempts x 2s = 120s timeout for creation tx verification
+- [Phase 01]: verifyDepositCallEffect: len(result)>0 && err==nil sufficient for function-call verification (no ABI decode)
+- [Phase 01]: setAliveImplementation2 must precede setSelectorImplementations2 (Pitfall 2 prevention)
+- [Phase 01]: chainData/registerCheck ABI presence check before optional view function verification; fallback to 10s sleep
+- [Phase 01]: registerTokenFunc callback for deployL2CrossTradePair — supports 3-param (L2CrossTrade) and 6-param (L2toL2CrossTradeL2) registerToken without overloading
+- [Phase 01]: CrossTrade ABI strings stored as exported const in abis package — go:embed cannot traverse parent dirs from pkg/stacks/thanos/
 
 ### Pending Todos
 
@@ -80,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-06T17:16:00.640Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-04-06T17:29:23.202Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
