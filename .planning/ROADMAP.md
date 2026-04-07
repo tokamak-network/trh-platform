@@ -45,10 +45,10 @@ Plans:
   1. SDK PresetModules에서 DeFi=crossTrade true, Gaming=crossTrade removed/false, Full=crossTrade true가 설정된다
   2. Backend stack_lifecycle.go의 localUnsupported에서 crossTrade 항목이 제거되어 로컬 배포가 허용된다
   3. 로컬 infra에서 DeFi/Full preset 배포 시 CrossTrade integration entity가 생성된다
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 02-01-PLAN.md — Wave 0 TDD: SDK PresetModules + Backend localUnsupported 테스트 스캐폴드
+- [x] 02-01-PLAN.md — Wave 0 TDD: SDK PresetModules + Backend localUnsupported 테스트 스캐폴드
 - [ ] 02-02-PLAN.md — SDK/Backend crossTrade 정합성 코드 수정 (3파일, ~8줄)
 
 ### Phase 3: Backend Auto-Install Pipeline
@@ -107,7 +107,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. SDK L1 Deposit Tx Deployment | 3/3 | Complete   | 2026-04-06 |
-| 2. Preset Alignment | 0/2 | Not started | - |
+| 2. Preset Alignment | 1/2 | In Progress|  |
 | 3. Backend Auto-Install Pipeline | 0/3 | Not started | - |
 | 4. Platform & UI Integration | 0/3 | Not started | - |
 | 5. E2E Sepolia Validation | 0/2 | Not started | - |

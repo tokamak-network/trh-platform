@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-04-06T17:33:19.799Z"
-last_activity: 2026-04-06
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-07T00:13:47.421Z"
+last_activity: 2026-04-07
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** DeFi/Full Preset 선택만으로 CrossTrade가 자동 배포되어 7일 출금 대기 없는 빠른 크로스체인 토큰 교환 제공
-**Current focus:** Phase 01 — sdk-l1-deposit-tx-deployment
+**Current focus:** Phase 02 — preset-alignment
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-06
+Phase: 02 (preset-alignment) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-07
 
 Progress: [..........] 0%
 
@@ -55,6 +55,7 @@ Progress: [..........] 0%
 | Phase 01 P01 | 3min | 2 tasks | 8 files |
 | Phase 01 P02 | 15min | 2 tasks | 1 files |
 | Phase 01 P03 | 3min | 2 tasks | 2 files |
+| Phase 02-preset-alignment P01 | 15 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,7 @@ Recent decisions affecting current work:
 - [Phase 01]: chainData/registerCheck ABI presence check before optional view function verification; fallback to 10s sleep
 - [Phase 01]: registerTokenFunc callback for deployL2CrossTradePair — supports 3-param (L2CrossTrade) and 6-param (L2toL2CrossTradeL2) registerToken without overloading
 - [Phase 01]: CrossTrade ABI strings stored as exported const in abis package — go:embed cannot traverse parent dirs from pkg/stacks/thanos/
+- [Phase 02-preset-alignment]: Backend 테스트에서 localUnsupported 맵 인라인 시뮬레이션: stack_lifecycle.go 내부 로직 직접 접근 불가이므로 preset definitions 레벨에서 검증
 
 ### Pending Todos
 
@@ -88,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-06T17:29:23.202Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-04-07T00:13:47.418Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

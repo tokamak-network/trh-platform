@@ -19,14 +19,14 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 
 ### SDK — Preset Configuration
 
-- [ ] **SDK-08**: PresetModules에서 DeFi preset에 crossTrade=true가 설정된다
-- [ ] **SDK-09**: PresetModules에서 Gaming preset에서 crossTrade가 제거된다
-- [ ] **SDK-10**: PresetModules에서 Full preset에 crossTrade=true가 유지된다
+- [x] **SDK-08**: PresetModules에서 DeFi preset에 crossTrade=true가 설정된다
+- [x] **SDK-09**: PresetModules에서 Gaming preset에서 crossTrade가 제거된다
+- [x] **SDK-10**: PresetModules에서 Full preset에 crossTrade=true가 유지된다
 
 ### Backend — Local Deployment Unblock
 
-- [ ] **BE-01**: stack_lifecycle.go의 localUnsupported 맵에서 crossTrade 항목이 제거된다
-- [ ] **BE-02**: 로컬 infra에서 DeFi/Full preset 배포 시 CrossTrade integration entity가 생성된다
+- [x] **BE-01**: stack_lifecycle.go의 localUnsupported 맵에서 crossTrade 항목이 제거된다
+- [x] **BE-02**: 로컬 infra에서 DeFi/Full preset 배포 시 CrossTrade integration entity가 생성된다
 
 ### Backend — Auto-Install Pipeline
 
@@ -105,11 +105,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SDK-05 | Phase 1 | Complete |
 | SDK-06 | Phase 1 | Complete |
 | SDK-07 | Phase 1 | Complete |
-| SDK-08 | Phase 2 | Pending |
-| SDK-09 | Phase 2 | Pending |
-| SDK-10 | Phase 2 | Pending |
-| BE-01 | Phase 2 | Pending |
-| BE-02 | Phase 2 | Pending |
+| SDK-08 | Phase 2 | Complete |
+| SDK-09 | Phase 2 | Complete |
+| SDK-10 | Phase 2 | Complete |
+| BE-01 | Phase 2 | Complete |
+| BE-02 | Phase 2 | Complete |
 | BE-03 | Phase 3 | Pending |
 | BE-04 | Phase 3 | Pending |
 | BE-05 | Phase 3 | Pending |
