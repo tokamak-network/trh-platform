@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-04-07T02:49:32.443Z"
+status: executing
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-04-07T03:28:10.538Z"
 last_activity: 2026-04-07
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 9
+  completed_plans: 9
   percent: 75
 ---
 
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 
 ## Current Position
 
-Phase: 03 (backend-auto-install-pipeline) — IN PROGRESS
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 03 (backend-auto-install-pipeline) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
 Last activity: 2026-04-07
 
 Progress: [██████████████░░░░░░] 75%
@@ -60,6 +60,7 @@ Progress: [██████████████░░░░░░] 75%
 | Phase 03 P01 | 4min | 2 tasks | 3 files |
 | Phase 03 P02 | 5 | 2 tasks | 2 files |
 | Phase 03 P03 | 8 | 2 tasks | 1 files |
+| Phase 03 P04 | 4min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 03]: cross_trade_local.go created in integrations package with CrossTradeDAppConfig + BuildDAppEnvConfig() (Plan 03-01 missed creating it)
 - [Phase 03]: RegisterCrossTradeL2() not needed: SDK DeployCrossTradeLocal() handles setChainInfo internally via deposit tx
 - [Phase 03]: readDeployCrossTradeContracts helper not added: autoInstallCrossTradeLocal() already uses SDK utility to read artifacts
+- [Phase 03]: RegisterCrossTradeL2() sends direct L1 txs (not deposit txs) to call setChainInfo on Sepolia CrossTrade contracts
+- [Phase 03]: L1 registration failure (D-01): integration marked failed, L2 deploy result preserved intact
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-07T02:49:32.440Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-04-07T03:28:10.533Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None

@@ -62,12 +62,13 @@ Plans:
   3. setChainInfo 실패 시 최대 3회 재시도가 동작한다
   4. config/.env.crosstrade 파일이 자동 생성된다
   5. integration metadata에 배포된 컨트랙트 주소와 dApp URL이 저장된다
-**Plans:** 3/3 plans complete
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 03-01-PLAN.md — Backend thanos_stack.go DeployCrossTradeLocal 래퍼 + deployment.go crossTrade auto-install 블록 + autoInstallCrossTradeLocal 헬퍼 (completed 2026-04-07)
 - [x] 03-02-PLAN.md — dApp Docker Compose 서비스 추가 + docker-compose.crosstrade.yml + Backend dApp 시작 연동
 - [x] 03-03-PLAN.md — L1 setChainInfo 자동 등록 (CrossTradeProxy + L2toL2CrossTradeL1, 3회 재시도)
+- [x] 03-04-PLAN.md — [GAP CLOSURE] RegisterCrossTradeL2() 구현 + deployment.go L1 등록 연결 (BE-04, BE-05, BE-06, BE-10, BE-11)
 
 ### Phase 4: Platform & UI Integration
 **Goal**: CrossTrade dApp이 Docker Compose로 관리되고, Platform UI에서 CrossTrade 상태를 확인할 수 있다
@@ -109,6 +110,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. SDK L1 Deposit Tx Deployment | 3/3 | Complete   | 2026-04-06 |
 | 2. Preset Alignment | 1/2 | In Progress|  |
-| 3. Backend Auto-Install Pipeline | 3/3 | Complete   | 2026-04-07 |
+| 3. Backend Auto-Install Pipeline | 4/4 | Complete   | 2026-04-07 |
 | 4. Platform & UI Integration | 0/3 | Not started | - |
 | 5. E2E Sepolia Validation | 0/2 | Not started | - |

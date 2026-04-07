@@ -31,17 +31,17 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 ### Backend — Auto-Install Pipeline
 
 - [x] **BE-03**: deployment.go의 로컬 auto-install 블록에서 CrossTrade가 활성화된 preset일 때 SDK의 DeployCrossTradeLocal()을 호출한다
-- [ ] **BE-04**: SDK 배포 완료 후 L1 CrossTradeProxy.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L1)
-- [ ] **BE-05**: SDK 배포 완료 후 L2toL2CrossTradeL1.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L2)
-- [ ] **BE-06**: setChainInfo 실패 시 최대 3회 재시도한다
+- [x] **BE-04**: SDK 배포 완료 후 L1 CrossTradeProxy.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L1)
+- [x] **BE-05**: SDK 배포 완료 후 L2toL2CrossTradeL1.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L2)
+- [x] **BE-06**: setChainInfo 실패 시 최대 3회 재시도한다
 - [x] **BE-07**: config/.env.crosstrade 파일을 자동 생성하여 dApp 환경 변수를 설정한다
 - [ ] **BE-08**: CrossTrade dApp Docker 컨테이너를 시작한다
 - [x] **BE-09**: integration metadata에 배포된 컨트랙트 주소와 dApp URL을 저장한다
 
 ### Backend — DTO
 
-- [ ] **BE-10**: CrossTradePresetConfig 구조체가 L1 CrossTrade 주소, owner key, 토큰 쌍을 포함한다
-- [ ] **BE-11**: cross_trade_local.go에 CrossTradeL1RegistrationInput/Output 구조체가 정의된다
+- [x] **BE-10**: CrossTradePresetConfig 구조체가 L1 CrossTrade 주소, owner key, 토큰 쌍을 포함한다
+- [x] **BE-11**: cross_trade_local.go에 CrossTradeL1RegistrationInput/Output 구조체가 정의된다
 
 ### Platform — Docker Compose
 
@@ -111,14 +111,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BE-01 | Phase 2 | Complete |
 | BE-02 | Phase 2 | Complete |
 | BE-03 | Phase 3 | Complete |
-| BE-04 | Phase 3 | Pending |
-| BE-05 | Phase 3 | Pending |
-| BE-06 | Phase 3 | Pending |
+| BE-04 | Phase 3 | Complete |
+| BE-05 | Phase 3 | Complete |
+| BE-06 | Phase 3 | Complete |
 | BE-07 | Phase 3 | Complete |
 | BE-08 | Phase 3 | Pending |
 | BE-09 | Phase 3 | Complete |
-| BE-10 | Phase 3 | Pending |
-| BE-11 | Phase 3 | Pending |
+| BE-10 | Phase 3 | Complete |
+| BE-11 | Phase 3 | Complete |
 | PLT-01 | Phase 4 | Pending |
 | PLT-02 | Phase 4 | Pending |
 | UI-01 | Phase 4 | Pending |
