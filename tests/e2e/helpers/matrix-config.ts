@@ -33,7 +33,7 @@ export interface StackConfig {
 
 export const PRESET_MODULES: Record<Preset, ModuleName[]> = {
   general: ['bridge', 'blockExplorer'],
-  defi: ['bridge', 'blockExplorer', 'monitoring', 'uptimeService'],
+  defi: ['bridge', 'blockExplorer', 'monitoring', 'uptimeService', 'crossTrade'],
   gaming: ['bridge', 'blockExplorer', 'monitoring', 'uptimeService', 'crossTrade', 'drb'],
   full: ['bridge', 'blockExplorer', 'monitoring', 'uptimeService', 'crossTrade', 'drb'],
 };

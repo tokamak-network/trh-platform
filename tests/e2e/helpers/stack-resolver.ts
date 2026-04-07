@@ -19,6 +19,7 @@ export interface StackUrls {
   uptimeUrl: string;
   drbUrl: string;
   bundlerUrl: string;
+  crossTradeUrl: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -35,6 +36,7 @@ const LOCAL_DEFAULTS: Omit<StackUrls, 'stackId' | 'l2ChainId'> = {
   uptimeUrl: 'http://localhost:3003',
   drbUrl: 'http://localhost:9600',
   bundlerUrl: 'http://localhost:4337',
+  crossTradeUrl: 'http://localhost:3004',
 };
 
 // ---------------------------------------------------------------------------
@@ -190,5 +192,6 @@ export async function resolveStackUrls(
     uptimeUrl: (meta.uptimeUrl as string) || LOCAL_DEFAULTS.uptimeUrl,
     drbUrl: (meta.drbUrl as string) || LOCAL_DEFAULTS.drbUrl,
     bundlerUrl: (meta.bundlerUrl as string) || LOCAL_DEFAULTS.bundlerUrl,
+    crossTradeUrl: (meta.crossTradeUrl as string) || LOCAL_DEFAULTS.crossTradeUrl,
   };
 }
