@@ -57,9 +57,9 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 
 ### E2E Verification
 
-- [ ] **E2E-01**: Sepolia 테스트넷에서 DeFi preset으로 L2 배포 후 CrossTrade L2 컨트랙트 4개가 정상 배포된다
-- [ ] **E2E-02**: L1 setChainInfo가 성공적으로 호출되어 CrossTrade 사용 가능 상태가 된다
-- [ ] **E2E-03**: CrossTrade dApp이 http://localhost:3004에서 접근 가능하다
+- [x] **E2E-01**: Sepolia 테스트넷에서 DeFi preset으로 L2 배포 후 CrossTrade L2 컨트랙트 4개가 정상 배포된다
+- [x] **E2E-02**: L1 setChainInfo가 성공적으로 호출되어 CrossTrade 사용 가능 상태가 된다
+- [x] **E2E-03**: CrossTrade dApp이 http://localhost:3004에서 접근 가능하다
 
 ## v2 Requirements
 
@@ -125,9 +125,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-02 | Phase 4 | Complete |
 | UI-03 | Phase 4 | Complete |
 | UI-04 | Phase 4 | Complete |
-| E2E-01 | Phase 5 | Pending |
-| E2E-02 | Phase 5 | Pending |
-| E2E-03 | Phase 5 | Pending |
+| E2E-01 | Phase 5 | Complete |
+| E2E-02 | Phase 5 | Complete |
+| E2E-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 30 total

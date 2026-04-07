@@ -94,10 +94,10 @@ Plans:
   1. DeFi preset으로 Sepolia L2 배포 후 CrossTrade L2 컨트랙트 4개가 정상 배포된다
   2. L1 setChainInfo가 성공적으로 호출되어 CrossTrade 사용 가능 상태가 된다
   3. CrossTrade dApp이 http://localhost:3004에서 접근 가능하다
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 05-01-PLAN.md — Test infra fixes + crosstrade-health.live.spec.ts (RED)
+- [x] 05-01-PLAN.md — Test infra fixes + crosstrade-health.live.spec.ts (RED)
 - [ ] 05-02-PLAN.md — Sepolia E2E test execution + verification (GREEN)
 
 ## Progress
@@ -111,4 +111,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Preset Alignment | 1/2 | In Progress|  |
 | 3. Backend Auto-Install Pipeline | 4/4 | Complete   | 2026-04-07 |
 | 4. Platform & UI Integration | 3/3 | Complete   | 2026-04-07 |
-| 5. E2E Sepolia Validation | 0/2 | Not started | - |
+| 5. E2E Sepolia Validation | 1/2 | In Progress|  |
