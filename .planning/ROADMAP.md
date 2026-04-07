@@ -73,19 +73,18 @@ Plans:
 ### Phase 4: Platform & UI Integration
 **Goal**: CrossTrade dApp이 Docker Compose로 관리되고, Platform UI에서 CrossTrade 상태를 확인할 수 있다
 **Depends on**: Phase 2 (preset 정합성 필요), Phase 3과는 독립적으로 병행 가능하나 순차 실행 모드에서는 Phase 3 이후
-**Requirements**: PLT-01, PLT-02, UI-01, UI-02, UI-03, UI-04
+**Requirements**: PLT-01, PLT-02, UI-01, UI-02, UI-03, UI-04, BE-08
 **Success Criteria** (what must be TRUE):
   1. docker-compose에 CrossTrade dApp 서비스가 port 3004로 정의되어 있다
   2. CrossTrade dApp 서비스는 DeFi/Full preset에서만 시작된다
   3. Platform UI의 preset.ts에서 DeFi crossTrade=true, Gaming crossTrade=false가 설정된다
   4. Rollup Detail Components 탭에 CrossTrade 상태 카드가 dApp URL 링크(localhost:3004)와 함께 표시된다
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — Docker Compose dApp 서비스 정의 + BE-08 Backend dApp 컨테이너 시작
+- [ ] 04-02-PLAN.md — preset.ts MOCK_PRESETS crossTrade 버그 수정 + fixture/test 동기화
+- [ ] 04-03-PLAN.md — CrossTrade 상태 카드 UI 컴포넌트 + IntegrationCard/ComponentsTab 연동
 
 ### Phase 5: E2E Sepolia Validation
 **Goal**: Sepolia 테스트넷에서 CrossTrade 전체 플로우가 검증된다
