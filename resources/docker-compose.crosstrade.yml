@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  crosstrade-dapp:
+    image: tokamaknetwork/cross-trade-app:latest
+    container_name: trh-crosstrade-dapp
+    ports:
+      - "3004:3000"
+    env_file:
+      - ./config/.env.crosstrade
+    restart: unless-stopped
