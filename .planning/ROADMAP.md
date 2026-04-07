@@ -49,7 +49,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Wave 0 TDD: SDK PresetModules + Backend localUnsupported 테스트 스캐폴드
-- [ ] 02-02-PLAN.md — SDK/Backend crossTrade 정합성 코드 수정 (3파일, ~8줄)
+- [x] 02-02-PLAN.md — SDK/Backend crossTrade 정합성 코드 수정 (3파일, ~8줄)
 
 ### Phase 3: Backend Auto-Install Pipeline
 **Goal**: 로컬 DeFi/Full preset 배포 시 CrossTrade가 자동으로 설치된다 (SDK 호출, L1 setChainInfo, dApp 시작까지)
