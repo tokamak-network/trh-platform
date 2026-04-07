@@ -35,7 +35,7 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 - [x] **BE-05**: SDK 배포 완료 후 L2toL2CrossTradeL1.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L2)
 - [x] **BE-06**: setChainInfo 실패 시 최대 3회 재시도한다
 - [x] **BE-07**: config/.env.crosstrade 파일을 자동 생성하여 dApp 환경 변수를 설정한다
-- [ ] **BE-08**: CrossTrade dApp Docker 컨테이너를 시작한다
+- [x] **BE-08**: CrossTrade dApp Docker 컨테이너를 시작한다
 - [x] **BE-09**: integration metadata에 배포된 컨트랙트 주소와 dApp URL을 저장한다
 
 ### Backend — DTO
@@ -45,13 +45,13 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 
 ### Platform — Docker Compose
 
-- [ ] **PLT-01**: docker-compose에 CrossTrade dApp 서비스가 정의된다 (tokamaknetwork/cross-trade-app, port 3004)
-- [ ] **PLT-02**: CrossTrade dApp 서비스는 DeFi/Full preset에서만 시작된다
+- [x] **PLT-01**: docker-compose에 CrossTrade dApp 서비스가 정의된다 (tokamaknetwork/cross-trade-app, port 3004)
+- [x] **PLT-02**: CrossTrade dApp 서비스는 DeFi/Full preset에서만 시작된다
 
 ### Platform UI — Preset & Status
 
-- [ ] **UI-01**: preset.ts에서 DeFi preset의 crossTrade 모듈이 true로 설정된다
-- [ ] **UI-02**: preset.ts에서 Gaming preset의 crossTrade 모듈이 false로 설정된다
+- [x] **UI-01**: preset.ts에서 DeFi preset의 crossTrade 모듈이 true로 설정된다
+- [x] **UI-02**: preset.ts에서 Gaming preset의 crossTrade 모듈이 false로 설정된다
 - [ ] **UI-03**: Rollup Detail의 Components 탭에 CrossTrade integration 상태 카드가 표시된다
 - [ ] **UI-04**: CrossTrade 상태 카드에 dApp URL 링크(http://localhost:3004)가 포함된다
 
@@ -115,14 +115,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BE-05 | Phase 3 | Complete |
 | BE-06 | Phase 3 | Complete |
 | BE-07 | Phase 3 | Complete |
-| BE-08 | Phase 3 | Pending |
+| BE-08 | Phase 3 | Complete |
 | BE-09 | Phase 3 | Complete |
 | BE-10 | Phase 3 | Complete |
 | BE-11 | Phase 3 | Complete |
-| PLT-01 | Phase 4 | Pending |
-| PLT-02 | Phase 4 | Pending |
-| UI-01 | Phase 4 | Pending |
-| UI-02 | Phase 4 | Pending |
+| PLT-01 | Phase 4 | Complete |
+| PLT-02 | Phase 4 | Complete |
+| UI-01 | Phase 4 | Complete |
+| UI-02 | Phase 4 | Complete |
 | UI-03 | Phase 4 | Pending |
 | UI-04 | Phase 4 | Pending |
 | E2E-01 | Phase 5 | Pending |
