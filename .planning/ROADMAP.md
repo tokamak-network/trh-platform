@@ -82,7 +82,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Docker Compose dApp 서비스 정의 + BE-08 Backend dApp 컨테이너 시작
+- [x] 04-01-PLAN.md — Docker Compose dApp 서비스 정의 + BE-08 Backend dApp 컨테이너 시작
 - [ ] 04-02-PLAN.md — preset.ts MOCK_PRESETS crossTrade 버그 수정 + fixture/test 동기화
 - [ ] 04-03-PLAN.md — CrossTrade 상태 카드 UI 컴포넌트 + IntegrationCard/ComponentsTab 연동
 

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-04-07T03:28:10.538Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-07T04:22:06.256Z"
 last_activity: 2026-04-07
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 12
+  completed_plans: 10
   percent: 75
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** DeFi/Full Preset 선택만으로 CrossTrade가 자동 배포되어 7일 출금 대기 없는 빠른 크로스체인 토큰 교환 제공
-**Current focus:** Phase 03 — backend-auto-install-pipeline
+**Current focus:** Phase 04 — platform-ui-integration
 
 ## Current Position
 
-Phase: 03 (backend-auto-install-pipeline) — EXECUTING
-Plan: 2 of 4
+Phase: 04 (platform-ui-integration) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
 Last activity: 2026-04-07
 
@@ -61,6 +61,7 @@ Progress: [██████████████░░░░░░] 75%
 | Phase 03 P02 | 5 | 2 tasks | 2 files |
 | Phase 03 P03 | 8 | 2 tasks | 1 files |
 | Phase 03 P04 | 4min | 2 tasks | 2 files |
+| Phase 04-platform-ui-integration P01 | 5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 03]: readDeployCrossTradeContracts helper not added: autoInstallCrossTradeLocal() already uses SDK utility to read artifacts
 - [Phase 03]: RegisterCrossTradeL2() sends direct L1 txs (not deposit txs) to call setChainInfo on Sepolia CrossTrade contracts
 - [Phase 03]: L1 registration failure (D-01): integration marked failed, L2 deploy result preserved intact
+- [Phase 04-platform-ui-integration]: BE-08 block inside crossTrade conditional — only DeFi/Full presets trigger dApp container start
+- [Phase 04-platform-ui-integration]: Compose file written at runtime to stack.DeploymentPath for relative env_file resolution
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-07T03:28:10.533Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-04-07T04:22:06.253Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
