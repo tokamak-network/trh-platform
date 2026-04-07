@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-04-07T00:18:25.687Z"
-last_activity: 2026-04-07
+status: executing
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-04-07T02:22:43Z"
+last_activity: 2026-04-07 -- Completed Phase 03 Plan 01 -- Backend CrossTrade local auto-install block
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 0
+  total_plans: 8
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** DeFi/Full Preset 선택만으로 CrossTrade가 자동 배포되어 7일 출금 대기 없는 빠른 크로스체인 토큰 교환 제공
-**Current focus:** Phase 02 — preset-alignment
+**Current focus:** Phase 03 — backend-auto-install-pipeline
 
 ## Current Position
 
-Phase: 02 (preset-alignment) — EXECUTING
-Plan: 2 of 2
-Status: Phase complete — ready for verification
-Last activity: 2026-04-07
+Phase: 03 (backend-auto-install-pipeline) — IN PROGRESS
+Plan: 2 of 3
+Status: Executing Phase 03 (Plan 01 complete, Plan 02 next)
+Last activity: 2026-04-07 -- Completed 03-01: Backend CrossTrade local auto-install block + go.mod replace directive
 
-Progress: [..........] 0%
+Progress: [██████████████░░░░░░] 75%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [..........] 0%
 | Phase 01 P03 | 3min | 2 tasks | 2 files |
 | Phase 02-preset-alignment P01 | 15 | 2 tasks | 2 files |
 | Phase 02-preset-alignment P02 | 3 | 2 tasks | 3 files |
+| Phase 03 P01 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,10 @@ Recent decisions affecting current work:
 - [Phase 02-preset-alignment]: Backend Gaming preset crossTrade=false 유지 (키 삭제 아님, HelmValues 정합성 필요)
 - [Phase 02-preset-alignment]: SDK PresetGaming crossTrade 키 완전 삭제 (SDK-09: Gaming에 crossTrade 없음)
 - [Phase 02-preset-alignment]: localUnsupported 전체 삭제: dead code, go vet 통과
+- [Phase 03 P01]: CrossTrade install failure is non-fatal: stack stays Deployed, integration set to Failed
+- [Phase 03 P01]: deployer key = AdminAccount (BIP44 index 0 private key stored in stackConfig)
+- [Phase 03 P01]: L1CrossTradeProxy/L2toL2CrossTradeL1 constants empty (stubs) — Sepolia addresses needed before E2E
+- [Phase 03 P01]: go.mod replace directive for local trh-sdk development (blocking issue auto-fixed)
 
 ### Pending Todos
 
@@ -94,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-07T00:18:25.683Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-04-07T02:22:43Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

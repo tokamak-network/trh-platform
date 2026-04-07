@@ -52,21 +52,22 @@ Plans:
 - [x] 02-02-PLAN.md — SDK/Backend crossTrade 정합성 코드 수정 (3파일, ~8줄)
 
 ### Phase 3: Backend Auto-Install Pipeline
-**Goal**: 로컬 DeFi/Full preset 배포 시 CrossTrade가 자동으로 설치된다 (SDK 호출, L1 setChainInfo, dApp 시작까지)
+**Goal**: 로컬 DeFi/Full preset 배포 시 CrossTrade가 자동으로 설치된다 (SDK 호출, L1 setChainInfo, env 파일 생성, metadata 업데이트)
 **Depends on**: Phase 1 (SDK DeployCrossTradeLocal 함수 필요), Phase 2 (localUnsupported 해제 및 preset 설정 필요)
-**Requirements**: BE-03, BE-04, BE-05, BE-06, BE-07, BE-08, BE-09, BE-10, BE-11
+**Requirements**: BE-03, BE-04, BE-05, BE-06, BE-07, BE-09, BE-10, BE-11
+**Note**: BE-08 (dApp 컨테이너 시작)은 Phase 4로 이동됨
 **Success Criteria** (what must be TRUE):
   1. deployment.go의 auto-install 블록에서 CrossTrade 활성화 preset일 때 SDK DeployCrossTradeLocal()을 호출한다
   2. SDK 배포 완료 후 L1 CrossTradeProxy.setChainInfo()와 L2toL2CrossTradeL1.setChainInfo()가 자동 실행된다
   3. setChainInfo 실패 시 최대 3회 재시도가 동작한다
-  4. config/.env.crosstrade 파일이 자동 생성되고 CrossTrade dApp Docker 컨테이너가 시작된다
+  4. config/.env.crosstrade 파일이 자동 생성된다
   5. integration metadata에 배포된 컨트랙트 주소와 dApp URL이 저장된다
-**Plans**: TBD
+**Plans:** 1/3 plans complete
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [x] 03-01-PLAN.md — Backend thanos_stack.go DeployCrossTradeLocal 래퍼 + deployment.go crossTrade auto-install 블록 + autoInstallCrossTradeLocal 헬퍼 (completed 2026-04-07)
+- [ ] 03-02-PLAN.md — dApp Docker Compose 서비스 추가 + docker-compose.crosstrade.yml + Backend dApp 시작 연동
+- [ ] 03-03-PLAN.md — L1 setChainInfo 자동 등록 (CrossTradeProxy + L2toL2CrossTradeL1, 3회 재시도)
 
 ### Phase 4: Platform & UI Integration
 **Goal**: CrossTrade dApp이 Docker Compose로 관리되고, Platform UI에서 CrossTrade 상태를 확인할 수 있다
