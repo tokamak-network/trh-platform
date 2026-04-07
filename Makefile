@@ -1,4 +1,4 @@
-.PHONY: help up update down setup clean logs status config dev-build-backend dev-build-frontend ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
+.PHONY: help up update down setup clean logs status config ensure-volumes dev-build-backend dev-build-frontend ec2-setup ec2-deploy ec2-destroy ec2-status ec2-clean
 
 # Default target
 help:
@@ -27,8 +27,13 @@ help:
 	@echo "  make ec2-status  - Show current EC2 infrastructure status"
 	@echo "  make ec2-clean   - Clean up Terraform state and files"
 
+# Ensure required external Docker volumes exist
+ensure-volumes:
+	@docker volume inspect trh_backend_storage > /dev/null 2>&1 || \
+		(echo "📦 Creating external volume trh_backend_storage..." && docker volume create trh_backend_storage)
+
 # Start all services in detached mode
-up:
+up: ensure-volumes
 	@echo "🚀 Starting TRH services..."
 	@if [ ! -f config/.env.docker ]; then \
 		echo "📋 Creating config/.env.docker file from template..."; \
@@ -38,7 +43,7 @@ up:
 	@echo "✅ Services started successfully!"
 
 # Update services with latest images
-update:
+update: ensure-volumes
 	@echo "🔄 Checking for image updates..."
 	@if [ ! -f config/.env.docker ]; then \
 		echo "📋 Creating config/.env.docker file from template..."; \
