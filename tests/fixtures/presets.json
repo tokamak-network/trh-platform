@@ -66,7 +66,7 @@
     "modules": {
       "blockExplorer": true,
       "bridge": true,
-      "crossTrade": false,
+      "crossTrade": true,
       "monitoring": true,
       "uptimeService": true
     },
@@ -121,7 +121,7 @@
     "modules": {
       "blockExplorer": true,
       "bridge": true,
-      "crossTrade": true,
+      "crossTrade": false,
       "monitoring": true,
       "uptimeService": true
     },

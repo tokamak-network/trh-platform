@@ -184,17 +184,17 @@ describe('PSET-05: Modules', () => {
     expect(m.uptimeService).toBe(false);
   });
 
-  it('defi: monitoring=true, crossTrade=false, uptimeService=true', () => {
+  it('defi: monitoring=true, crossTrade=true, uptimeService=true', () => {
     const m = presets.defi.modules;
     expect(m.monitoring).toBe(true);
-    expect(m.crossTrade).toBe(false);
+    expect(m.crossTrade).toBe(true);     // UI-01: DeFi has crossTrade
     expect(m.uptimeService).toBe(true);
   });
 
-  it('gaming: monitoring=true, crossTrade=true, uptimeService=true', () => {
+  it('gaming: monitoring=true, crossTrade=false, uptimeService=true', () => {
     const m = presets.gaming.modules;
     expect(m.monitoring).toBe(true);
-    expect(m.crossTrade).toBe(true);
+    expect(m.crossTrade).toBe(false);    // UI-02: Gaming has no crossTrade
     expect(m.uptimeService).toBe(true);
   });
 
