@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: SDK L1 Deposit Tx Deployment** - L1 OptimismPortal을 통한 CrossTrade L2 컨트랙트 4개 배포 함수 구현 (completed 2026-04-06)
 - [ ] **Phase 2: Preset Alignment** - SDK/Backend/UI 전체에서 DeFi=crossTrade true, Gaming=false 정합성 확보
 - [x] **Phase 3: Backend Auto-Install Pipeline** - 로컬 배포 시 CrossTrade 자동 설치 (SDK 호출 -> setChainInfo -> dApp 시작) (completed 2026-04-07)
-- [ ] **Phase 4: Platform & UI Integration** - Docker Compose dApp 서비스 추가 및 CrossTrade 상태 카드 UI
+- [x] **Phase 4: Platform & UI Integration** - Docker Compose dApp 서비스 추가 및 CrossTrade 상태 카드 UI (completed 2026-04-07)
 - [ ] **Phase 5: E2E Sepolia Validation** - Sepolia에서 전체 CrossTrade 플로우 검증
 
 ## Phase Details
@@ -79,12 +79,12 @@ Plans:
   2. CrossTrade dApp 서비스는 DeFi/Full preset에서만 시작된다
   3. Platform UI의 preset.ts에서 DeFi crossTrade=true, Gaming crossTrade=false가 설정된다
   4. Rollup Detail Components 탭에 CrossTrade 상태 카드가 dApp URL 링크(localhost:3004)와 함께 표시된다
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 04-01-PLAN.md — Docker Compose dApp 서비스 정의 + BE-08 Backend dApp 컨테이너 시작
 - [x] 04-02-PLAN.md — preset.ts MOCK_PRESETS crossTrade 버그 수정 + fixture/test 동기화
-- [ ] 04-03-PLAN.md — CrossTrade 상태 카드 UI 컴포넌트 + IntegrationCard/ComponentsTab 연동
+- [x] 04-03-PLAN.md — CrossTrade 상태 카드 UI 컴포넌트 + IntegrationCard/ComponentsTab 연동
 
 ### Phase 5: E2E Sepolia Validation
 **Goal**: Sepolia 테스트넷에서 CrossTrade 전체 플로우가 검증된다
@@ -94,11 +94,11 @@ Plans:
   1. DeFi preset으로 Sepolia L2 배포 후 CrossTrade L2 컨트랙트 4개가 정상 배포된다
   2. L1 setChainInfo가 성공적으로 호출되어 CrossTrade 사용 가능 상태가 된다
   3. CrossTrade dApp이 http://localhost:3004에서 접근 가능하다
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md — Test infra fixes + crosstrade-health.live.spec.ts (RED)
+- [ ] 05-02-PLAN.md — Sepolia E2E test execution + verification (GREEN)
 
 ## Progress
 
@@ -110,5 +110,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. SDK L1 Deposit Tx Deployment | 3/3 | Complete   | 2026-04-06 |
 | 2. Preset Alignment | 1/2 | In Progress|  |
 | 3. Backend Auto-Install Pipeline | 4/4 | Complete   | 2026-04-07 |
-| 4. Platform & UI Integration | 0/3 | Not started | - |
+| 4. Platform & UI Integration | 3/3 | Complete   | 2026-04-07 |
 | 5. E2E Sepolia Validation | 0/2 | Not started | - |

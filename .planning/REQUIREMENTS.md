@@ -52,8 +52,8 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 
 - [x] **UI-01**: preset.ts에서 DeFi preset의 crossTrade 모듈이 true로 설정된다
 - [x] **UI-02**: preset.ts에서 Gaming preset의 crossTrade 모듈이 false로 설정된다
-- [ ] **UI-03**: Rollup Detail의 Components 탭에 CrossTrade integration 상태 카드가 표시된다
-- [ ] **UI-04**: CrossTrade 상태 카드에 dApp URL 링크(http://localhost:3004)가 포함된다
+- [x] **UI-03**: Rollup Detail의 Components 탭에 CrossTrade integration 상태 카드가 표시된다
+- [x] **UI-04**: CrossTrade 상태 카드에 dApp URL 링크(http://localhost:3004)가 포함된다
 
 ### E2E Verification
 
@@ -123,8 +123,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLT-02 | Phase 4 | Complete |
 | UI-01 | Phase 4 | Complete |
 | UI-02 | Phase 4 | Complete |
-| UI-03 | Phase 4 | Pending |
-| UI-04 | Phase 4 | Pending |
+| UI-03 | Phase 4 | Complete |
+| UI-04 | Phase 4 | Complete |
 | E2E-01 | Phase 5 | Pending |
 | E2E-02 | Phase 5 | Pending |
 | E2E-03 | Phase 5 | Pending |
