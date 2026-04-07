@@ -34,10 +34,15 @@ const ELECTRON_APP_PATH = path.resolve('dist/main/index.js');
 const BACKEND_URL = process.env.LIVE_BACKEND_URL ?? 'http://localhost:8000';
 const CROSSTRADE_DAPP_URL = 'http://localhost:3004';
 
+// If LIVE_STACK_ID is set, skip fresh deployment and reuse the existing stack.
+const LIVE_STACK_ID = process.env.LIVE_STACK_ID ?? null;
+
 // Timeout constants
 const DAPP_STARTUP_TIMEOUT_MS = 60_000;  // 60s for dApp container to start
 const DAPP_POLL_INTERVAL_MS = 5_000;     // 5s poll interval
 const DEPLOY_TIMEOUT_MS = 25 * 60 * 1000; // 25 min deploy timeout
+const CROSSTRADE_INSTALL_TIMEOUT_MS = 30 * 60 * 1000; // 30 min for CrossTrade install (async after deploy)
+const CROSSTRADE_POLL_INTERVAL_MS = 15_000; // 15s poll
 
 // ---------------------------------------------------------------------------
 // Test State
@@ -97,6 +102,14 @@ test('ECT-01: start DeFi preset L2 deployment via backend API', async () => {
   await mainWindow.waitForLoadState('domcontentloaded');
   console.log('[ECT-01] Main window DOM ready');
 
+  if (LIVE_STACK_ID) {
+    // Reuse an existing deployed stack — skip fresh deployment.
+    deployedStackId = LIVE_STACK_ID;
+    console.log(`[ECT-01] LIVE_STACK_ID set — reusing existing stack: ${deployedStackId}`);
+    expect(deployedStackId).toBeTruthy();
+    return;
+  }
+
   // Trigger DeFi preset deployment via backend API (programmatic approach)
   // The UI flow through Electron WebContentsView is complex and timing-sensitive;
   // the authoritative integration test is via the backend API which the Electron app
@@ -126,7 +139,7 @@ test('ECT-01: start DeFi preset L2 deployment via backend API', async () => {
 // ---------------------------------------------------------------------------
 
 test('ECT-02: wait for deployment and verify CrossTrade installed', async () => {
-  test.setTimeout(DEPLOY_TIMEOUT_MS);
+  test.setTimeout(DEPLOY_TIMEOUT_MS + CROSSTRADE_INSTALL_TIMEOUT_MS);
   expect(deployedStackId).not.toBeNull();
 
   const stackId = deployedStackId!;
@@ -137,37 +150,48 @@ test('ECT-02: wait for deployment and verify CrossTrade installed', async () => 
   expect(stackStatus.status).toBe('Deployed');
   console.log(`[ECT-02] Stack ${stackId} is Deployed`);
 
-  // Fetch integrations for this stack
+  // CrossTrade installation runs asynchronously after the stack is deployed.
+  // Poll until it reaches 'installed' (or a terminal failure status).
+  console.log(`[ECT-02] Polling for CrossTrade integration to reach 'installed'...`);
+
   const token = await loginBackend(BACKEND_URL);
-  const integrationsResp = await fetch(
-    `${BACKEND_URL}/api/v1/stacks/thanos/${stackId}/integrations`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
 
-  expect(integrationsResp.ok).toBe(true);
+  const crossTrade = await pollUntil<Record<string, unknown>>(
+    async () => {
+      const integrationsResp = await fetch(
+        `${BACKEND_URL}/api/v1/stacks/thanos/${stackId}/integrations`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!integrationsResp.ok) return null;
 
-  const integrationsBody = await integrationsResp.json() as Record<string, unknown>;
-  const integrationsData = (integrationsBody.data ?? integrationsBody) as Record<string, unknown>;
-  const integrations = (integrationsData.integrations as Record<string, unknown>[]) ?? [];
+      const integrationsBody = await integrationsResp.json() as Record<string, unknown>;
+      const integrationsData = (integrationsBody.data ?? integrationsBody) as Record<string, unknown>;
+      const integrations = (integrationsData.integrations as Record<string, unknown>[]) ?? [];
 
-  console.log(`[ECT-02] Integrations found: ${integrations.map(i => i.type).join(', ')}`);
+      const ct = integrations.find((i) => (i.type as string) === 'cross-trade');
+      if (!ct) return null;
 
-  // Find CrossTrade integration
-  const crossTrade = integrations.find(
-    (i) => (i.type as string) === 'cross-trade'
+      const status = ct.status as string;
+      console.log(`[ECT-02] CrossTrade integration status: ${status}`);
+
+      if (status === 'installed') return ct;
+      if (status === 'Failed') throw new Error(`CrossTrade integration failed`);
+      return null; // still Pending — keep polling
+    },
+    'CrossTrade integration to be installed',
+    CROSSTRADE_INSTALL_TIMEOUT_MS,
+    CROSSTRADE_POLL_INTERVAL_MS
   );
 
   expect(crossTrade).toBeDefined();
-  console.log(`[ECT-02] CrossTrade integration status: ${crossTrade?.status}`);
-
   // Verify CrossTrade is installed
   expect(crossTrade?.status).toBe('installed');
 
-  // Verify contract addresses are present in metadata
-  const metadata = (crossTrade?.metadata ?? {}) as Record<string, unknown>;
-  const contracts = (metadata.contracts ?? {}) as Record<string, unknown>;
+  // Verify contract addresses are present in info (API field name is 'info', not 'metadata')
+  const info = (crossTrade?.info ?? {}) as Record<string, unknown>;
+  const contracts = (info.contracts ?? {}) as Record<string, unknown>;
 
-  console.log('[ECT-02] CrossTrade contracts:', JSON.stringify(contracts, null, 2));
+  console.log('[ECT-02] CrossTrade info:', JSON.stringify(info, null, 2));
 
   // 4 L2 contract addresses must be present
   const expectedContracts = [
