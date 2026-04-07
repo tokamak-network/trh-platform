@@ -34,7 +34,7 @@ Requirements for Phase 1 (Foundation) release. Each maps to roadmap phases.
 - [ ] **BE-04**: SDK 배포 완료 후 L1 CrossTradeProxy.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L1)
 - [ ] **BE-05**: SDK 배포 완료 후 L2toL2CrossTradeL1.setChainInfo()를 호출하여 새 L2를 등록한다 (L2→L2)
 - [ ] **BE-06**: setChainInfo 실패 시 최대 3회 재시도한다
-- [ ] **BE-07**: config/.env.crosstrade 파일을 자동 생성하여 dApp 환경 변수를 설정한다
+- [x] **BE-07**: config/.env.crosstrade 파일을 자동 생성하여 dApp 환경 변수를 설정한다
 - [ ] **BE-08**: CrossTrade dApp Docker 컨테이너를 시작한다
 - [x] **BE-09**: integration metadata에 배포된 컨트랙트 주소와 dApp URL을 저장한다
 
@@ -114,7 +114,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BE-04 | Phase 3 | Pending |
 | BE-05 | Phase 3 | Pending |
 | BE-06 | Phase 3 | Pending |
-| BE-07 | Phase 3 | Pending |
+| BE-07 | Phase 3 | Complete |
 | BE-08 | Phase 3 | Pending |
 | BE-09 | Phase 3 | Complete |
 | BE-10 | Phase 3 | Pending |

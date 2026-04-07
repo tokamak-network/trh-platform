@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: SDK L1 Deposit Tx Deployment** - L1 OptimismPortal을 통한 CrossTrade L2 컨트랙트 4개 배포 함수 구현 (completed 2026-04-06)
 - [ ] **Phase 2: Preset Alignment** - SDK/Backend/UI 전체에서 DeFi=crossTrade true, Gaming=false 정합성 확보
-- [ ] **Phase 3: Backend Auto-Install Pipeline** - 로컬 배포 시 CrossTrade 자동 설치 (SDK 호출 -> setChainInfo -> dApp 시작)
+- [x] **Phase 3: Backend Auto-Install Pipeline** - 로컬 배포 시 CrossTrade 자동 설치 (SDK 호출 -> setChainInfo -> dApp 시작) (completed 2026-04-07)
 - [ ] **Phase 4: Platform & UI Integration** - Docker Compose dApp 서비스 추가 및 CrossTrade 상태 카드 UI
 - [ ] **Phase 5: E2E Sepolia Validation** - Sepolia에서 전체 CrossTrade 플로우 검증
 
@@ -62,12 +62,12 @@ Plans:
   3. setChainInfo 실패 시 최대 3회 재시도가 동작한다
   4. config/.env.crosstrade 파일이 자동 생성된다
   5. integration metadata에 배포된 컨트랙트 주소와 dApp URL이 저장된다
-**Plans:** 1/3 plans complete
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 03-01-PLAN.md — Backend thanos_stack.go DeployCrossTradeLocal 래퍼 + deployment.go crossTrade auto-install 블록 + autoInstallCrossTradeLocal 헬퍼 (completed 2026-04-07)
-- [ ] 03-02-PLAN.md — dApp Docker Compose 서비스 추가 + docker-compose.crosstrade.yml + Backend dApp 시작 연동
-- [ ] 03-03-PLAN.md — L1 setChainInfo 자동 등록 (CrossTradeProxy + L2toL2CrossTradeL1, 3회 재시도)
+- [x] 03-02-PLAN.md — dApp Docker Compose 서비스 추가 + docker-compose.crosstrade.yml + Backend dApp 시작 연동
+- [x] 03-03-PLAN.md — L1 setChainInfo 자동 등록 (CrossTradeProxy + L2toL2CrossTradeL1, 3회 재시도)
 
 ### Phase 4: Platform & UI Integration
 **Goal**: CrossTrade dApp이 Docker Compose로 관리되고, Platform UI에서 CrossTrade 상태를 확인할 수 있다
@@ -109,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. SDK L1 Deposit Tx Deployment | 3/3 | Complete   | 2026-04-06 |
 | 2. Preset Alignment | 1/2 | In Progress|  |
-| 3. Backend Auto-Install Pipeline | 0/3 | Not started | - |
+| 3. Backend Auto-Install Pipeline | 3/3 | Complete   | 2026-04-07 |
 | 4. Platform & UI Integration | 0/3 | Not started | - |
 | 5. E2E Sepolia Validation | 0/2 | Not started | - |
