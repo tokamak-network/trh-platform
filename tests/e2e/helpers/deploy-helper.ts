@@ -95,7 +95,7 @@ export async function ensureNoActiveStacks(): Promise<void> {
   const stacks = (data.stacks as Record<string, unknown>[]) ?? [];
 
   const active = stacks.filter(
-    (s) => !['Terminated', 'FailedToDeploy'].includes(s.status as string)
+    (s) => (s.status as string) !== 'Terminated'
   );
 
   if (active.length === 0) {
@@ -123,7 +123,7 @@ export async function ensureNoActiveStacks(): Promise<void> {
       const checkBody = await checkResp.json() as Record<string, unknown>;
       const checkData = (checkBody.data ?? checkBody) as Record<string, unknown>;
       const remaining = ((checkData.stacks as Record<string, unknown>[]) ?? []).filter(
-        (s) => !['Terminated', 'FailedToDeploy'].includes(s.status as string)
+        (s) => (s.status as string) !== 'Terminated'
       );
       return remaining.length === 0 ? true : null;
     },
@@ -192,24 +192,13 @@ export async function deployPreset(config: {
     throw new Error(`preset-deploy returned no IDs: ${JSON.stringify(result)}`);
   }
 
-  // Resolve actual stackId by finding the stack with matching chainName
+  // Resolve actual stackId.
+  // The backend's preset-deploy API returns the stack UUID as "deploymentId" (misleading name).
+  // Use it directly rather than re-fetching by chainName, which could match stale stacks.
   let resolvedStackId = directStackId;
-  if (!resolvedStackId) {
-    console.log(`[deploy] deploymentId=${deploymentId}, resolving stackId by chainName="${config.chainName}"...`);
-    const stacksResp = await fetch(`${backendUrl}/api/v1/stacks/thanos`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (stacksResp.ok) {
-      const stacksBody = await stacksResp.json() as Record<string, unknown>;
-      const stacksData = (stacksBody.data ?? stacksBody) as Record<string, unknown>;
-      const stacks = (stacksData.stacks as Record<string, unknown>[]) ?? [];
-      const match = stacks.find(
-        (s) => (s.config as Record<string, unknown>)?.chainName === config.chainName
-      );
-      if (match) {
-        resolvedStackId = match.id as string;
-      }
-    }
+  if (!resolvedStackId && deploymentId) {
+    resolvedStackId = deploymentId;
+    console.log(`[deploy] using returned id as stackId: ${resolvedStackId}`);
   }
 
   if (!resolvedStackId) {

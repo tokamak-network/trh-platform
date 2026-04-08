@@ -8,4 +8,10 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #9313 | 12:49 AM | 🔵 | L1 Contract Deployment Count Clarification for Gaming Preset | ~779 |
+
+### Apr 1, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #12253 | 11:48 AM | 🟣 | Interactive HTML diagram for non-TON fee token AA deployment flow | ~1014 |
 </claude-mem-context>
