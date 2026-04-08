@@ -15,8 +15,8 @@ describe('PRESET_MODULES crossTrade membership', () => {
     expect(PRESET_MODULES.defi).toContain('crossTrade');
   });
 
-  it('gaming preset includes crossTrade', () => {
-    expect(PRESET_MODULES.gaming).toContain('crossTrade');
+  it('gaming preset does NOT include crossTrade', () => {
+    expect(PRESET_MODULES.gaming).not.toContain('crossTrade');
   });
 
   it('full preset includes crossTrade', () => {
@@ -33,8 +33,8 @@ describe('isModuleEnabled for crossTrade', () => {
     expect(isModuleEnabled('defi', 'crossTrade')).toBe(true);
   });
 
-  it('isModuleEnabled("gaming", "crossTrade") returns true', () => {
-    expect(isModuleEnabled('gaming', 'crossTrade')).toBe(true);
+  it('isModuleEnabled("gaming", "crossTrade") returns false', () => {
+    expect(isModuleEnabled('gaming', 'crossTrade')).toBe(false);
   });
 
   it('isModuleEnabled("full", "crossTrade") returns true', () => {
