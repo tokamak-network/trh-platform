@@ -84,6 +84,14 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false
     },
+    "dmg": {
+      "extraFiles": [
+        {
+          "from": "scripts/install-macos.command",
+          "to": "Install TRH Desktop.command"
+        }
+      ]
+    },
     "win": {
       "target": [
         {
