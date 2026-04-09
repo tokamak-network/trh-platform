@@ -66,20 +66,6 @@ make ec2-destroy    # 모든 리소스 종료
 - 브랜치: `feature/xxx`, `fix/xxx`, `test/xxx`
 - `main` = 프로덕션 릴리즈 브랜치
 
-## 프로젝트
-
-### TRH Preset 배포 테스트 하네스
-
-TRH 플랫폼의 4가지 Preset(General, DeFi, Gaming, Full) 배포 흐름을 mock 기반으로 검증하는 테스트 suite.
-
-- **스택**: TypeScript/Vitest (unit/integration), Playwright (E2E)
-- **Mock 경계**: 모든 외부 의존성(L1/L2 RPC, Docker, AWS)은 mock/stub
-- **위치**: 모든 테스트 코드는 `tests/` 디렉토리
-
-### CrossTrade 연동
-
-DeFi/Full Preset 선택 시 CrossTrade 프로토콜 자동 통합. 구현 스펙은 `crossTrade` 레포 참조.
-
 ## 워크플로
 
 - **계획 필요 시**: `/gsd:discuss-phase`
