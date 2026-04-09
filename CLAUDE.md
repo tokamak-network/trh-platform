@@ -4,7 +4,7 @@
 
 ## 프로젝트 개요
 
-**TRH Platform** — Electron 데스크톱 앱. Docker Compose로 PostgreSQL + Node.js 백엔드 + Next.js 프론트엔드를 로컬에서 실행하고, Terraform으로 AWS EC2에 배포한다.
+**TRH Platform** — Electron 데스크톱 앱. Docker Compose로 PostgreSQL + Node.js 백엔드 + Next.js 프론트엔드를 로컬에서 실행한다.
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
@@ -13,7 +13,6 @@
 
 ## 주요 명령어
 
-**서비스 관리**:
 ```bash
 make setup       # 초기 설정: config 생성 + docker compose 실행 + backend 초기화
 make up          # 전체 서비스 시작
@@ -25,15 +24,6 @@ make update      # 최신 이미지 pull + 재시작
 make config      # 환경 설정 대화형 구성
 ```
 
-**EC2 배포**:
-```bash
-make ec2-setup      # 최초 1회: AWS 자격증명 + SSH 키 → ec2/.env 생성
-make ec2-deploy     # 전체 배포: Terraform + 원격 프로비저닝
-make ec2-update     # SSH → git pull → docker pull → 재시작
-make ec2-status     # Terraform 상태 + 인스턴스 정보
-make ec2-destroy    # 모든 리소스 종료
-```
-
 ## 설정 파일
 
 | 파일 | 용도 |
@@ -41,24 +31,14 @@ make ec2-destroy    # 모든 리소스 종료
 | `config/.env.docker` | Docker 이미지 오버라이드 (기본 비어있음; `:latest` 태그 사용) |
 | `config/.env.backend` | PostgreSQL, JWT, 기본 관리자 계정 |
 | `config/.env.frontend` | `NEXT_PUBLIC_API_BASE_URL` |
-| `ec2/.env` | Terraform 변수 (`make ec2-setup`이 생성; EC2 배포 전용) |
 
 템플릿은 `config/*.template`. `make config` 또는 `make setup`으로 생성.
-
-## 중요 패턴
-
-**EC2 프로비저닝 흐름**: `make ec2-setup` (최초 1회) → `make ec2-deploy` (Terraform + cloud-init + install.sh + make setup) → `make ec2-update` (증분 업데이트)
-
-**Terraform 상태 파일** (`ec2/terraform.tfstate`)은 git에 커밋된다.
 
 ## 트러블슈팅
 
 - 서비스 시작 실패 → `make logs`, Docker 실행 여부 확인
 - DB 연결 실패 → `config/.env.backend`의 PostgreSQL 자격증명 확인
 - 프론트엔드 → 백엔드 연결 실패 → `config/.env.frontend`의 `NEXT_PUBLIC_API_BASE_URL` 확인
-- EC2 타임아웃 → `make ec2-status`로 인스턴스 상태 확인
-- Terraform 상태 손상 → `make ec2-clean` + 재시도 (기존 리소스 삭제됨)
-- EC2 자격증명 불일치 → `make ec2-setup` 재실행
 
 ## Git 워크플로
 
