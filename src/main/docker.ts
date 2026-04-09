@@ -1,4 +1,5 @@
 import { spawn, exec, ChildProcess } from 'child_process';
+import * as https from 'https';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as net from 'net';
@@ -473,74 +474,114 @@ const UPDATE_IMAGES = [
   'tokamaknetwork/trh-platform-ui:latest',
 ];
 
-async function getImageDigests(): Promise<Record<string, string>> {
-  const digests: Record<string, string> = {};
-  for (const image of UPDATE_IMAGES) {
-    try {
-      const id = await execPromise(`"${DOCKER_BIN}" image inspect ${image} --format "{{.Id}}"`, 10000);
-      digests[image] = id.trim();
-    } catch {
-      digests[image] = '';
-    }
-  }
-  return digests;
-}
-
-export async function checkForUpdates(): Promise<boolean> {
-  const composePath = getComposePath();
-  emitLog('Checking for image updates...');
-
-  // Snapshot current image IDs
-  const before = await getImageDigests();
-
-  // Pull latest images
+// Fetch the remote manifest digest from Docker Hub without downloading any layers.
+// Returns the Docker-Content-Digest header value (e.g. "sha256:abc...").
+async function getRemoteDigest(image: string): Promise<string> {
   return new Promise((resolve) => {
-    const pull = spawn(DOCKER_BIN, ['compose', '-f', composePath, 'pull', '-q', '--ignore-buildable'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, PATH: EXTENDED_PATH }
-    });
+    const colonIdx = image.lastIndexOf(':');
+    const tag = colonIdx !== -1 ? image.slice(colonIdx + 1) : 'latest';
+    const name = colonIdx !== -1 ? image.slice(0, colonIdx) : image;
+    const slashIdx = name.indexOf('/');
+    const namespace = slashIdx !== -1 ? name.slice(0, slashIdx) : 'library';
+    const repo = slashIdx !== -1 ? name.slice(slashIdx + 1) : name;
 
-    activeProcesses.add(pull);
-    // 3 min timeout for background check (not 10 min)
-    const timeout = setTimeout(() => {
-      pull.kill('SIGTERM');
-      emitLog('Update check timed out');
-      resolve(false);
-    }, 180000);
-
-    pull.stderr.on('data', (data) => {
-      // Don't emit logs for quiet background pull
-      // Only capture errors
-    });
-
-    pull.on('close', async (code) => {
-      clearTimeout(timeout);
-      activeProcesses.delete(pull);
-      if (code !== 0) {
-        emitLog('Update check failed');
-        resolve(false);
-        return;
+    https.get(
+      `https://auth.docker.io/token?service=registry.docker.io&scope=repository:${namespace}/${repo}:pull`,
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const { token } = JSON.parse(data) as { token: string };
+            const options: https.RequestOptions = {
+              hostname: 'registry-1.docker.io',
+              path: `/v2/${namespace}/${repo}/manifests/${tag}`,
+              method: 'HEAD',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: [
+                  'application/vnd.docker.distribution.manifest.list.v2+json',
+                  'application/vnd.docker.distribution.manifest.v2+json',
+                ].join(','),
+              },
+            };
+            const req = https.request(options, (res2) => {
+              resolve((res2.headers['docker-content-digest'] as string) || '');
+            });
+            req.on('error', () => resolve(''));
+            req.end();
+          } catch {
+            resolve('');
+          }
+        });
       }
-
-      // Compare image IDs after pull
-      const after = await getImageDigests();
-      const changed = UPDATE_IMAGES.some(img => before[img] !== after[img] && after[img] !== '');
-
-      if (changed) {
-        emitLog('New images downloaded — update available');
-        resolve(true);
-      } else {
-        emitLog('All images up to date');
-        resolve(false);
-      }
-    });
-
-    pull.on('error', () => { clearTimeout(timeout); activeProcesses.delete(pull); resolve(false); });
+    ).on('error', () => resolve(''));
   });
 }
 
+// Get the local image's RepoDigest (manifest digest stored after pull).
+async function getLocalDigest(image: string): Promise<string> {
+  try {
+    const output = await execPromise(
+      `"${DOCKER_BIN}" image inspect "${image}" --format "{{index .RepoDigests 0}}"`,
+      10000
+    );
+    const match = output.match(/@(sha256:[a-f0-9]+)/);
+    return match ? match[1] : '';
+  } catch {
+    return '';
+  }
+}
+
+// Check for updates by comparing remote manifest digests against local RepoDigests.
+// Does NOT download any image layers — pure registry metadata query.
+export async function checkForUpdates(): Promise<boolean> {
+  emitLog('Checking for image updates...');
+  for (const image of UPDATE_IMAGES) {
+    try {
+      const [remote, local] = await Promise.all([getRemoteDigest(image), getLocalDigest(image)]);
+      if (remote && local && remote !== local) {
+        emitLog(`Update available for ${image}`);
+        return true;
+      }
+    } catch {
+      // Network or Docker unavailable — skip silently
+    }
+  }
+  emitLog('All images up to date');
+  return false;
+}
 
 export async function restartWithUpdates(config?: ContainerConfig): Promise<void> {
+  const composePath = getComposePath();
+  emitLog('Pulling latest images...');
+
+  await new Promise<void>((resolve, reject) => {
+    const pull = spawn(DOCKER_BIN, ['compose', '-f', composePath, 'pull', '-q', '--ignore-buildable'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    });
+    activeProcesses.add(pull);
+    const timeout = setTimeout(() => {
+      pull.kill('SIGTERM');
+      reject(new Error('Image pull timed out'));
+    }, PULL_TIMEOUT);
+    pull.stderr.on('data', (data: Buffer) => {
+      data.toString().split('\n').filter(Boolean).forEach((l: string) => emitLog(l));
+    });
+    pull.on('close', (code) => {
+      clearTimeout(timeout);
+      activeProcesses.delete(pull);
+      if (code === 0) resolve();
+      else reject(new Error(`Pull failed with code ${code}`));
+    });
+    pull.on('error', (err) => {
+      clearTimeout(timeout);
+      activeProcesses.delete(pull);
+      reject(err);
+    });
+  });
+
   emitLog('Restarting containers with updated images...');
   await stopContainers();
   await startContainers(config);
