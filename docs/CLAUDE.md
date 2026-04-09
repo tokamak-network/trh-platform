@@ -14,4 +14,11 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #12253 | 11:48 AM | 🟣 | Interactive HTML diagram for non-TON fee token AA deployment flow | ~1014 |
+
+### Apr 8, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #13244 | 2:43 PM | 🔄 | CrossTrade Deployment Flow Diagram Redesigned for User Audience | ~678 |
+| #13243 | 2:42 PM | 🟣 | CrossTrade Deployment Flow Interactive HTML Diagram | ~865 |
 </claude-mem-context>
