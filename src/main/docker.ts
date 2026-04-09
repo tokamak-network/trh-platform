@@ -314,8 +314,9 @@ export async function getDockerStatus(): Promise<DockerStatus> {
   }
 
   try {
+    const composePath = getComposePath();
     const psOutput = await execPromise(
-      `"${DOCKER_BIN}" compose -f "${getComposePath()}" ps --format json`
+      `"${DOCKER_BIN}" compose -f "${composePath}" ps --format json`
     );
 
     if (!psOutput) {
@@ -331,7 +332,8 @@ export async function getDockerStatus(): Promise<DockerStatus> {
       })
       .filter(Boolean);
 
-    const allUp = containers.length >= 3 && containers.every((c: any) => c.State === 'running');
+    const expectedCount = getExpectedServiceCount(composePath);
+    const allUp = containers.length >= expectedCount && containers.every((c: any) => c.State === 'running');
     const allHealthy = containers.every((c: any) => !c.Health || c.Health === 'healthy');
 
     return { installed: true, running: true, containersUp: allUp, healthy: allUp && allHealthy };
@@ -369,6 +371,24 @@ function getServiceImages(composePath: string): Record<string, string> {
     }
   } catch { /* ignore */ }
   return result;
+}
+
+function getExpectedServiceCount(composePath: string): number {
+  try {
+    const content = fs.readFileSync(composePath, 'utf-8');
+    let count = 0;
+    let inServices = false;
+
+    for (const line of content.split('\n')) {
+      if (line.match(/^services:\s*$/)) { inServices = true; continue; }
+      if (inServices && line.match(/^\S/) && !line.startsWith('#')) { inServices = false; continue; }
+      if (!inServices) continue;
+      if (line.match(/^  [\w][\w-]*:\s*$/)) { count++; }
+    }
+    return count > 0 ? count : 3;
+  } catch {
+    return 3;
+  }
 }
 
 function imageExistsLocally(image: string): Promise<boolean> {

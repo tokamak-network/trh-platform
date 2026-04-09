@@ -46,6 +46,14 @@ describe('Docker Compose Schema (resources/docker-compose.yml)', () => {
     expect(backendTestStr).toContain('curl');
   });
 
+  it('DOCK-04a: service count is deterministic (regression: no hardcoded 3)', () => {
+    // getDockerStatus() derives expected container count from this compose file.
+    // If services are added/removed, this test must be updated alongside docker.ts.
+    const serviceNames = Object.keys(compose.services);
+    expect(serviceNames.length).toBeGreaterThan(0);
+    expect(serviceNames.sort()).toEqual(['backend', 'platform-ui', 'postgres']);
+  });
+
   it('DOCK-04: required environment variables per service', () => {
     const getEnvKeys = (env: Record<string, string | number> | string[] | undefined): string[] => {
       if (!env) return [];
