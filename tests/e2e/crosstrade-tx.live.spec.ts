@@ -40,6 +40,7 @@ import { pollUntil } from './helpers/poll';
 
 const LIVE_CHAIN_NAME = process.env.LIVE_CHAIN_NAME ?? null;
 const BACKEND_URL = process.env.LIVE_BACKEND_URL ?? 'http://localhost:8000';
+const L2L2_DEST_RPC = process.env.LIVE_L2L2_DESTINATION_RPC ?? null;
 
 const L1_RPC =
   process.env.LIVE_L1_RPC_URL ??
@@ -68,7 +69,7 @@ const CT_AMOUNT    = ethers.parseEther('0.001');  // L1 amount sent by provider
 // Timeouts
 const TX_TIMEOUT_MS    = 2 * 60 * 1000;           // 2 min for individual TXs
 const CLAIM_TIMEOUT_MS = 20 * 60 * 1000;          // 20 min for L1→L2 cross-domain message
-const CLAIM_POLL_MS    = 15_000;                   // 15s poll interval
+const CLAIM_POLL_MS    = 5_000;                    // 5s poll interval
 
 // Cross-domain message gas limit (passed to CDM.sendMessage)
 const MIN_GAS_LIMIT = 200_000;
@@ -130,6 +131,10 @@ let adminAddress: string;
 // L2 chain ID (resolved via eth_chainId)
 let l2ChainId: bigint;
 
+// L2-L2 destination chain (separate chain or same as source)
+let l2DestProvider: ethers.JsonRpcProvider;
+let l2DestChainId: bigint;
+
 // L1-L2 request state
 let l1l2SaleCount: bigint;
 let l1l2HashValue: string;
@@ -137,6 +142,10 @@ let l1l2HashValue: string;
 // L2-L2 request state
 let l2l2SaleCount: bigint;
 let l2l2HashValue: string;
+
+// L2 log query start blocks (set after provide TX to avoid scanning from genesis)
+let l1l2ClaimFromBlock: number;
+let l2l2ClaimFromBlock: number;
 
 // ---------------------------------------------------------------------------
 // Setup
@@ -251,6 +260,18 @@ test.describe('CrossTrade Transactions', () => {
     l2ChainId = network.chainId;
     console.log('[crt] L2 chainId:', l2ChainId.toString());
 
+    // L2-L2 destination provider (external chain or fallback to same chain)
+    if (L2L2_DEST_RPC) {
+      l2DestProvider = new ethers.JsonRpcProvider(L2L2_DEST_RPC);
+      const destNetwork = await l2DestProvider.getNetwork();
+      l2DestChainId = destNetwork.chainId;
+      console.log('[crt] L2-L2 destination chain:', L2L2_DEST_RPC, 'chainId:', l2DestChainId.toString());
+    } else {
+      l2DestProvider = l2Provider;
+      l2DestChainId = l2ChainId;
+      console.log('[crt] L2-L2 destination: same as source (single-L2 mode)');
+    }
+
     // Balance check
     const l1Balance = await l1Provider.getBalance(adminAddress);
     const l2Balance = await l2Provider.getBalance(adminAddress);
@@ -355,7 +376,7 @@ test.describe('CrossTrade Transactions', () => {
       l2ChainId,        // _l2chainId
       MIN_GAS_LIMIT,    // _minGasLimit
       l1l2HashValue,    // _hash
-      { value: CT_AMOUNT }  // msg.value = ctAmount for native ETH
+      { value: CT_AMOUNT, gasLimit: 400_000 }  // explicit gasLimit: reentrancy guard SSTORE needs buffer beyond estimate
     );
     console.log('[CRT-02] TX sent:', tx.hash);
     const receipt = await tx.wait(1);
@@ -383,6 +404,10 @@ test.describe('CrossTrade Transactions', () => {
     console.log('[CRT-02] ProvideCT event confirmed');
     console.log(`[CRT-02]   provider: ${provideCTLog!.args._provider}`);
     console.log(`[CRT-02]   ctAmount: ${ethers.formatEther(provideCTLog!.args._ctAmount)} ETH`);
+
+    // Record current L2 block to avoid full log scan in CRT-03
+    l1l2ClaimFromBlock = await l2Provider.getBlockNumber();
+    console.log('[CRT-02] L2 claim search start block:', l1l2ClaimFromBlock);
   });
 
   // ── CRT-03: L1-L2 Claim verified ──────────────────────────────────────
@@ -406,7 +431,7 @@ test.describe('CrossTrade Transactions', () => {
       async () => {
         const logs = await l2Provider.getLogs({
           ...claimFilter,
-          fromBlock: 'earliest',
+          fromBlock: l1l2ClaimFromBlock,
           toBlock: 'latest',
         });
         const matched = logs.find((log) => {
@@ -441,8 +466,8 @@ test.describe('CrossTrade Transactions', () => {
     const l2l2Contract = new ethers.Contract(l2ToL2CrossTradeProxy, L2L2_L2_ABI, l2Wallet);
     const l1ChainId = (await l1Provider.getNetwork()).chainId;
 
-    // Source and destination are the same L2 chain (single-L2 deployment)
-    const l2DestinationChainId = l2ChainId;
+    // Use configured destination chain (Thanos Sepolia or same chain as fallback)
+    const l2DestinationChainId = l2DestChainId;
 
     console.log(`[CRT-04] Calling requestNonRegisteredToken on L2ToL2CrossTradeProxy`);
     console.log(`[CRT-04]   l1token:               ${ETH_ADDRESS}`);
@@ -505,7 +530,7 @@ test.describe('CrossTrade Transactions', () => {
     expect(l2l2HashValue, 'CRT-04 must succeed first').toBeTruthy();
 
     const l1L2l2Contract = new ethers.Contract(l2ToL2CrossTradeL1Proxy, L2L2_L1_ABI, l1Wallet);
-    const l2DestinationChainId = l2ChainId; // same chain for single-L2 deployment
+    const l2DestinationChainId = l2DestChainId; // use configured destination chain
 
     console.log(`[CRT-05] Calling provideCT on L2toL2CrossTradeL1Proxy (Sepolia)`);
     console.log(`[CRT-05]   l1token:               ${ETH_ADDRESS}`);
@@ -534,7 +559,7 @@ test.describe('CrossTrade Transactions', () => {
       l2DestinationChainId,   // _l2DestinationChainId
       MIN_GAS_LIMIT,          // _minGasLimit
       l2l2HashValue,          // _hash
-      { value: CT_AMOUNT }    // msg.value = ctAmount for native ETH
+      { value: CT_AMOUNT, gasLimit: 400_000 }  // explicit gasLimit: reentrancy guard SSTORE needs buffer beyond estimate
     );
     console.log('[CRT-05] TX sent:', tx.hash);
     const receipt = await tx.wait(1);
@@ -562,6 +587,10 @@ test.describe('CrossTrade Transactions', () => {
     console.log('[CRT-05] ProvideCT event confirmed');
     console.log(`[CRT-05]   provider: ${provideCTLog!.args._provider}`);
     console.log(`[CRT-05]   ctAmount: ${ethers.formatEther(provideCTLog!.args._ctAmount)} ETH`);
+
+    // Record current L2 block to avoid full log scan in CRT-06
+    l2l2ClaimFromBlock = await l2DestProvider.getBlockNumber();
+    console.log('[CRT-05] L2 claim search start block:', l2l2ClaimFromBlock);
   });
 
   // ── CRT-06: L2-L2 Claim verified ──────────────────────────────────────
@@ -583,9 +612,9 @@ test.describe('CrossTrade Transactions', () => {
 
     const claimEvent = await pollUntil<ethers.Log>(
       async () => {
-        const logs = await l2Provider.getLogs({
+        const logs = await l2DestProvider.getLogs({
           ...claimFilter,
-          fromBlock: 'earliest',
+          fromBlock: l2l2ClaimFromBlock,
           toBlock: 'latest',
         });
         const matched = logs.find((log) => {

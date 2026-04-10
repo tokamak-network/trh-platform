@@ -164,9 +164,12 @@ export async function resolveStackUrls(
   const data = body.data as Record<string, unknown> | undefined;
   const stacks = (data?.stacks as Record<string, unknown>[]) ?? [];
 
-  const stack = stacks.find(
+  const matching = stacks.filter(
     (s) => (s.config as Record<string, unknown> | undefined)?.chainName === chainName
   );
+  // Prefer non-Terminated stacks; fall back to any match if all are Terminated
+  const stack =
+    matching.find((s) => (s.status as string) !== 'Terminated') ?? matching[0];
 
   if (!stack) {
     const available = stacks
