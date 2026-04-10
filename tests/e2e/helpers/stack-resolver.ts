@@ -117,7 +117,7 @@ export async function resolveContractAddresses(stackId: string, token?: string):
 
   try {
     const raw = execSync(
-      `docker exec trh-backend cat "${deployJsonPath}"`,
+      `docker exec trh-platform-backend-1 cat "${deployJsonPath}"`,
       { encoding: 'utf-8', timeout: 10_000 }
     );
     const deployJson = JSON.parse(raw) as Record<string, string>;

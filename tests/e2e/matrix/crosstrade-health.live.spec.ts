@@ -43,20 +43,21 @@ test.describe(`CrossTrade Health [${config.preset}/${config.feeToken}]`, () => {
     const found = integrations.find((i) => i.type === 'cross-trade');
     expect(found, 'CrossTrade integration not found in backend').toBeDefined();
     crossTradeIntegration = found!;
-    expect(crossTradeIntegration.status, 'CrossTrade integration must be installed').toBe('installed');
+    expect(['installed', 'Completed'], 'CrossTrade integration must be installed or Completed').toContain(crossTradeIntegration.status);
   });
 
   // E2E-01: 4 L2 CrossTrade contracts deployed
   test('L2 CrossTrade contracts deployed (4 addresses)', async () => {
-    const meta = crossTradeIntegration.metadata as Record<string, unknown>;
-    const contracts = meta?.contracts as Record<string, string>;
-    expect(contracts, 'No contracts in integration metadata').toBeDefined();
+    // API returns integration info in the 'info' field (not 'metadata'), with snake_case keys
+    const info = (crossTradeIntegration.info ?? crossTradeIntegration.metadata) as Record<string, unknown>;
+    const contracts = (info?.contracts ?? {}) as Record<string, string>;
+    expect(Object.keys(contracts).length > 0, 'No contracts in integration info').toBe(true);
 
     const requiredContracts = [
-      'L2CrossTrade',
-      'L2CrossTradeProxy',
-      'L2toL2CrossTradeL2',
-      'L2toL2CrossTradeProxy',
+      'l2_cross_trade',
+      'l2_cross_trade_proxy',
+      'l2_to_l2_cross_trade_l2',
+      'l2_to_l2_cross_trade_proxy',
     ];
 
     for (const name of requiredContracts) {
@@ -75,15 +76,16 @@ test.describe(`CrossTrade Health [${config.preset}/${config.feeToken}]`, () => {
 
   // E2E-02: L1 setChainInfo registered
   test('L1 setChainInfo registered (tx hashes exist)', async () => {
-    const meta = crossTradeIntegration.metadata as Record<string, unknown>;
+    // API returns tx hashes at the top level of the 'info' field
+    const info = (crossTradeIntegration.info ?? crossTradeIntegration.metadata) as Record<string, unknown>;
 
     expect(
-      meta.l1_registration_tx_hash,
+      info.l1_registration_tx_hash,
       'L1CrossTradeProxy setChainInfo tx hash required'
     ).toBeTruthy();
 
     expect(
-      meta.l1_l2l2_tx_hash,
+      info.l1_l2l2_tx_hash,
       'L2toL2CrossTradeL1 setChainInfo tx hash required'
     ).toBeTruthy();
 
@@ -92,13 +94,13 @@ test.describe(`CrossTrade Health [${config.preset}/${config.feeToken}]`, () => {
     if (sepoliaRpc) {
       const l1Provider = new ethers.JsonRpcProvider(sepoliaRpc);
       const receipt1 = await l1Provider.getTransactionReceipt(
-        meta.l1_registration_tx_hash as string
+        info.l1_registration_tx_hash as string
       );
       expect(receipt1, 'L1 registration tx not found on Sepolia').not.toBeNull();
       expect(receipt1!.status, 'L1 registration tx failed').toBe(1);
 
       const receipt2 = await l1Provider.getTransactionReceipt(
-        meta.l1_l2l2_tx_hash as string
+        info.l1_l2l2_tx_hash as string
       );
       expect(receipt2, 'L1 L2toL2 tx not found on Sepolia').not.toBeNull();
       expect(receipt2!.status, 'L1 L2toL2 tx failed').toBe(1);

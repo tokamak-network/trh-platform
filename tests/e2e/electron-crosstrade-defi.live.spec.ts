@@ -174,7 +174,7 @@ test('ECT-02: wait for deployment and verify CrossTrade installed', async () => 
       const status = ct.status as string;
       console.log(`[ECT-02] CrossTrade integration status: ${status}`);
 
-      if (status === 'installed') return ct;
+      if (status === 'installed' || status === 'Completed') return ct;
       if (status === 'Failed') throw new Error(`CrossTrade integration failed`);
       return null; // still Pending — keep polling
     },
@@ -185,7 +185,7 @@ test('ECT-02: wait for deployment and verify CrossTrade installed', async () => 
 
   expect(crossTrade).toBeDefined();
   // Verify CrossTrade is installed
-  expect(crossTrade?.status).toBe('installed');
+  expect(['installed', 'Completed']).toContain(crossTrade?.status);
 
   // Verify contract addresses are present in info (API field name is 'info', not 'metadata')
   const info = (crossTrade?.info ?? {}) as Record<string, unknown>;
@@ -193,12 +193,12 @@ test('ECT-02: wait for deployment and verify CrossTrade installed', async () => 
 
   console.log('[ECT-02] CrossTrade info:', JSON.stringify(info, null, 2));
 
-  // 4 L2 contract addresses must be present
+  // 4 L2 contract addresses must be present (API returns snake_case keys)
   const expectedContracts = [
-    'L2CrossTrade',
-    'L2CrossTradeProxy',
-    'L2toL2CrossTradeL2',
-    'L2toL2CrossTradeProxy',
+    'l2_cross_trade',
+    'l2_cross_trade_proxy',
+    'l2_to_l2_cross_trade_l2',
+    'l2_to_l2_cross_trade_proxy',
   ];
 
   for (const contractName of expectedContracts) {
@@ -250,4 +250,18 @@ test('ECT-03: CrossTrade dApp accessible at localhost:3004', async () => {
   const finalResp = await fetch(CROSSTRADE_DAPP_URL);
   expect(finalResp.status).toBeLessThan(500);
   console.log(`[ECT-03] CrossTrade dApp confirmed accessible: HTTP ${finalResp.status}`);
+
+  // Navigate to the dApp and capture a screenshot for visual verification
+  const context = electronApp!.context();
+  const page = await context.newPage();
+  try {
+    await page.goto(CROSSTRADE_DAPP_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.screenshot({
+      path: 'test-results/ect-03-crosstrade-dapp.png',
+      fullPage: true,
+    });
+    console.log('[ECT-03] Screenshot saved: test-results/ect-03-crosstrade-dapp.png');
+  } finally {
+    await page.close();
+  }
 });

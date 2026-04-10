@@ -1,17 +1,13 @@
 /**
- * Live Bridge Transaction Tests — usdc-gaming stack
+ * Live Bridge Transaction Tests
  *
  * Executes REAL deposit and withdrawal transactions and verifies they appear
  * in the block explorer.
  *
- * Stack: usdc-gaming (Gaming preset, USDC fee token)
- *   L1:        Sepolia (chainId 11155111)
- *   L2:        http://localhost:8545 (chainId 111551147729)
- *   Bridge:    http://localhost:3001
- *   Explorer:  http://localhost:4001
- *   Blockscout API: http://localhost:4000
+ * Default stack: usdc-gaming (Gaming preset, USDC fee token)
+ * Override with LIVE_CHAIN_NAME env var for dynamic stack resolution.
  *
- * TX-01: Send L1→L2 deposit via L1StandardBridge.depositETH()
+ * TX-01: Send L1→L2 deposit via L1StandardBridge.bridgeETH()
  * TX-02: Blockscout /api/v2/optimism/deposits shows the deposit
  * TX-03: Explorer /op-deposits page shows the deposit
  * TX-04: Initiate L2→L1 withdrawal via L2ToL1MessagePasser
@@ -24,21 +20,37 @@
 import { test, expect } from '@playwright/test';
 import { ethers } from 'ethers';
 import * as fs from 'fs';
+import { resolveStackUrls, resolveContractAddresses } from './helpers/stack-resolver';
 
 const OUT = '/tmp/pw-screenshots';
 if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
 
-// ── Config ─────────────────────────────────────────────────────────────────
-const L1_RPC   = 'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
-const L2_RPC   = 'http://localhost:8545';
-const BS_API   = 'http://localhost:4000/api/v2';
-const EXPLORER = 'http://localhost:4001';
-const BRIDGE   = 'http://localhost:3001';
+// ── Config (resolved in beforeAll when LIVE_CHAIN_NAME is set) ─────────────
+const LIVE_CHAIN_NAME = process.env.LIVE_CHAIN_NAME ?? null;
 
-const ADMIN_KEY = '679d88a9fb565707c0aff9434f9c141fee0b197455c12a52868b5d94bac694f9';
+const L1_RPC = process.env.LIVE_L1_RPC_URL
+  ?? 'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
 
-// Contract addresses (usdc-gaming stack, Sepolia)
-const L1_STANDARD_BRIDGE = '0x5eFc3a0ca00a25Df1227387CA10110F301dA4E50';
+// Derive admin key: ADMIN_KEY env > LIVE_SEED_PHRASE (first account) > hardcoded fallback
+function resolveAdminKey(): string {
+  if (process.env.ADMIN_KEY) return process.env.ADMIN_KEY;
+  const mnemonic = process.env.LIVE_SEED_PHRASE;
+  if (mnemonic) {
+    const wallet = ethers.HDNodeWallet.fromPhrase(mnemonic);
+    return wallet.privateKey;
+  }
+  return '679d88a9fb565707c0aff9434f9c141fee0b197455c12a52868b5d94bac694f9';
+}
+
+// Mutable — overridden in beforeAll when LIVE_CHAIN_NAME is set
+let L2_RPC   = 'http://localhost:8545';
+let BS_API   = 'http://localhost:4000/api/v2';
+let EXPLORER = 'http://localhost:4001';
+
+const ADMIN_KEY = resolveAdminKey();
+
+// Contract addresses — overridden in beforeAll when LIVE_CHAIN_NAME is set
+let L1_STANDARD_BRIDGE = '0x5eFc3a0ca00a25Df1227387CA10110F301dA4E50';
 const OPTIMISM_PORTAL    = '0x5E93B692654281173fa3230e5640ae48d6c5C98f';
 const L2_TO_L1_PASSER    = '0x4200000000000000000000000000000000000016'; // L2 predeploy
 
@@ -82,6 +94,20 @@ let adminAddress: string;
 // ── Setup: send transactions ───────────────────────────────────────────────
 test.describe('Bridge Transactions', () => {
   test.beforeAll(async () => {
+    // Resolve dynamic URLs and contract addresses when LIVE_CHAIN_NAME is set
+    if (LIVE_CHAIN_NAME) {
+      console.log(`[bridge-tx] Resolving stack config for chain: ${LIVE_CHAIN_NAME}`);
+      const urls = await resolveStackUrls(LIVE_CHAIN_NAME);
+      L2_RPC   = urls.l2Rpc;
+      BS_API   = urls.explorerApiUrl;
+      EXPLORER = urls.explorerUrl;
+      console.log(`[bridge-tx] L2 RPC: ${L2_RPC}`);
+      console.log(`[bridge-tx] Explorer: ${EXPLORER}`);
+      const contracts = await resolveContractAddresses(urls.stackId);
+      L1_STANDARD_BRIDGE = contracts.l1StandardBridgeProxy;
+      console.log(`[bridge-tx] L1StandardBridge: ${L1_STANDARD_BRIDGE}`);
+    }
+
     const l1Provider = new ethers.JsonRpcProvider(L1_RPC);
     const l2Provider = new ethers.JsonRpcProvider(L2_RPC);
     const l1Wallet   = new ethers.Wallet(ADMIN_KEY, l1Provider);

@@ -44,6 +44,11 @@ id_ed25519*
 
 # Test artifacts
 test-results/
+playwright-report/
+playwright-report-*/
+
+# claude-mem auto-generated context files
+**/CLAUDE.md
 
 # Daily reports (contain sensitive info: IPs, costs)
 docs/daily-reports/
