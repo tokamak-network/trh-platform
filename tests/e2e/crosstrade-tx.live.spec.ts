@@ -376,7 +376,7 @@ test.describe('CrossTrade Transactions', () => {
       l2ChainId,        // _l2chainId
       MIN_GAS_LIMIT,    // _minGasLimit
       l1l2HashValue,    // _hash
-      { value: CT_AMOUNT, gasLimit: 400_000 }  // explicit gasLimit: reentrancy guard SSTORE needs buffer beyond estimate
+      { value: CT_AMOUNT }  // no explicit gasLimit: let ethers estimate (ResourceMetering burn needs ~490k, exceeds any fixed limit)
     );
     console.log('[CRT-02] TX sent:', tx.hash);
     const receipt = await tx.wait(1);
@@ -559,7 +559,7 @@ test.describe('CrossTrade Transactions', () => {
       l2DestinationChainId,   // _l2DestinationChainId
       MIN_GAS_LIMIT,          // _minGasLimit
       l2l2HashValue,          // _hash
-      { value: CT_AMOUNT, gasLimit: 400_000 }  // explicit gasLimit: reentrancy guard SSTORE needs buffer beyond estimate
+      { value: CT_AMOUNT }  // no explicit gasLimit: let ethers estimate (ResourceMetering burn needs more than any fixed cap)
     );
     console.log('[CRT-05] TX sent:', tx.hash);
     const receipt = await tx.wait(1);
@@ -588,9 +588,10 @@ test.describe('CrossTrade Transactions', () => {
     console.log(`[CRT-05]   provider: ${provideCTLog!.args._provider}`);
     console.log(`[CRT-05]   ctAmount: ${ethers.formatEther(provideCTLog!.args._ctAmount)} ETH`);
 
-    // Record current L2 block to avoid full log scan in CRT-06
-    l2l2ClaimFromBlock = await l2DestProvider.getBlockNumber();
-    console.log('[CRT-05] L2 claim search start block:', l2l2ClaimFromBlock);
+    // Record current SOURCE L2 block to avoid full log scan in CRT-06
+    // ProviderClaimCT is emitted on the SOURCE L2 (local), not the destination chain
+    l2l2ClaimFromBlock = await l2Provider.getBlockNumber();
+    console.log('[CRT-05] L2 claim search start block (source L2):', l2l2ClaimFromBlock);
   });
 
   // ── CRT-06: L2-L2 Claim verified ──────────────────────────────────────
@@ -612,7 +613,9 @@ test.describe('CrossTrade Transactions', () => {
 
     const claimEvent = await pollUntil<ethers.Log>(
       async () => {
-        const logs = await l2DestProvider.getLogs({
+        // ProviderClaimCT is emitted on the SOURCE L2 when the L1→L2 CDM is relayed
+        // and claimCT() is called on L2ToL2CrossTradeProxy. Poll source L2, not destination.
+        const logs = await l2Provider.getLogs({
           ...claimFilter,
           fromBlock: l2l2ClaimFromBlock,
           toBlock: 'latest',
