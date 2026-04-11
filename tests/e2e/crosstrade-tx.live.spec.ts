@@ -29,7 +29,7 @@
  *   CRT-07 — dApp UI pages accessible and screenshotted
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { ethers } from 'ethers';
 import { resolveStackUrls, loginBackend, StackUrls } from './helpers/stack-resolver';
 import { pollUntil } from './helpers/poll';
@@ -67,7 +67,7 @@ const TRADE_AMOUNT = ethers.parseEther('0.001');  // L2 amount locked by request
 const CT_AMOUNT    = ethers.parseEther('0.001');  // L1 amount sent by provider
 
 // Timeouts
-const TX_TIMEOUT_MS    = 2 * 60 * 1000;           // 2 min for individual TXs
+const TX_TIMEOUT_MS    = 3 * 60 * 1000;           // 3 min for individual TXs
 const CLAIM_TIMEOUT_MS = 20 * 60 * 1000;          // 20 min for L1→L2 cross-domain message
 const CLAIM_POLL_MS    = 5_000;                    // 5s poll interval
 
@@ -146,6 +146,277 @@ let l2l2HashValue: string;
 // L2 log query start blocks (set after provide TX to avoid scanning from genesis)
 let l1l2ClaimFromBlock: number;
 let l2l2ClaimFromBlock: number;
+
+// ---------------------------------------------------------------------------
+// dApp screenshot helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Injects a mock EIP-1193 + EIP-6963 wallet provider into the page and connects
+ * via the AppKit modal. Must be called before any page.goto().
+ */
+async function connectDAppWallet(page: Page): Promise<void> {
+  const dappUrl = stackUrls.crossTradeUrl ?? 'http://localhost:3004';
+  const chainIdHex = '0x' + l2ChainId.toString(16);
+  const chainIdDecimal = Number(l2ChainId);
+  const l2RpcUrl = stackUrls.l2Rpc ?? 'http://localhost:8545';
+
+  await page.addInitScript(
+    ({ address, chainId, chainIdNum, rpcUrl }: { address: string; chainId: string; chainIdNum: number; rpcUrl: string }) => {
+      const handlers: Record<string, ((...args: unknown[]) => void)[]> = {};
+      const mockProvider = {
+        isMetaMask: true,
+        selectedAddress: address,
+        chainId,
+        networkVersion: String(chainIdNum),
+        request: async ({ method, params }: { method: string; params?: unknown[] }) => {
+          switch (method) {
+            case 'eth_requestAccounts':
+            case 'eth_accounts':
+              return [address];
+            case 'eth_chainId':
+              return chainId;
+            case 'net_version':
+              return String(chainIdNum);
+            case 'wallet_switchEthereumChain':
+            case 'wallet_addEthereumChain':
+              return null;
+            case 'eth_getBalance':
+              return '0x8AC7230489E80000'; // 10 ETH in wei (mock balance)
+            default: {
+              // Proxy all other RPC calls (eth_getLogs, eth_call, eth_blockNumber, etc.)
+              // to the actual L2 node so dApp data loads correctly
+              const resp = await fetch(rpcUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params: params ?? [] }),
+              });
+              const json = (await resp.json()) as { result?: unknown; error?: { code: number; message: string } };
+              if (json.error) {
+                const err = new Error(json.error.message) as Error & { code?: number };
+                err.code = json.error.code;
+                throw err;
+              }
+              return json.result;
+            }
+          }
+        },
+        on: (event: string, handler: (...args: unknown[]) => void) => {
+          if (!handlers[event]) handlers[event] = [];
+          handlers[event].push(handler);
+          return mockProvider;
+        },
+        removeListener: (event: string, handler: (...args: unknown[]) => void) => {
+          if (handlers[event]) handlers[event] = handlers[event].filter(h => h !== handler);
+          return mockProvider;
+        },
+        emit: (event: string, ...args: unknown[]) => {
+          (handlers[event] ?? []).forEach(h => h(...args));
+          return mockProvider;
+        },
+      };
+
+      // EIP-1193: legacy window.ethereum
+      Object.defineProperty(window, 'ethereum', {
+        value: mockProvider,
+        writable: false,
+        configurable: true,
+      });
+
+      // EIP-6963: announce provider info so AppKit v3 detects the wallet
+      const providerDetail = {
+        info: {
+          uuid: '550e8400-e29b-41d4-a716-446655440000',
+          name: 'MetaMask',
+          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48L3N2Zz4=',
+          rdns: 'io.metamask',
+        },
+        provider: mockProvider,
+      };
+
+      const announceEvent = new CustomEvent('eip6963:announceProvider', {
+        detail: Object.freeze(providerDetail),
+      });
+      window.dispatchEvent(announceEvent);
+
+      window.addEventListener('eip6963:requestProvider', () => {
+        window.dispatchEvent(
+          new CustomEvent('eip6963:announceProvider', {
+            detail: Object.freeze(providerDetail),
+          })
+        );
+      });
+    },
+    { address: adminAddress, chainId: chainIdHex, chainIdNum: chainIdDecimal, rpcUrl: l2RpcUrl }
+  );
+
+  await page.goto(dappUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+
+  // Attempt wallet connection via AppKit modal
+  const connectBtn = page.locator('appkit-button').first();
+  const isConnectVisible = await connectBtn.isVisible({ timeout: 5_000 }).catch(() => false);
+  if (isConnectVisible) {
+    await connectBtn.click();
+    await page.waitForTimeout(1_500);
+
+    const metaMaskOption = page.getByText('MetaMask', { exact: true }).first();
+    const hasMetaMask = await metaMaskOption.isVisible({ timeout: 3_000 }).catch(() => false);
+    if (hasMetaMask) {
+      await metaMaskOption.click();
+      await page.waitForTimeout(1_000);
+
+      const browserTab = page.getByText('Browser', { exact: true }).first();
+      const hasBrowserTab = await browserTab.isVisible({ timeout: 2_000 }).catch(() => false);
+      if (hasBrowserTab) {
+        await browserTab.click();
+        await page.waitForTimeout(2_000);
+      }
+    } else {
+      const browserWallet = page.getByText('Browser Wallet', { exact: false }).first();
+      const hasBrowserWallet = await browserWallet.isVisible({ timeout: 2_000 }).catch(() => false);
+      if (hasBrowserWallet) {
+        await browserWallet.click();
+        await page.waitForTimeout(2_000);
+      }
+    }
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+  }
+
+  // Wait for wallet connection to be recognized (address displayed in UI or localStorage updated)
+  try {
+    await page.waitForFunction(
+      () => {
+        const text = document.body.innerText;
+        // Check if address is visible in UI (show "0x..." or "Connected")
+        return /0x[a-fA-F0-9]{40}|Connected/.test(text);
+      },
+      { timeout: 5_000 }
+    );
+  } catch {
+    console.log('[connectDAppWallet] Wallet address not detected in UI after 5s — proceeding anyway');
+  }
+}
+
+/**
+ * Navigates to a dApp route and captures a screenshot.
+ * Waits for loading indicators to disappear, then injects a TX info overlay
+ * so transaction IDs are always visible in the screenshot.
+ */
+async function screenshotDAppPage(
+  page: Page,
+  route: string,
+  filename: string,
+  label: string,
+  txInfo?: { label: string; txHash?: string; hashValue?: string; saleCount?: string }
+): Promise<void> {
+  const dappUrl = stackUrls.crossTradeUrl ?? 'http://localhost:3004';
+
+  // Use client-side navigation when already on the same dApp origin so that
+  // AppKit's wallet client (useWalletClient) stays initialised across route
+  // changes.  Full page.goto() causes a fresh page load which races against
+  // AppKit re-initialisation: the history useEffect fires before the wallet
+  // client is ready, B() skips the fetch (if(a&&e)), and the deps array never
+  // includes `a` so it never retries.
+  const currentUrl = page.url();
+  const onDapp = currentUrl.startsWith(dappUrl);
+
+  if (onDapp) {
+    // Trigger Next.js App Router client-side navigation without a full reload.
+    await page.evaluate((targetPath: string) => {
+      window.history.pushState({}, '', targetPath);
+      // Next.js App Router listens to popstate to detect navigation.
+      window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+    }, route);
+    // Wait until the pathname actually changed (Next.js may be async).
+    await page.waitForFunction(
+      (path: string) => window.location.pathname === path,
+      route,
+      { timeout: 10_000 }
+    ).catch(() => {
+      console.log(`[${label}] Client-side nav to ${route} timed out — falling back to goto`);
+    });
+    // If pathname didn't update (fallback case) do a proper goto.
+    const updatedUrl = page.url();
+    if (!updatedUrl.includes(route)) {
+      await page.goto(`${dappUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    }
+  } else {
+    await page.goto(`${dappUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  }
+
+  if (route.includes('/history')) {
+    await page.waitForFunction(
+      () => !document.body.innerText.includes('Loading history'),
+      { timeout: 30_000 }
+    ).catch(() => {
+      console.log(`[${label}] History load timed out — capturing partial state`);
+    });
+    // If history is still empty after the initial wait, the wallet client may
+    // not have been ready when the useEffect fired.  Re-announce the EIP-6963
+    // provider so AppKit sets up the wallet client and the component re-renders.
+    const isEmpty = await page.locator('text=No transaction history found').isVisible({ timeout: 2_000 }).catch(() => false);
+    if (isEmpty) {
+      console.log(`[${label}] History empty — re-announcing EIP-6963 provider to re-trigger wallet client`);
+      await page.evaluate(() => {
+        // Re-dispatch the eip6963:requestProvider event; our mock listener will
+        // re-announce the provider which causes AppKit to re-init the wallet client.
+        window.dispatchEvent(new Event('eip6963:requestProvider'));
+      });
+      await page.waitForTimeout(2_000);
+      // Wait for loading indicator to clear again after re-trigger.
+      await page.waitForFunction(
+        () => !document.body.innerText.includes('Loading history'),
+        { timeout: 15_000 }
+      ).catch(() => {});
+    }
+  } else if (route.includes('/request-pool')) {
+    await page.waitForFunction(
+      () => !document.body.innerText.includes('Loading requests'),
+      { timeout: 30_000 }
+    ).catch(() => {
+      console.log(`[${label}] Request pool load timed out — capturing partial state`);
+    });
+  }
+
+  // Inject a fixed overlay so TX IDs are always visible in the screenshot
+  if (txInfo) {
+    await page.evaluate((info: { label: string; txHash?: string; hashValue?: string; saleCount?: string }) => {
+      const existing = document.getElementById('__crt-tx-overlay');
+      if (existing) existing.remove();
+      const overlay = document.createElement('div');
+      overlay.id = '__crt-tx-overlay';
+      overlay.style.cssText = [
+        'position:fixed',
+        'bottom:16px',
+        'right:16px',
+        'background:rgba(0,0,0,0.88)',
+        'color:#00ff88',
+        'font-family:monospace',
+        'font-size:11px',
+        'padding:10px 14px',
+        'border-radius:6px',
+        'z-index:2147483647',
+        'max-width:600px',
+        'word-break:break-all',
+        'border:1px solid #00ff88',
+        'line-height:1.7',
+        'box-shadow:0 4px 12px rgba(0,0,0,0.5)',
+      ].join(';');
+      const lines: string[] = [`<span style="color:#fff;font-weight:bold">${info.label}</span>`];
+      if (info.txHash) lines.push(`TX:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${info.txHash}`);
+      if (info.hashValue) lines.push(`hash:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${info.hashValue}`);
+      if (info.saleCount !== undefined) lines.push(`saleCount: ${info.saleCount}`);
+      overlay.innerHTML = lines.join('<br>');
+      document.body.appendChild(overlay);
+    }, txInfo);
+  }
+
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `test-results/${filename}`, fullPage: true });
+  console.log(`[${label}] Screenshot: ${filename}`);
+}
 
 // ---------------------------------------------------------------------------
 // Setup
@@ -287,7 +558,7 @@ test.describe('CrossTrade Transactions', () => {
   });
 
   // ── CRT-01: L1-L2 Request ──────────────────────────────────────────────
-  test('CRT-01: L1-L2 request — lock L2 ETH in L2CrossTradeProxy', async () => {
+  test('CRT-01: L1-L2 request — lock L2 ETH in L2CrossTradeProxy', async ({ page }) => {
     test.setTimeout(TX_TIMEOUT_MS);
 
     const l2CtContract = new ethers.Contract(l2CrossTradeProxy, L2_CT_ABI, l2Wallet);
@@ -342,6 +613,15 @@ test.describe('CrossTrade Transactions', () => {
 
     expect(l1l2HashValue).toMatch(/^0x[0-9a-fA-F]{64}$/);
     expect(l1l2SaleCount).toBeGreaterThan(0n);
+
+    // dApp screenshot: show new L1-L2 request in request pool
+    await connectDAppWallet(page);
+    await screenshotDAppPage(page, '/request-pool', 'crt-01-dapp-request-pool.png', 'CRT-01', {
+      label: 'L1-L2 Request (CRT-01)',
+      txHash: tx.hash,
+      hashValue: l1l2HashValue,
+      saleCount: l1l2SaleCount.toString(),
+    });
   });
 
   // ── CRT-02: L1-L2 Provide ─────────────────────────────────────────────
@@ -411,7 +691,7 @@ test.describe('CrossTrade Transactions', () => {
   });
 
   // ── CRT-03: L1-L2 Claim verified ──────────────────────────────────────
-  test('CRT-03: L1-L2 claim — ProviderClaimCT event on L2 via cross-domain message', async () => {
+  test('CRT-03: L1-L2 claim — ProviderClaimCT event on L2 via cross-domain message', async ({ page }) => {
     test.setTimeout(CLAIM_TIMEOUT_MS + 60_000);
     expect(l1l2HashValue, 'CRT-02 must succeed first').toBeTruthy();
 
@@ -457,10 +737,19 @@ test.describe('CrossTrade Transactions', () => {
 
     expect(parsedClaim.args._hash).toBe(l1l2HashValue);
     expect(parsedClaim.args._provider).not.toBe(ETH_ADDRESS);
+
+    // dApp screenshot: show completed L1-L2 trade in history
+    await connectDAppWallet(page);
+    await screenshotDAppPage(page, '/history', 'crt-03-dapp-history.png', 'CRT-03', {
+      label: 'L1-L2 Claim (CRT-03)',
+      txHash: claimEvent.transactionHash,
+      hashValue: l1l2HashValue,
+      saleCount: parsedClaim.args._saleCount?.toString(),
+    });
   });
 
   // ── CRT-04: L2-L2 Request ─────────────────────────────────────────────
-  test('CRT-04: L2-L2 request — lock L2 ETH in L2ToL2CrossTradeProxy', async () => {
+  test('CRT-04: L2-L2 request — lock L2 ETH in L2ToL2CrossTradeProxy', async ({ page }) => {
     test.setTimeout(TX_TIMEOUT_MS);
 
     const l2l2Contract = new ethers.Contract(l2ToL2CrossTradeProxy, L2L2_L2_ABI, l2Wallet);
@@ -522,6 +811,15 @@ test.describe('CrossTrade Transactions', () => {
 
     expect(l2l2HashValue).toMatch(/^0x[0-9a-fA-F]{64}$/);
     expect(l2l2SaleCount).toBeGreaterThan(0n);
+
+    // dApp screenshot: show new L2-L2 request in request pool
+    await connectDAppWallet(page);
+    await screenshotDAppPage(page, '/request-pool', 'crt-04-dapp-request-pool.png', 'CRT-04', {
+      label: 'L2-L2 Request (CRT-04)',
+      txHash: tx.hash,
+      hashValue: l2l2HashValue,
+      saleCount: l2l2SaleCount.toString(),
+    });
   });
 
   // ── CRT-05: L2-L2 Provide ─────────────────────────────────────────────
@@ -595,7 +893,7 @@ test.describe('CrossTrade Transactions', () => {
   });
 
   // ── CRT-06: L2-L2 Claim verified ──────────────────────────────────────
-  test('CRT-06: L2-L2 claim — ProviderClaimCT event on L2ToL2CrossTradeProxy', async () => {
+  test('CRT-06: L2-L2 claim — ProviderClaimCT event on L2ToL2CrossTradeProxy', async ({ page }) => {
     test.setTimeout(CLAIM_TIMEOUT_MS + 60_000);
     expect(l2l2HashValue, 'CRT-05 must succeed first').toBeTruthy();
 
@@ -643,6 +941,15 @@ test.describe('CrossTrade Transactions', () => {
 
     expect(parsedClaim.args._hash).toBe(l2l2HashValue);
     expect(parsedClaim.args._provider).not.toBe(ETH_ADDRESS);
+
+    // dApp screenshot: show both completed trades in history
+    await connectDAppWallet(page);
+    await screenshotDAppPage(page, '/history', 'crt-06-dapp-history.png', 'CRT-06', {
+      label: 'L2-L2 Claim (CRT-06)',
+      txHash: claimEvent.transactionHash,
+      hashValue: l2l2HashValue,
+      saleCount: parsedClaim.args._saleCount?.toString(),
+    });
   });
 
   // ── CRT-07: dApp UI screenshots ───────────────────────────────────────
@@ -650,7 +957,6 @@ test.describe('CrossTrade Transactions', () => {
     test.setTimeout(3 * 60 * 1000);
 
     const dappUrl = stackUrls.crossTradeUrl ?? 'http://localhost:3004';
-    const chainIdHex = '0x' + l2ChainId.toString(16);
 
     // Ensure dApp is reachable
     await pollUntil(
@@ -667,172 +973,29 @@ test.describe('CrossTrade Transactions', () => {
       5_000
     );
 
-    // Inject mock EIP-1193 + EIP-6963 provider before page scripts run.
-    // AppKit v3 uses EIP-6963 (eip6963:announceProvider event) to detect wallets —
-    // window.ethereum alone shows "Not Detected". We must also dispatch the event.
-    const chainIdDecimal = Number(l2ChainId);
-    await page.addInitScript(
-      ({ address, chainId, chainIdNum }: { address: string; chainId: string; chainIdNum: number }) => {
-        const handlers: Record<string, ((...args: unknown[]) => void)[]> = {};
-        const mockProvider = {
-          isMetaMask: true,
-          selectedAddress: address,
-          chainId,
-          networkVersion: String(chainIdNum),
-          request: async ({ method }: { method: string; params?: unknown[] }) => {
-            switch (method) {
-              case 'eth_requestAccounts':
-              case 'eth_accounts':
-                return [address];
-              case 'eth_chainId':
-                return chainId;
-              case 'net_version':
-                return String(chainIdNum);
-              case 'wallet_switchEthereumChain':
-              case 'wallet_addEthereumChain':
-                return null;
-              case 'eth_getBalance':
-                return '0x8AC7230489E80000'; // 10 ETH in wei (mock balance)
-              case 'eth_blockNumber':
-                return '0x1000';
-              default:
-                return null;
-            }
-          },
-          on: (event: string, handler: (...args: unknown[]) => void) => {
-            if (!handlers[event]) handlers[event] = [];
-            handlers[event].push(handler);
-            return mockProvider;
-          },
-          removeListener: (event: string, handler: (...args: unknown[]) => void) => {
-            if (handlers[event]) handlers[event] = handlers[event].filter(h => h !== handler);
-            return mockProvider;
-          },
-          emit: (event: string, ...args: unknown[]) => {
-            (handlers[event] ?? []).forEach(h => h(...args));
-            return mockProvider;
-          },
-        };
-
-        // EIP-1193: legacy window.ethereum
-        Object.defineProperty(window, 'ethereum', {
-          value: mockProvider,
-          writable: false,
-          configurable: true,
-        });
-
-        // EIP-6963: announce provider info so AppKit v3 detects the wallet
-        const providerDetail = {
-          info: {
-            uuid: '550e8400-e29b-41d4-a716-446655440000',
-            name: 'MetaMask',
-            icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48L3N2Zz4=',
-            rdns: 'io.metamask',
-          },
-          provider: mockProvider,
-        };
-
-        // Announce immediately and also respond to future requestProvider events
-        const announceEvent = new CustomEvent('eip6963:announceProvider', {
-          detail: Object.freeze(providerDetail),
-        });
-        window.dispatchEvent(announceEvent);
-
-        window.addEventListener('eip6963:requestProvider', () => {
-          window.dispatchEvent(
-            new CustomEvent('eip6963:announceProvider', {
-              detail: Object.freeze(providerDetail),
-            })
-          );
-        });
-      },
-      { address: adminAddress, chainId: chainIdHex, chainIdNum: chainIdDecimal }
-    );
-
-    // Navigate to dApp and attempt wallet connection via the AppKit connect modal.
-    // AppKit detects window.ethereum and offers "MetaMask" / "Browser Wallet" option.
-    await page.goto(dappUrl, { waitUntil: 'networkidle', timeout: 30_000 });
-
-    // Click the appkit connect button and navigate to the injected provider flow.
-    // AppKit modal structure: wallet list → MetaMask page → "Browser" tab (injected).
-    const connectBtn = page.locator('appkit-button').first();
-    const isConnectVisible = await connectBtn.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (isConnectVisible) {
-      await connectBtn.click();
-      await page.waitForTimeout(1_500);
-
-      // In the wallet list, find MetaMask (first visible option)
-      const metaMaskOption = page.getByText('MetaMask', { exact: true }).first();
-      const hasMetaMask = await metaMaskOption.isVisible({ timeout: 3_000 }).catch(() => false);
-      if (hasMetaMask) {
-        await metaMaskOption.click();
-        await page.waitForTimeout(1_000);
-
-        // MetaMask detail page has "Mobile" and "Browser" tabs.
-        // "Browser" tab connects to the injected window.ethereum provider.
-        const browserTab = page.getByText('Browser', { exact: true }).first();
-        const hasBrowserTab = await browserTab.isVisible({ timeout: 2_000 }).catch(() => false);
-        if (hasBrowserTab) {
-          await browserTab.click();
-          await page.waitForTimeout(2_000);
-          console.log('[CRT-07] Clicked Browser tab — connecting to injected provider...');
-        } else {
-          console.log('[CRT-07] Browser tab not found, proceeding without connection');
-        }
-      } else {
-        // Fallback: try Browser Wallet option directly
-        const browserWallet = page.getByText('Browser Wallet', { exact: false }).first();
-        const hasBrowserWallet = await browserWallet.isVisible({ timeout: 2_000 }).catch(() => false);
-        if (hasBrowserWallet) {
-          await browserWallet.click();
-          await page.waitForTimeout(2_000);
-          console.log('[CRT-07] Browser Wallet clicked');
-        }
-      }
-
-      // Close any remaining modal by pressing Escape
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(500);
-    }
-
-    await page.waitForTimeout(2_000);
-    await page.screenshot({
-      path: 'test-results/crt-07-dapp-home.png',
-      fullPage: true,
-    });
+    // Connect wallet and navigate to dApp home
+    await connectDAppWallet(page);
+    await page.waitForTimeout(1_500);
+    await page.screenshot({ path: 'test-results/crt-07-dapp-home.png', fullPage: true });
     console.log('[CRT-07] Screenshot: crt-07-dapp-home.png');
 
     let body = await page.textContent('body') ?? '';
     expect(body.length, 'dApp home page is empty').toBeGreaterThan(100);
 
     // Capture request pool page
-    await page.goto(`${dappUrl}/request-pool`, { waitUntil: 'networkidle', timeout: 30_000 });
-    await page.waitForTimeout(2_000);
-    await page.screenshot({
-      path: 'test-results/crt-07-dapp-request-pool.png',
-      fullPage: true,
+    await screenshotDAppPage(page, '/request-pool', 'crt-07-dapp-request-pool.png', 'CRT-07', {
+      label: 'Request Pool (CRT-07)',
+      hashValue: l2l2HashValue || l1l2HashValue || undefined,
+      saleCount: (l2l2SaleCount || l1l2SaleCount)?.toString(),
     });
-    console.log('[CRT-07] Screenshot: crt-07-dapp-request-pool.png');
-
     body = await page.textContent('body') ?? '';
     expect(body.length, 'Request pool page is empty').toBeGreaterThan(100);
 
-    // Capture history page — wait for event log query to complete
-    await page.goto(`${dappUrl}/history`, { waitUntil: 'networkidle', timeout: 30_000 });
-    // Wait up to 20s for "Loading history..." to disappear (contract event scan may be slow)
-    await page.waitForFunction(
-      () => !document.body.innerText.includes('Loading history'),
-      { timeout: 20_000 }
-    ).catch(() => {
-      // Timeout is acceptable — screenshot whatever state is reached
-      console.log('[CRT-07] History load timed out — capturing partial state');
+    // Capture history page
+    await screenshotDAppPage(page, '/history', 'crt-07-dapp-history.png', 'CRT-07', {
+      label: 'History (CRT-07)',
+      hashValue: l1l2HashValue || l2l2HashValue || undefined,
     });
-    await page.screenshot({
-      path: 'test-results/crt-07-dapp-history.png',
-      fullPage: true,
-    });
-    console.log('[CRT-07] Screenshot: crt-07-dapp-history.png');
-
     body = await page.textContent('body') ?? '';
     expect(body.length, 'History page is empty').toBeGreaterThan(100);
 

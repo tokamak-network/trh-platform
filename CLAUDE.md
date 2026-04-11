@@ -104,7 +104,6 @@ Start with a GSD command before modifying files:
 
 @docs/claude/conventions.md
 @docs/claude/architecture.md
-@docs/claude/crosstrade-stack.md
 
 ## Skill Routing
 
