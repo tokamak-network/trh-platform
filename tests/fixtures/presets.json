@@ -47,7 +47,6 @@
       "l2BlockTime",
       "batchSubmissionFrequency",
       "outputRootFrequency",
-      "challengePeriod",
       "backupEnabled"
     ]
   },
@@ -101,9 +100,10 @@
       "fundingWait": "5-15m"
     },
     "overridableFields": [
+      "l2BlockTime",
       "batchSubmissionFrequency",
       "outputRootFrequency",
-      "challengePeriod"
+      "backupEnabled"
     ]
   },
   "gaming": {
@@ -157,7 +157,8 @@
     "overridableFields": [
       "l2BlockTime",
       "batchSubmissionFrequency",
-      "outputRootFrequency"
+      "outputRootFrequency",
+      "backupEnabled"
     ]
   },
   "full": {
@@ -217,7 +218,7 @@
       "l2BlockTime",
       "batchSubmissionFrequency",
       "outputRootFrequency",
-      "challengePeriod"
+      "backupEnabled"
     ]
   }
 }
