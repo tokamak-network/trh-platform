@@ -126,6 +126,24 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
     appendLog('Docker daemon is running');
     updateStep('docker', { status: 'success', detail: 'Docker ready' });
 
+    // Fast path: if all trh containers are already running, skip pull/port/start
+    appendLog('Checking if TRH stack is already running...');
+    const trhStackRunning = await api.docker.isTrhStackRunning();
+    if (trhStackRunning) {
+      appendLog('TRH stack already running — reusing existing containers');
+      updateStep('images', { status: 'success', detail: 'Using running images' });
+      updateStep('containers', { status: 'success', detail: 'Already running' });
+
+      // Non-blocking background update check
+      api.docker.checkUpdates().then((hasUpdate) => {
+        if (hasUpdate) {
+          appendLog('Newer images available — use tray menu to apply update');
+        }
+      }).catch(() => { /* network unavailable — ignore */ });
+
+      // Skip to Step 4 (deps)
+    } else {
+
     // Step 2: Pull images (auto-retry up to 2 times)
     appendLog('Pulling container images...');
     updateStep('images', { status: 'loading', detail: 'Pulling images...', progress: 0 });
@@ -201,6 +219,14 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
 
       const conflictPorts = [...new Set(portResult.conflicts.map(c => c.port))];
       appendLog('Port conflict on: ' + conflictPorts.join(', '));
+
+      // If all conflicts are owned by our own trh containers, skip the modal —
+      // compose up -d will handle them idempotently.
+      const allTrhOwned = portResult.conflicts.every(c => c.ownedByTrh);
+      if (allTrhOwned) {
+        appendLog('All port conflicts are owned by existing trh containers — proceeding');
+        return true;
+      }
 
       const userChoice = await new Promise<'confirm' | 'cancel'>((resolve) => {
         setPortModal({ open: true, conflicts: portResult.conflicts, resolve });
@@ -288,6 +314,8 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
       logCleanup();
       return;
     }
+
+    } // end else (trh stack was not already running)
 
     // Step 4: Backend dependencies (auto-retry up to 2 times)
     appendLog('Checking backend dependencies...');

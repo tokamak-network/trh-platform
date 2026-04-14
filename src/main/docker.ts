@@ -12,6 +12,7 @@ const PULL_TIMEOUT = 600000;
 const COMPOSE_TIMEOUT = 120000;
 
 const REQUIRED_PORTS = [3000, 5433, 8000];
+const TRH_CONTAINER_NAMES = ['trh-postgres', 'trh-backend', 'trh-platform-ui'];
 const activeProcesses = new Set<ChildProcess>();
 
 let logCallback: ((line: string) => void) | null = null;
@@ -128,6 +129,7 @@ export interface PortConflict {
   port: number;
   pid: number;
   processName: string;
+  ownedByTrh: boolean;
 }
 
 export async function getPortConflicts(): Promise<{ available: boolean; conflicts: PortConflict[] }> {
@@ -143,10 +145,22 @@ export async function getPortConflicts(): Promise<{ available: boolean; conflict
       const pids = pidOutput.split('\n').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
       for (const pid of pids) {
         try {
-          const name = await execPromise(`ps -p ${pid} -o comm=`);
-          conflicts.push({ port, pid, processName: name.trim() });
+          const name = (await execPromise(`ps -p ${pid} -o comm=`)).trim();
+          let ownedByTrh = false;
+          if (name.includes('docker') || name.includes('com.docker')) {
+            try {
+              const containerName = (await execPromise(
+                `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.Names}}"`,
+                5000
+              )).trim();
+              ownedByTrh = TRH_CONTAINER_NAMES.some(n => containerName.includes(n));
+            } catch {
+              // docker ps failed — treat as unknown docker container
+            }
+          }
+          conflicts.push({ port, pid, processName: name, ownedByTrh });
         } catch {
-          conflicts.push({ port, pid, processName: 'unknown' });
+          conflicts.push({ port, pid, processName: 'unknown', ownedByTrh: false });
         }
       }
     } catch {
@@ -159,7 +173,7 @@ export async function getPortConflicts(): Promise<{ available: boolean; conflict
 }
 
 export async function killPortProcesses(ports: number[]): Promise<void> {
-  let dockerContainerFound = false;
+  let externalDockerFound = false;
 
   for (const port of ports) {
     try {
@@ -169,8 +183,24 @@ export async function killPortProcesses(ports: number[]): Promise<void> {
         try {
           const name = (await execPromise(`ps -p ${pid} -o comm=`)).trim();
           if (name.includes('docker') || name.includes('com.docker')) {
-            dockerContainerFound = true;
-            emitLog(`Port ${port} is held by Docker (${name}) — will stop containers instead of killing daemon`);
+            // Check if this port is owned by one of our own trh containers
+            let isTrhOwned = false;
+            try {
+              const containerName = (await execPromise(
+                `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.Names}}"`,
+                5000
+              )).trim();
+              isTrhOwned = TRH_CONTAINER_NAMES.some(n => containerName.includes(n));
+            } catch {
+              // docker ps failed — treat as external
+            }
+
+            if (isTrhOwned) {
+              emitLog(`Port ${port} is held by our own trh container — skipping (will be handled by compose up)`);
+            } else {
+              externalDockerFound = true;
+              emitLog(`Port ${port} is held by external Docker container (${name}) — will stop it`);
+            }
           } else {
             process.kill(pid, 'SIGTERM');
             emitLog(`Killed process ${pid} on port ${port}`);
@@ -184,18 +214,25 @@ export async function killPortProcesses(ports: number[]): Promise<void> {
     }
   }
 
-  if (dockerContainerFound) {
-    emitLog('Stopping Docker containers occupying required ports...');
+  if (externalDockerFound) {
+    emitLog('Stopping external Docker containers occupying required ports...');
     for (const port of ports) {
       try {
-        // Find container ID by published port, regardless of compose project
-        const containerId = (await execPromise(
-          `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.ID}}"`
+        const containerName = (await execPromise(
+          `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.Names}}"`,
+          5000
         )).trim();
-        if (containerId) {
-          await execPromise(`"${DOCKER_BIN}" stop ${containerId}`);
-          await execPromise(`"${DOCKER_BIN}" rm -f ${containerId}`);
-          emitLog(`Stopped container ${containerId} on port ${port}`);
+        // Only stop containers that are NOT our own trh containers
+        if (containerName && !TRH_CONTAINER_NAMES.some(n => containerName.includes(n))) {
+          const containerId = (await execPromise(
+            `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.ID}}"`,
+            5000
+          )).trim();
+          if (containerId) {
+            await execPromise(`"${DOCKER_BIN}" stop ${containerId}`);
+            await execPromise(`"${DOCKER_BIN}" rm -f ${containerId}`);
+            emitLog(`Stopped external container ${containerId} on port ${port}`);
+          }
         }
       } catch {
         emitLog(`Could not stop Docker container on port ${port}`);
@@ -206,9 +243,21 @@ export async function killPortProcesses(ports: number[]): Promise<void> {
   // Wait for processes to terminate
   await new Promise(resolve => setTimeout(resolve, 1500));
 
-  // Verify ports are freed
+  // Verify ports are freed (skip trh-owned ports — they stay running intentionally)
   for (const port of ports) {
     if (!(await isPortAvailable(port))) {
+      // Check if still held by our own trh container — that's OK
+      try {
+        const containerName = (await execPromise(
+          `"${DOCKER_BIN}" ps --filter "publish=${port}" --format "{{.Names}}"`,
+          5000
+        )).trim();
+        if (TRH_CONTAINER_NAMES.some(n => containerName.includes(n))) {
+          continue; // trh container holding the port — expected, skip error
+        }
+      } catch {
+        // ignore
+      }
       throw new Error(`Port ${port} is still in use after killing processes. You may need to free it manually.`);
     }
   }
@@ -346,6 +395,37 @@ export async function getDockerStatus(): Promise<DockerStatus> {
       healthy: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     };
+  }
+}
+
+// Check if all three trh containers are running and healthy by container name,
+// independent of the compose project label. Handles the case where containers
+// were started via `make up` outside the Electron app.
+export async function isTrhStackRunning(): Promise<boolean> {
+  try {
+    const output = await execPromise(
+      `"${DOCKER_BIN}" ps --filter "name=trh-postgres" --filter "name=trh-backend" --filter "name=trh-platform-ui" --format "{{.Names}}\\t{{.State}}\\t{{.Status}}"`,
+      10000
+    );
+    if (!output) return false;
+
+    const lines = output.split('\n').filter(Boolean);
+    const found: Record<string, { running: boolean; healthy: boolean }> = {};
+
+    for (const line of lines) {
+      const [name, state, status] = line.split('\t');
+      if (!name || !state) continue;
+      const matchedName = TRH_CONTAINER_NAMES.find(n => name.trim() === n);
+      if (!matchedName) continue;
+      const running = state.trim() === 'running';
+      // healthy = no healthcheck defined OR healthcheck passed
+      const healthy = !status.includes('(') || status.includes('(healthy)');
+      found[matchedName] = { running, healthy };
+    }
+
+    return TRH_CONTAINER_NAMES.every(n => found[n]?.running && found[n]?.healthy);
+  } catch {
+    return false;
   }
 }
 

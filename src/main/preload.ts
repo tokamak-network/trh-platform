@@ -18,6 +18,7 @@ export interface PortConflict {
   port: number;
   pid: number;
   processName: string;
+  ownedByTrh: boolean;
 }
 
 export interface PortCheckResult {
@@ -42,6 +43,7 @@ const electronAPI = {
     cleanup: (): Promise<void> => ipcRenderer.invoke('docker:cleanup'),
     startDaemon: (): Promise<boolean> => ipcRenderer.invoke('docker:start-daemon'),
     prune: (): Promise<void> => ipcRenderer.invoke('docker:prune'),
+    isTrhStackRunning: (): Promise<boolean> => ipcRenderer.invoke('docker:is-trh-stack-running'),
     checkUpdates: (): Promise<boolean> => ipcRenderer.invoke('docker:check-updates'),
     restartWithUpdates: (config?: { adminEmail?: string; adminPassword?: string }): Promise<void> => ipcRenderer.invoke('docker:restart-with-updates', config),
     pullImages: (): Promise<void> => ipcRenderer.invoke('docker:pull-images'),

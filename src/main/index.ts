@@ -21,6 +21,7 @@ import {
   pruneDockerDisk,
   checkForUpdates,
   restartWithUpdates,
+  isTrhStackRunning,
   PullProgress
 } from './docker';
 import { installDockerDesktop, type InstallResult } from './installer';
@@ -438,6 +439,7 @@ function setupIpcHandlers(): void {
       dockerOperationInProgress = false;
     }
   });
+  ipcMain.handle('docker:is-trh-stack-running', () => isTrhStackRunning());
   ipcMain.handle('docker:check-ports', () => getPortConflicts());
   ipcMain.handle('docker:kill-port-processes', async (_event, ports: number[]) => {
     await killPortProcesses(ports);
