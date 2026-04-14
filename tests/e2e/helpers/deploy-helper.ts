@@ -78,6 +78,41 @@ function getSeedPhrase(): string {
 // ---------------------------------------------------------------------------
 
 /**
+ * Wait for the backend API to become reachable.
+ * Used by Electron specs where the app auto-starts Docker; the backend
+ * may not be ready immediately after Electron launches.
+ *
+ * @param timeoutMs - Maximum wait time (default 5 min)
+ * @param intervalMs - Poll interval (default 10 s)
+ */
+export async function waitForBackendReady(
+  timeoutMs = 5 * 60 * 1000,
+  intervalMs = 10_000,
+): Promise<void> {
+  const backendUrl = getBackendUrl();
+  console.log(`[deploy] Waiting for backend at ${backendUrl}...`);
+  await pollUntil(
+    async () => {
+      try {
+        const resp = await fetch(`${backendUrl}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'admin@gmail.com', password: 'admin' }),
+          signal: AbortSignal.timeout(5_000),
+        });
+        return resp.ok ? (true as const) : null;
+      } catch {
+        return null;
+      }
+    },
+    'backend ready',
+    timeoutMs,
+    intervalMs,
+  );
+  console.log('[deploy] Backend is ready');
+}
+
+/**
  * Ensure no active (non-Terminated) stacks exist before deploying.
  * Local Docker uses fixed ports, so concurrent stacks cause conflicts.
  */
@@ -139,16 +174,22 @@ export async function ensureNoActiveStacks(): Promise<void> {
  * Deploy an L2 stack via the preset-deploy API.
  * Automatically ensures no active stacks exist before deploying.
  *
- * @param config - Deployment configuration (preset, feeToken, chainName)
+ * @param config - Deployment configuration (preset, feeToken, chainName, provider)
  * @returns Stack ID and deployment ID from the API response
  */
 export async function deployPreset(config: {
   preset: Preset;
   feeToken: FeeToken;
   chainName: string;
+  /** Infrastructure provider. 'aws' reads E2E_AWS_* env vars for credentials. Defaults to 'local'. */
+  provider?: 'local' | 'aws';
 }): Promise<DeployResult> {
-  // Ensure no active stacks (local Docker has fixed ports)
-  await ensureNoActiveStacks();
+  const provider = config.provider ?? 'local';
+
+  // Ensure no active stacks for local provider (fixed ports cause conflicts)
+  if (provider === 'local') {
+    await ensureNoActiveStacks();
+  }
 
   const backendUrl = getBackendUrl();
   const token = await loginBackend(backendUrl);
@@ -157,12 +198,22 @@ export async function deployPreset(config: {
     presetId: config.preset,
     chainName: config.chainName,
     network: process.env.LIVE_NETWORK ?? 'Testnet',
-    infraProvider: process.env.LIVE_INFRA_PROVIDER ?? 'local',
+    infraProvider: provider,
     seedPhrase: getSeedPhrase(),
     l1RpcUrl: getL1RpcUrl(),
     l1BeaconUrl: getL1BeaconUrl(),
     feeToken: config.feeToken,
   };
+
+  // Inject AWS credentials for the 'aws' provider path
+  if (provider === 'aws') {
+    const awsAccessKey = process.env.E2E_AWS_ACCESS_KEY;
+    const awsSecretKey = process.env.E2E_AWS_SECRET_KEY;
+    const awsRegion = process.env.E2E_AWS_REGION;
+    if (awsAccessKey) body.awsAccessKey = awsAccessKey;
+    if (awsSecretKey) body.awsSecretKey = awsSecretKey;
+    if (awsRegion) body.awsRegion = awsRegion;
+  }
 
   console.log(`[deploy] Starting preset-deploy: ${config.preset}/${config.feeToken} as "${config.chainName}"`);
 
@@ -229,9 +280,17 @@ export async function waitForDeployed(
 
   const status = await pollUntil<StackStatus>(
     async () => {
-      const resp = await fetch(`${backendUrl}/api/v1/stacks/thanos/${stackId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let resp: Response;
+      try {
+        resp = await fetch(`${backendUrl}/api/v1/stacks/thanos/${stackId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch (err) {
+        // Transient network error (backend briefly restarting) — retry next interval
+        console.log(`[deploy] Stack ${stackId}: fetch error (retrying) — ${err}`);
+        return null;
+      }
 
       if (!resp.ok) return null;
 

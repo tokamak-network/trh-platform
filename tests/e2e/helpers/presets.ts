@@ -12,6 +12,8 @@
  */
 
 import type { Preset } from './matrix-config';
+import { expect } from '@playwright/test';
+import { ethers } from 'ethers';
 
 // ---------------------------------------------------------------------------
 // Fixture types
@@ -109,3 +111,59 @@ export const DEFI_ADDRESSES: Record<string, string> = {
   // USDCBridge:                          'TODO',
   // WrappedETH (WETH9 predeploy):        '0x4200000000000000000000000000000000000006',
 };
+
+// ---------------------------------------------------------------------------
+// Expected predeploy counts per preset
+// Source: tests/fixtures/presets.json (genesisPredeploys arrays)
+// general=13, defi=18, gaming=20, full=25
+// ---------------------------------------------------------------------------
+
+export const EXPECTED_PREDEPLOY_COUNT: Record<Preset, number> = {
+  general: 13,
+  defi: 18,
+  gaming: 20,
+  full: 25,
+};
+
+// ---------------------------------------------------------------------------
+// assertIntegrationModules
+// Verifies that expectedPresent modules appear and expectedAbsent do not.
+// `integrationTypes` is the array from GET /api/v1/stacks/thanos/:id response.
+// ---------------------------------------------------------------------------
+
+export function assertIntegrationModules(
+  integrationTypes: string[],
+  expectedPresent: readonly string[],
+  expectedAbsent: readonly string[],
+  context: string,
+): void {
+  const normalized = integrationTypes.map((t) => t.toLowerCase().replace(/[-_]/g, ''));
+  for (const mod of expectedPresent) {
+    const modNorm = mod.toLowerCase().replace(/[-_]/g, '');
+    const found = normalized.some((t) => t === modNorm);
+    expect(found, `${context}: expected module "${mod}" to be present`).toBe(true);
+  }
+  for (const mod of expectedAbsent) {
+    const modNorm = mod.toLowerCase().replace(/[-_]/g, '');
+    const found = normalized.some((t) => t === modNorm);
+    expect(found, `${context}: expected module "${mod}" to be absent`).toBe(false);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// assertOpStandardBytecode
+// Checks that all 11 OP Standard predeploys have non-empty bytecode.
+// Returns the number of addresses verified.
+// ---------------------------------------------------------------------------
+
+export async function assertOpStandardBytecode(
+  provider: ethers.JsonRpcProvider,
+  context: string,
+): Promise<number> {
+  const entries = Object.entries(OP_STANDARD_ADDRESSES);
+  for (const [name, address] of entries) {
+    const code = await provider.getCode(address);
+    expect(code, `${context}: OP Standard predeploy "${name}" at ${address} must have bytecode`).not.toBe('0x');
+  }
+  return entries.length;
+}

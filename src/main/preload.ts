@@ -172,6 +172,14 @@ const electronAPI = {
     ssoAssumeRole: (accountId: string, roleName: string): Promise<any> => ipcRenderer.invoke('aws-auth:sso-assume-role', accountId, roleName),
     getCredentials: (): Promise<any> => ipcRenderer.invoke('aws-auth:get-credentials'),
     clear: (): Promise<void> => ipcRenderer.invoke('aws-auth:clear'),
+    refresh: (): Promise<any> => ipcRenderer.invoke('aws-auth:refresh'),
+    setRegion: (region: string): Promise<void> => ipcRenderer.invoke('aws-auth:set-region', region),
+    getRegion: (): Promise<string | null> => ipcRenderer.invoke('aws-auth:get-region'),
+    onExpired: (callback: () => void): (() => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('aws-auth:expired', handler);
+      return () => ipcRenderer.removeListener('aws-auth:expired', handler);
+    },
   },
 
   networkGuard: {

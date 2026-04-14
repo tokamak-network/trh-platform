@@ -53,6 +53,18 @@ let currentCredentials: AwsCredentials | null = null;
 let ssoAccessToken: string | null = null;
 let ssoRegion: string | null = null;
 
+// Active region selected by user for AWS deployment
+let activeRegion: string | null = null;
+
+// Last assumed SSO role — used for automatic credential refresh
+let lastSsoRole: { accountId: string; roleName: string } | null = null;
+
+// Whether a refresh is currently in-flight (prevents concurrent refresh calls)
+let isRefreshing = false;
+
+// Callback invoked for credential lifecycle events (expired, refreshed)
+let credentialEventCallback: ((event: string) => void) | null = null;
+
 // ---------------------------------------------------------------------------
 // INI parser helpers
 // ---------------------------------------------------------------------------
@@ -298,29 +310,82 @@ export async function startSsoLogin(profileName: string): Promise<AwsCredentials
 
 /**
  * Return in-memory credentials. Returns null if none loaded or if expired.
+ * Kicks off a background refresh when credentials are within 10 minutes of expiry.
  */
 export function getCredentials(): AwsCredentials | null {
   if (!currentCredentials) return null;
 
-  // Check expiry if set
-  if (
-    currentCredentials.expiresAt !== undefined &&
-    Date.now() > currentCredentials.expiresAt
-  ) {
-    currentCredentials = null;
-    return null;
+  if (currentCredentials.expiresAt !== undefined) {
+    const now = Date.now();
+
+    if (now > currentCredentials.expiresAt) {
+      currentCredentials = null;
+      credentialEventCallback?.('aws-auth:expired');
+      return null;
+    }
+
+    // Kick off background refresh when less than 10 minutes remain
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
+    if (!isRefreshing && currentCredentials.expiresAt - now < TEN_MINUTES_MS) {
+      void refreshCredentials();
+    }
   }
 
   return currentCredentials;
 }
 
 /**
- * Clear in-memory credentials.
+ * Attempt to refresh credentials using the active SSO session.
+ * Returns new credentials on success, null on failure.
+ * On failure emits 'aws-auth:expired' via the registered event callback.
+ */
+export async function refreshCredentials(): Promise<AwsCredentials | null> {
+  if (isRefreshing) return currentCredentials;
+  if (!ssoAccessToken || !ssoRegion || !lastSsoRole) return null;
+
+  isRefreshing = true;
+  try {
+    const creds = await assumeSsoRole(lastSsoRole.accountId, lastSsoRole.roleName);
+    return creds;
+  } catch {
+    credentialEventCallback?.('aws-auth:expired');
+    return null;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+/**
+ * Set the active AWS region for deployment.
+ */
+export function setActiveRegion(region: string): void {
+  activeRegion = region;
+}
+
+/**
+ * Get the active AWS region selected for deployment.
+ */
+export function getActiveRegion(): string | null {
+  return activeRegion;
+}
+
+/**
+ * Register a callback to receive credential lifecycle events.
+ * Events: 'aws-auth:expired'
+ */
+export function setCredentialEventCallback(cb: (event: string) => void): void {
+  credentialEventCallback = cb;
+}
+
+/**
+ * Clear in-memory credentials and reset all auth state.
  */
 export function clearCredentials(): void {
   currentCredentials = null;
   ssoAccessToken = null;
   ssoRegion = null;
+  activeRegion = null;
+  lastSsoRole = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -451,6 +516,7 @@ export async function assumeSsoRole(
     expiresAt: roleCreds.expiration,
   };
 
+  lastSsoRole = { accountId, roleName };
   currentCredentials = creds;
   return creds;
 }

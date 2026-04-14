@@ -29,7 +29,9 @@ import {
   showPlatformView,
   destroyPlatformView,
   registerWebviewIpcHandlers,
-  setAdminCredentials
+  setAdminCredentials,
+  refreshAwsCredentials as refreshWebviewAwsCredentials,
+  clearWebviewAwsCredentials,
 } from './webview';
 import * as NotificationStore from './notifications';
 import {
@@ -56,6 +58,10 @@ import {
   assumeSsoRole as assumeAwsSsoRole,
   getCredentials as getAwsCredentials,
   clearCredentials as clearAwsCredentials,
+  refreshCredentials as refreshAwsCredentials,
+  setActiveRegion as setAwsActiveRegion,
+  getActiveRegion as getAwsActiveRegion,
+  setCredentialEventCallback as setAwsCredentialEventCallback,
 } from './aws-auth';
 
 let mainWindow: BrowserWindow | null = null;
@@ -677,6 +683,23 @@ function setupIpcHandlers(): void {
   ipcMain.handle('aws-auth:sso-assume-role', async (_event, accountId: string, roleName: string) => {
     return assumeAwsSsoRole(accountId, roleName);
   });
+  ipcMain.handle('aws-auth:refresh', async () => {
+    const creds = await refreshAwsCredentials();
+    if (creds) refreshWebviewAwsCredentials();
+    return creds;
+  });
+  ipcMain.handle('aws-auth:set-region', (_event, region: string) => {
+    setAwsActiveRegion(region);
+    refreshWebviewAwsCredentials();
+  });
+  ipcMain.handle('aws-auth:get-region', () => {
+    return getAwsActiveRegion();
+  });
+
+  // Wire up credential lifecycle events → forward to renderer
+  setAwsCredentialEventCallback((event) => {
+    mainWindow?.webContents.send(event);
+  });
 
   // Network Guard IPC handlers
   ipcMain.handle('network-guard:get-blocked', () => getBlockedRequests());
@@ -739,6 +762,8 @@ app.on('before-quit', async (event) => {
   }
 
   event.preventDefault();
+  clearAwsCredentials();
+  clearWebviewAwsCredentials();
   destroyPlatformView();
   cleanupProcesses();
   if (!isRelaunching) {

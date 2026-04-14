@@ -11,7 +11,7 @@ import * as path from 'path';
 import { BrowserWindow, WebContentsView, ipcMain, shell } from 'electron';
 import { hasSeedPhrase, getAddresses, deriveKeysToEnv, getSeedWords } from './keystore';
 import type { KeyRole } from './keystore';
-import { getCredentials as getAwsCredentials } from './aws-auth';
+import { getCredentials as getAwsCredentials, getActiveRegion } from './aws-auth';
 import { addAllowedHost } from './network-guard';
 
 const PLATFORM_UI_URL = 'http://localhost:3000';
@@ -289,7 +289,7 @@ async function injectTokenToView(): Promise<void> {
 }
 
 /**
- * Injects AWS credentials into the WebContentsView.
+ * Injects AWS credentials and active region into the WebContentsView.
  * Provides credentials so the web frontend can use them for AWS API calls.
  */
 function injectAwsCredentials(): void {
@@ -297,15 +297,37 @@ function injectAwsCredentials(): void {
   const creds = getAwsCredentials();
   if (!creds) return;
 
+  const region = getActiveRegion();
   const payload = {
     accessKeyId: creds.accessKeyId,
     secretAccessKey: creds.secretAccessKey,
     sessionToken: creds.sessionToken,
     source: creds.source,
+    region: region ?? undefined,
   };
 
   platformView.webContents.executeJavaScript(
     `window.__TRH_AWS_CREDENTIALS__ = ${JSON.stringify(payload)};`
+    + (region ? `window.__TRH_AWS_REGION__ = ${JSON.stringify(region)};` : '')
+  ).catch(() => {});
+}
+
+/**
+ * Re-injects the latest AWS credentials into the WebContentsView.
+ * Call this after credentials are refreshed or region is updated.
+ */
+export function refreshAwsCredentials(): void {
+  injectAwsCredentials();
+}
+
+/**
+ * Clears AWS credentials from the WebContentsView JavaScript context.
+ * Call this on logout or app quit to prevent stale credential access.
+ */
+export function clearWebviewAwsCredentials(): void {
+  if (!platformView) return;
+  platformView.webContents.executeJavaScript(
+    'window.__TRH_AWS_CREDENTIALS__ = null; window.__TRH_AWS_REGION__ = null;'
   ).catch(() => {});
 }
 
@@ -315,6 +337,9 @@ function injectAwsCredentials(): void {
  */
 export function destroyPlatformView(): void {
   if (platformView) {
+    // Best-effort: clear credentials from JS context before closing
+    clearWebviewAwsCredentials();
+
     if (hostWindow && !hostWindow.isDestroyed()) {
       hostWindow.contentView.removeChildView(platformView);
     }
