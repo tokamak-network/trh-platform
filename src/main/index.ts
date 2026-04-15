@@ -32,6 +32,7 @@ import {
   setAdminCredentials,
   refreshAwsCredentials as refreshWebviewAwsCredentials,
   clearWebviewAwsCredentials,
+  getCachedAuthToken,
 } from './webview';
 import * as NotificationStore from './notifications';
 import {
@@ -63,6 +64,7 @@ import {
   getActiveRegion as getAwsActiveRegion,
   setCredentialEventCallback as setAwsCredentialEventCallback,
 } from './aws-auth';
+import { DeploymentWatcher } from './deployment-watcher';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -71,6 +73,7 @@ let isRelaunching = false;
 let dockerOperationInProgress = false;
 let updateAvailable = false;
 let updateCheckInterval: ReturnType<typeof setInterval> | null = null;
+const deploymentWatcher = new DeploymentWatcher('http://localhost:8000');
 
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -586,6 +589,7 @@ function setupIpcHandlers(): void {
 
         if (response.ok) {
           await showPlatformView(mainWindow);
+          deploymentWatcher.start(() => getCachedAuthToken());
           return;
         }
       } catch {
@@ -760,6 +764,8 @@ app.on('before-quit', async (event) => {
     clearInterval(updateCheckInterval);
     updateCheckInterval = null;
   }
+
+  deploymentWatcher.stop();
 
   event.preventDefault();
   clearAwsCredentials();
