@@ -213,4 +213,86 @@ describe('DeploymentWatcher', () => {
     const notificationMock = Notification as unknown as ReturnType<typeof vi.fn>;
     expect(notificationMock).not.toHaveBeenCalled();
   });
+
+  // DW-08: FailedToDeploy → detail extracted from logs (error level message)
+  it('DW-08: FailedToDeploy includes detail extracted from deployment logs', async () => {
+    // Poll 1: snapshot 'Deploying'
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { stacks: [makeStack('s1', 'my-chain', 'Deploying')] } }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { integrations: [] } }) });
+    await watcher.poll(makeGetToken('token'));
+
+    vi.clearAllMocks();
+
+    // Poll 2: transition to FailedToDeploy
+    // fetch order: [stacks, integrations, deployments-list, deployment-logs]
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { stacks: [makeStack('s1', 'my-chain', 'FailedToDeploy')] } }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { integrations: [] } }) })
+      // Latest deployment
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { deployments: [{ id: 'd1', status: 'Failed' }] } }),
+      })
+      // Deployment logs
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            logs: [
+              '{"level":"info","message":"Starting L1 deployment"}',
+              '{"level":"error","message":"Insufficient balance: need 2.83 ETH, have 1.96 ETH"}',
+            ],
+          },
+        }),
+      });
+    await watcher.poll(makeGetToken('token'));
+
+    expect(NotificationStore.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'deployment',
+        title: 'L2 Deployment Failed',
+        detail: 'Insufficient balance: need 2.83 ETH, have 1.96 ETH',
+      }),
+    );
+  });
+
+  // DW-09: Log fetch fails → detail is undefined, notification still fires
+  it('DW-09: log fetch failure does not prevent failure notification', async () => {
+    // Poll 1: snapshot 'Deploying'
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { stacks: [makeStack('s1', 'my-chain', 'Deploying')] } }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { integrations: [] } }) });
+    await watcher.poll(makeGetToken('token'));
+
+    vi.clearAllMocks();
+
+    // Poll 2: transition to FailedToDeploy — deployments fetch fails
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { stacks: [makeStack('s1', 'my-chain', 'FailedToDeploy')] } }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { integrations: [] } }) })
+      .mockRejectedValueOnce(new Error('network error')); // deployments fetch fails
+    await watcher.poll(makeGetToken('token'));
+
+    expect(NotificationStore.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'L2 Deployment Failed',
+      }),
+    );
+    // detail should not be present (or undefined)
+    const addArgs = (NotificationStore.add as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as { detail?: string };
+    expect(addArgs.detail).toBeUndefined();
+  });
 });

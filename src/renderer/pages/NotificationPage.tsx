@@ -19,6 +19,7 @@ function getTypeIcon(type: AppNotification['type']): string {
     case 'image-update': return '🔄';
     case 'release-update': return '🚀';
     case 'system': return '⚙️';
+    case 'deployment': return '❌';
   }
 }
 
@@ -54,6 +55,9 @@ function NotificationCard({ notification, onDismiss, onAction }: NotificationCar
       <div className="notification-content">
         <div className="notification-card-title">{notification.title}</div>
         <div className="notification-card-message">{notification.message}</div>
+        {notification.detail && (
+          <div className="notification-card-detail">{notification.detail}</div>
+        )}
         <div className="notification-card-time">{getRelativeTime(notification.timestamp)}</div>
       </div>
       <div className="notification-actions">

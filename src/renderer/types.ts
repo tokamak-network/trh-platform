@@ -35,6 +35,7 @@ export interface AppNotification {
   type: 'image-update' | 'release-update' | 'system' | 'deployment';
   title: string;
   message: string;
+  detail?: string;
   timestamp: number;
   read: boolean;
   actionLabel?: string;

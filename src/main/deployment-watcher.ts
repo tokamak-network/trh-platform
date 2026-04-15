@@ -81,7 +81,7 @@ export class DeploymentWatcher {
       for (let i = 0; i < stacks.length; i++) {
         const stack = stacks[i];
         const prev = this.previousStackStates.get(stack.id);
-        this.detectStackTransition(stack, prev);
+        await this.detectStackTransition(stack, prev, token);
         this.previousStackStates.set(stack.id, stack.status);
 
         const integrations = integrationSets[i];
@@ -130,7 +130,11 @@ export class DeploymentWatcher {
     }
   }
 
-  private detectStackTransition(stack: StackEntry, prevStatus: StackStatus | undefined): void {
+  private async detectStackTransition(
+    stack: StackEntry,
+    prevStatus: StackStatus | undefined,
+    token: string,
+  ): Promise<void> {
     if (prevStatus === undefined) return; // initial snapshot — no notification
 
     const wasInProgress = prevStatus === 'Deploying' || prevStatus === 'Updating';
@@ -142,9 +146,11 @@ export class DeploymentWatcher {
         `"${stack.name}" is now deployed and running.`,
       );
     } else if (stack.status === 'FailedToDeploy' || stack.status === 'FailedToUpdate') {
+      const detail = await this.fetchFailureReason(stack.id, token);
       this.fire(
         'L2 Deployment Failed',
         `"${stack.name}" deployment failed. Check the dashboard for details.`,
+        detail,
       );
     }
   }
@@ -169,9 +175,74 @@ export class DeploymentWatcher {
     }
   }
 
-  private fire(title: string, body: string): void {
+  /**
+   * Fetches the latest failed deployment and extracts the failure reason from logs.
+   * Returns undefined on any error so the caller always gets a notification even
+   * if the reason cannot be determined.
+   */
+  private async fetchFailureReason(stackId: string, token: string): Promise<string | undefined> {
+    try {
+      // Step 1: get the latest deployment for this stack
+      const depResp = await fetch(
+        `${this.backendUrl}/api/v1/stacks/thanos/${stackId}/deployments?limit=1`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(8_000),
+        },
+      );
+      if (!depResp.ok) return undefined;
+
+      const depBody = await depResp.json() as Record<string, unknown>;
+      const depData = (depBody.data ?? depBody) as Record<string, unknown>;
+      const deployments = (depData.deployments ?? []) as Array<{ id: string }>;
+      if (deployments.length === 0) return undefined;
+      const deploymentId = deployments[0].id;
+
+      // Step 2: fetch the last 50 log lines for that deployment
+      const logResp = await fetch(
+        `${this.backendUrl}/api/v1/stacks/thanos/${stackId}/deployments/${deploymentId}/logs?limit=50`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(8_000),
+        },
+      );
+      if (!logResp.ok) return undefined;
+
+      const logBody = await logResp.json() as Record<string, unknown>;
+      const logData = (logBody.data ?? logBody) as Record<string, unknown>;
+      const logs = (logData.logs ?? []) as string[];
+
+      return this.extractFailureReason(logs);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Extracts a human-readable failure reason from log lines (JSON Lines format).
+   * Priority:
+   *   1. Last log entry with level === "error" → its message field
+   *   2. Last non-empty raw line
+   *   3. undefined
+   */
+  private extractFailureReason(logLines: string[]): string | undefined {
+    // Pass 1: last JSON line with level === "error"
+    for (let i = logLines.length - 1; i >= 0; i--) {
+      try {
+        const entry = JSON.parse(logLines[i]) as { level?: string; message?: string };
+        if (entry.level === 'error' && entry.message) return entry.message;
+      } catch { /* raw text line — skip */ }
+    }
+    // Pass 2: last non-empty raw line
+    for (let i = logLines.length - 1; i >= 0; i--) {
+      if (logLines[i].trim()) return logLines[i].trim();
+    }
+    return undefined;
+  }
+
+  private fire(title: string, body: string, detail?: string): void {
     // In-app notification (always)
-    NotificationStore.add({ type: 'deployment', title, message: body });
+    NotificationStore.add({ type: 'deployment', title, message: body, detail });
 
     // OS desktop notification (if supported)
     if (Notification.isSupported()) {
