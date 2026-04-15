@@ -332,6 +332,14 @@ export function clearWebviewAwsCredentials(): void {
 }
 
 /**
+ * Returns the currently cached auth token, or null if not yet obtained.
+ * Used by deployment-watcher to authenticate backend API polling requests.
+ */
+export function getCachedAuthToken(): string | null {
+  return cachedAuthToken;
+}
+
+/**
  * Destroys the WebContentsView and frees resources.
  * Call this when the application is quitting or when a full reset is needed.
  */

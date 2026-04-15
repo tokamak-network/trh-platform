@@ -32,7 +32,7 @@ export interface PortCheckResult {
 
 export interface AppNotification {
   id: string;
-  type: 'image-update' | 'release-update' | 'system';
+  type: 'image-update' | 'release-update' | 'system' | 'deployment';
   title: string;
   message: string;
   timestamp: number;
