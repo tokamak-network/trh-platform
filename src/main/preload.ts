@@ -30,6 +30,7 @@ export interface BackendDependencies {
   pnpm: boolean;
   node: boolean;
   forge: boolean;
+  runtimeDir: boolean;
   allInstalled: boolean;
 }
 

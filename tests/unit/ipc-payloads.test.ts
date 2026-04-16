@@ -155,14 +155,14 @@ describe('Docker IPC Payloads (IPC-03)', () => {
   });
 
   it('IPC-03: backend dependencies result matches schema', () => {
-    // BackendDependencies has pnpm/node/forge/allInstalled booleans
-    const deps = { pnpm: true, node: true, forge: false, allInstalled: false };
+    // BackendDependencies has pnpm/node/forge/runtimeDir/allInstalled booleans
+    const deps = { pnpm: true, node: true, forge: false, runtimeDir: false, allInstalled: false };
     const result = BackendDependenciesSchema.safeParse(deps);
     expect(result.success).toBe(true);
   });
 
   it('IPC-03: backend dependencies all installed matches schema', () => {
-    const deps = { pnpm: true, node: true, forge: true, allInstalled: true };
+    const deps = { pnpm: true, node: true, forge: true, runtimeDir: true, allInstalled: true };
     const result = BackendDependenciesSchema.safeParse(deps);
     expect(result.success).toBe(true);
     if (result.success) {

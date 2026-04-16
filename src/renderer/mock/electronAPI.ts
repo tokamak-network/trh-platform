@@ -164,9 +164,9 @@ export const mockElectronAPI: ElectronAPI = {
     checkBackendDeps: async (): Promise<BackendDependencies> => {
       await delay(400);
       if (SCENARIO === 'dep-missing') {
-        return { pnpm: true, node: true, forge: false, allInstalled: false };
+        return { pnpm: true, node: true, forge: false, runtimeDir: false, allInstalled: false };
       }
-      return { pnpm: true, node: true, forge: true, allInstalled: true };
+      return { pnpm: true, node: true, forge: true, runtimeDir: true, allInstalled: true };
     },
 
     installBackendDeps: async () => {

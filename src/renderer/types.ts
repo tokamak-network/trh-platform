@@ -16,6 +16,7 @@ export interface BackendDependencies {
   pnpm: boolean;
   node: boolean;
   forge: boolean;
+  runtimeDir: boolean;
   allInstalled: boolean;
 }
 
@@ -111,6 +112,7 @@ export interface ElectronAPI {
     cleanup: () => Promise<void>;
     startDaemon: () => Promise<boolean>;
     prune: () => Promise<void>;
+    isTrhStackRunning: () => Promise<boolean>;
     checkUpdates: () => Promise<boolean>;
     restartWithUpdates: (config?: { adminEmail?: string; adminPassword?: string }) => Promise<void>;
     pullImages: () => Promise<void>;

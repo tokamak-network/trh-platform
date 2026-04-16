@@ -56,3 +56,6 @@ docs/daily-reports/
 # Screenshot directories (generated content)
 docs/screenshots/
 docs/screenshots-demo/
+
+# Superpowers design specs (commit after implementation, not during brainstorming)
+docs/superpowers/

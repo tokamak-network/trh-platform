@@ -8,4 +8,16 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #10284 | 9:06 PM | 🔵 | checkBackendDeps API Surface Mapped Across Electron App | ~428 |
+
+### Mar 30, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #11959 | 7:57 PM | 🟣 | Removed login configuration screen and implemented automatic authentication | ~598 |
+
+### Apr 15, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #14681 | 10:31 PM | 🔵 | L2 Rollup Trash Button Display Logic | ~419 |
 </claude-mem-context>

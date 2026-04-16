@@ -50,6 +50,7 @@ const { mockElectronAPI, mockKeystore } = vi.hoisted(() => {
       checkRunning: vi.fn().mockResolvedValue(true),
       getStatus: vi.fn().mockResolvedValue({ installed: true, running: true, containersUp: true, healthy: true }),
       checkPorts: vi.fn().mockResolvedValue({ available: true, conflicts: [] }),
+      isTrhStackRunning: vi.fn().mockResolvedValue(false),
       killPortProcesses: vi.fn().mockResolvedValue(undefined),
       cleanup: vi.fn().mockResolvedValue(undefined),
       startDaemon: vi.fn().mockResolvedValue(true),
@@ -62,7 +63,7 @@ const { mockElectronAPI, mockKeystore } = vi.hoisted(() => {
       waitHealthy: vi.fn().mockResolvedValue(true),
       getInstallUrl: vi.fn().mockResolvedValue('https://docker.com'),
       installDocker: vi.fn().mockResolvedValue({ requiresRelogin: false }),
-      checkBackendDeps: vi.fn().mockResolvedValue({ pnpm: true, node: true, forge: true, aws: true, allInstalled: true }),
+      checkBackendDeps: vi.fn().mockResolvedValue({ pnpm: true, node: true, forge: true, runtimeDir: true, allInstalled: true }),
       installBackendDeps: vi.fn().mockResolvedValue(undefined),
       onPullProgress: vi.fn().mockReturnValue(_noop),
       onStatusUpdate: vi.fn().mockReturnValue(_noop),
@@ -138,10 +139,11 @@ describe('SetupPage - Step 6 Key Setup', () => {
     mockElectronAPI.docker.checkInstalled.mockResolvedValue(true);
     mockElectronAPI.docker.checkRunning.mockResolvedValue(true);
     mockElectronAPI.docker.checkPorts.mockResolvedValue({ available: true, conflicts: [] });
+    mockElectronAPI.docker.isTrhStackRunning.mockResolvedValue(false);
     mockElectronAPI.docker.pullImages.mockResolvedValue(undefined);
     mockElectronAPI.docker.start.mockResolvedValue(undefined);
     mockElectronAPI.docker.waitHealthy.mockResolvedValue(true);
-    mockElectronAPI.docker.checkBackendDeps.mockResolvedValue({ pnpm: true, node: true, forge: true, aws: true, allInstalled: true });
+    mockElectronAPI.docker.checkBackendDeps.mockResolvedValue({ pnpm: true, node: true, forge: true, runtimeDir: true, allInstalled: true });
     mockElectronAPI.docker.onPullProgress.mockReturnValue(noop);
     mockElectronAPI.docker.onStatusUpdate.mockReturnValue(noop);
     mockElectronAPI.docker.onInstallProgress.mockReturnValue(noop);

@@ -21,4 +21,10 @@
 |----|------|---|-------|------|
 | #13244 | 2:43 PM | 🔄 | CrossTrade Deployment Flow Diagram Redesigned for User Audience | ~678 |
 | #13243 | 2:42 PM | 🟣 | CrossTrade Deployment Flow Interactive HTML Diagram | ~865 |
+
+### Apr 13, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #14089 | 3:11 PM | 🔄 | E2E Preset Overridable Fields Test Rewritten for Full Wizard Navigation | ~499 |
 </claude-mem-context>

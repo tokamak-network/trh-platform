@@ -333,6 +333,7 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
           if (!deps.pnpm) missing.push('pnpm');
           if (!deps.node) missing.push('node');
           if (!deps.forge) missing.push('forge');
+          if (!deps.runtimeDir) missing.push('backend-runtime-dir');
 
           appendLog('Installing: ' + missing.join(', '));
           updateStep('deps', { status: 'loading', detail: `Installing: ${missing.join(', ')}...` });
@@ -353,6 +354,7 @@ export default function SetupPage({ adminEmail, adminPassword, onComplete }: Set
             if (!verifyDeps.pnpm) stillMissing.push('pnpm');
             if (!verifyDeps.node) stillMissing.push('node');
             if (!verifyDeps.forge) stillMissing.push('forge');
+            if (!verifyDeps.runtimeDir) stillMissing.push('backend-runtime-dir');
             throw new Error(`Still missing: ${stillMissing.join(', ')}`);
           }
         }

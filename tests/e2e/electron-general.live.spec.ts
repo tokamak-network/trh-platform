@@ -11,6 +11,8 @@
  *   EGN-01 — Electron 앱 실행 및 General preset 배포 시작
  *   EGN-02 — 배포 완료 대기 및 모듈 검증 (bridge/blockExplorer만 존재)
  *   EGN-03 — L2 RPC alive + TON fee token이므로 paymaster 미배포 확인
+ *   EGN-04 — Chain params + overridableFields + predeploy count 계약 검증
+ *   EGN-05 — 배포 완료 후 deployment-watcher가 in-app 알림을 NotificationStore에 추가했는지 확인
  *
  * Usage:
  *   npm run build && npx playwright test --config playwright.electron.config.ts \
@@ -37,6 +39,7 @@ import {
   getPresetData,
 } from './helpers/presets';
 import { ethers } from 'ethers';
+import type { AppNotification } from '../../src/renderer/types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -413,4 +416,42 @@ test('EGN-04: chain params and overridable fields match General preset contract'
 
   // Screenshot: platform UI stack detail (chain params verified)
   await screenshotPlatformUI(`${SCREENSHOT_DIR}/egn-04-chain-params-verified.png`, deployedStackId!);
+});
+
+// ---------------------------------------------------------------------------
+// EGN-05: deployment-watcher가 in-app 알림을 추가했는지 확인
+// ---------------------------------------------------------------------------
+
+test('EGN-05: deployment-watcher adds L2 Deployment Complete notification after stack deployed', async () => {
+  test.setTimeout(2 * 60 * 1000);
+  restoreState();
+  expect(deployedStackId, 'deployedStackId must be set — run EGN-01 first').not.toBeNull();
+  expect(electronApp).not.toBeNull();
+
+  const mainWindow = electronApp!.windows()[0];
+
+  // Query the in-app NotificationStore via IPC (preload bridge)
+  const notifications = await mainWindow.evaluate<AppNotification[]>(async () => {
+    return window.electronAPI.notifications.getAll();
+  });
+
+  console.log(`[EGN-05] Total notifications in store: ${notifications.length}`);
+  notifications.forEach((n) => console.log(`[EGN-05]  - [${n.type}] "${n.title}"`));
+
+  // The deployment-watcher must have added at least one 'L2 Deployment Complete' notification
+  const deployNotif = notifications.find((n) => n.title === 'L2 Deployment Complete');
+  expect(
+    deployNotif,
+    'deployment-watcher must add an "L2 Deployment Complete" notification when stack reaches Deployed',
+  ).toBeTruthy();
+
+  // Notification message should reference the deployed stack
+  expect(deployNotif!.message).toMatch(/is now deployed and running/);
+
+  // Type must be 'deployment'
+  expect(deployNotif!.type).toBe('deployment');
+
+  console.log(`[EGN-05] Deployment notification found: "${deployNotif!.title}" — ${deployNotif!.message} ✓`);
+
+  await mainWindow.screenshot({ path: `${SCREENSHOT_DIR}/egn-05-notification-store.png` });
 });

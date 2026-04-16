@@ -85,6 +85,7 @@ export const BackendDependenciesSchema = z.object({
   pnpm: z.boolean(),
   node: z.boolean(),
   forge: z.boolean(),
+  runtimeDir: z.boolean(),
   allInstalled: z.boolean(),
 });
 export type BackendDependencies = z.infer<typeof BackendDependenciesSchema>;

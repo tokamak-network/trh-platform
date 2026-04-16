@@ -68,6 +68,7 @@ export interface BackendDependencies {
   pnpm: boolean;
   node: boolean;
   forge: boolean;
+  runtimeDir: boolean;
   allInstalled: boolean;
 }
 
@@ -880,13 +881,26 @@ export async function checkBackendDependencies(): Promise<BackendDependencies> {
     }
   };
 
+  const ensureRuntimeDir = async (): Promise<boolean> => {
+    try {
+      await execPromise(
+        `"${DOCKER_BIN}" exec trh-backend sh -lc "mkdir -p /root/.trh/bin && test -d /root/.trh/bin"`
+      );
+      return true;
+    } catch (error) {
+      emitLog(`Failed to prepare backend runtime dir: ${error instanceof Error ? error.message : 'unknown error'}`);
+      return false;
+    }
+  };
+
   const [pnpm, node, forge] = await Promise.all([
     checkCommand('pnpm'),
     checkCommand('node'),
     checkCommand('forge'),
   ]);
+  const runtimeDir = await ensureRuntimeDir();
 
-  return { pnpm, node, forge, allInstalled: pnpm && node && forge };
+  return { pnpm, node, forge, runtimeDir, allInstalled: pnpm && node && forge && runtimeDir };
 }
 
 export async function installBackendDependencies(onProgress?: (status: string) => void): Promise<void> {
@@ -930,7 +944,7 @@ export async function installBackendDependencies(onProgress?: (status: string) =
         onProgress?.('Finalizing setup...');
         try {
           await execPromise(
-            `"${DOCKER_BIN}" exec trh-backend bash -c "ln -sf /root/.local/share/pnpm/pnpm /usr/local/bin/pnpm 2>/dev/null || true; ln -sf /root/.nvm/versions/node/*/bin/node /usr/local/bin/node 2>/dev/null || true; ln -sf /root/.nvm/versions/node/*/bin/npm /usr/local/bin/npm 2>/dev/null || true; ln -sf /root/.nvm/versions/node/*/bin/npx /usr/local/bin/npx 2>/dev/null || true; ln -sf /root/.foundry/bin/forge /usr/local/bin/forge 2>/dev/null || true; ln -sf /root/.foundry/bin/cast /usr/local/bin/cast 2>/dev/null || true; ln -sf /root/.foundry/bin/anvil /usr/local/bin/anvil 2>/dev/null || true"`
+            `"${DOCKER_BIN}" exec trh-backend bash -c "mkdir -p /root/.trh/bin; ln -sf /root/.local/share/pnpm/pnpm /usr/local/bin/pnpm 2>/dev/null || true; ln -sf /root/.nvm/versions/node/*/bin/node /usr/local/bin/node 2>/dev/null || true; ln -sf /root/.nvm/versions/node/*/bin/npm /usr/local/bin/npm 2>/dev/null || true; ln -sf /root/.nvm/versions/node/*/bin/npx /usr/local/bin/npx 2>/dev/null || true; ln -sf /root/.foundry/bin/forge /usr/local/bin/forge 2>/dev/null || true; ln -sf /root/.foundry/bin/cast /usr/local/bin/cast 2>/dev/null || true; ln -sf /root/.foundry/bin/anvil /usr/local/bin/anvil 2>/dev/null || true"`
           );
         } catch { /* ignore symlink errors */ }
         resolve();
