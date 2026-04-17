@@ -106,6 +106,21 @@ const L2L2_L1_ABI = [
   'event ProvideCT(address _l1token, address _l2SourceToken, address _l2DestinationToken, address _requester, address _receiver, address _provider, uint256 _totalAmount, uint256 _ctAmount, uint256 indexed _saleCount, uint256 indexed _l2SourceChainId, uint256 indexed _l2DestinationChainId, bytes32 _hash)',
 ];
 
+// USDC token addresses
+const USDC_L1_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'; // Sepolia USDC
+const USDC_L2_ADDRESS = '0x4200000000000000000000000000000000000778'; // L2 USDC predeploy
+
+// ERC20 ABI (approve + balanceOf only)
+const ERC20_ABI = [
+  'function approve(address spender, uint256 amount) external returns (bool)',
+  'function balanceOf(address account) external view returns (uint256)',
+  'function allowance(address owner, address spender) external view returns (uint256)',
+];
+
+// USDC amounts (USDC has 6 decimals; 1 USDC = 1_000_000)
+const USDC_TRADE_AMOUNT = BigInt(1_000_000); // 1 USDC on L2 (locked by requester)
+const USDC_CT_AMOUNT    = BigInt(1_000_000); // 1 USDC on L1 (provided)
+
 // ---------------------------------------------------------------------------
 // Shared state (set in beforeAll)
 // ---------------------------------------------------------------------------
@@ -146,6 +161,11 @@ let l2l2HashValue: string;
 // L2 log query start blocks (set after provide TX to avoid scanning from genesis)
 let l1l2ClaimFromBlock: number;
 let l2l2ClaimFromBlock: number;
+
+// USDC request state (CRT-08/09/10)
+let usdcSaleCount: bigint;
+let usdcHashValue: string;
+let usdcClaimFromBlock: number;
 
 // ---------------------------------------------------------------------------
 // dApp screenshot helpers
@@ -1000,5 +1020,206 @@ test.describe('CrossTrade Transactions', () => {
     expect(body.length, 'History page is empty').toBeGreaterThan(100);
 
     console.log('[CRT-07] All 3 dApp pages captured successfully');
+  });
+
+  // ── CRT-08: USDC L2→L1 Request ───────────────────────────────────────
+  test('CRT-08: USDC L2→L1 request — approve + lock L2 USDC in L2CrossTradeProxy', async () => {
+    test.setTimeout(TX_TIMEOUT_MS);
+
+    const l1ChainId = (await l1Provider.getNetwork()).chainId;
+
+    // Check L2 USDC balance
+    const usdcL2Contract = new ethers.Contract(USDC_L2_ADDRESS, ERC20_ABI, l2Wallet);
+    const l2UsdcBalance = await usdcL2Contract.balanceOf(adminAddress);
+    console.log(`[CRT-08] L2 USDC balance: ${l2UsdcBalance} (need >= ${USDC_TRADE_AMOUNT})`);
+    if (l2UsdcBalance < USDC_TRADE_AMOUNT) {
+      test.skip(true, `L2 USDC balance too low (${l2UsdcBalance} < ${USDC_TRADE_AMOUNT}). Bridge USDC to L2 first.`);
+    }
+
+    // Approve L2CrossTradeProxy to spend USDC
+    console.log(`[CRT-08] Approving L2CrossTradeProxy to spend ${USDC_TRADE_AMOUNT} USDC...`);
+    const approveTx = await usdcL2Contract.approve(l2CrossTradeProxy, USDC_TRADE_AMOUNT);
+    const approveReceipt = await approveTx.wait(1);
+    expect(approveReceipt!.status, 'USDC approve tx failed').toBe(1);
+    console.log('[CRT-08] USDC approve confirmed:', approveTx.hash);
+
+    // Request USDC L2→L1
+    const l2CtContract = new ethers.Contract(l2CrossTradeProxy, L2_CT_ABI, l2Wallet);
+
+    console.log(`[CRT-08] Calling requestNonRegisteredToken (USDC) on L2CrossTradeProxy`);
+    console.log(`[CRT-08]   l1token:     ${USDC_L1_ADDRESS}`);
+    console.log(`[CRT-08]   l2token:     ${USDC_L2_ADDRESS}`);
+    console.log(`[CRT-08]   receiver:    ${adminAddress}`);
+    console.log(`[CRT-08]   totalAmount: ${USDC_TRADE_AMOUNT} (1 USDC)`);
+    console.log(`[CRT-08]   ctAmount:    ${USDC_CT_AMOUNT} (1 USDC)`);
+    console.log(`[CRT-08]   l1ChainId:   ${l1ChainId}`);
+
+    // ERC20: no msg.value (USDC is pulled via transferFrom, not sent as ETH)
+    const tx = await l2CtContract.requestNonRegisteredToken(
+      USDC_L1_ADDRESS,   // _l1token: Sepolia USDC
+      USDC_L2_ADDRESS,   // _l2token: L2 USDC predeploy
+      adminAddress,      // _receiver
+      USDC_TRADE_AMOUNT, // _totalAmount
+      USDC_CT_AMOUNT,    // _ctAmount
+      l1ChainId,         // _l1chainId
+      // No { value: ... } — USDC is ERC20, not native ETH
+    );
+    console.log('[CRT-08] TX sent:', tx.hash);
+    const receipt = await tx.wait(1);
+    expect(receipt).not.toBeNull();
+    expect(receipt!.status, 'L2 USDC requestNonRegisteredToken tx failed').toBe(1);
+    console.log('[CRT-08] TX confirmed. Block:', receipt!.blockNumber);
+
+    // Parse NonRequestCT or RequestCT event
+    const iface = new ethers.Interface(L2_CT_ABI);
+    let parsedEvent: ethers.LogDescription | null = null;
+
+    for (const log of receipt!.logs) {
+      try {
+        const parsed = iface.parseLog({ topics: [...log.topics], data: log.data });
+        if (parsed && (parsed.name === 'NonRequestCT' || parsed.name === 'RequestCT')) {
+          parsedEvent = parsed;
+          break;
+        }
+      } catch {
+        // Different event — skip
+      }
+    }
+
+    expect(parsedEvent, 'NonRequestCT/RequestCT event not found in USDC request receipt').not.toBeNull();
+    usdcSaleCount = parsedEvent!.args._saleCount as bigint;
+    usdcHashValue = parsedEvent!.args._hashValue as string;
+
+    console.log(`[CRT-08] Event: ${parsedEvent!.name}`);
+    console.log(`[CRT-08] saleCount: ${usdcSaleCount}`);
+    console.log(`[CRT-08] hashValue: ${usdcHashValue}`);
+
+    expect(usdcHashValue).toMatch(/^0x[0-9a-fA-F]{64}$/);
+    expect(usdcSaleCount).toBeGreaterThan(0n);
+    // Verify the token address in the event matches USDC
+    expect((parsedEvent!.args._l2token as string).toLowerCase()).toBe(USDC_L2_ADDRESS.toLowerCase());
+    console.log('[CRT-08] USDC token address in event verified ✓');
+  });
+
+  // ── CRT-09: USDC L2→L1 Provide ────────────────────────────────────────
+  test('CRT-09: USDC L2→L1 provide — approve + send L1 USDC via L1CrossTradeProxy', async () => {
+    test.setTimeout(TX_TIMEOUT_MS);
+    expect(usdcHashValue, 'CRT-08 must succeed first').toBeTruthy();
+
+    // Check L1 USDC balance
+    const usdcL1Contract = new ethers.Contract(USDC_L1_ADDRESS, ERC20_ABI, l1Wallet);
+    const l1UsdcBalance = await usdcL1Contract.balanceOf(adminAddress);
+    console.log(`[CRT-09] L1 USDC balance: ${l1UsdcBalance} (need >= ${USDC_CT_AMOUNT})`);
+    if (l1UsdcBalance < USDC_CT_AMOUNT) {
+      test.skip(true, `L1 USDC balance too low (${l1UsdcBalance} < ${USDC_CT_AMOUNT}). Get Sepolia USDC from faucet.`);
+    }
+
+    // Approve L1CrossTradeProxy to spend USDC
+    console.log(`[CRT-09] Approving L1CrossTradeProxy to spend ${USDC_CT_AMOUNT} USDC on L1...`);
+    const approveTx = await usdcL1Contract.approve(l1CrossTradeProxy, USDC_CT_AMOUNT);
+    const approveReceipt = await approveTx.wait(1);
+    expect(approveReceipt!.status, 'L1 USDC approve tx failed').toBe(1);
+    console.log('[CRT-09] L1 USDC approve confirmed:', approveTx.hash);
+
+    const l1CtContract = new ethers.Contract(l1CrossTradeProxy, L1_CT_ABI, l1Wallet);
+
+    console.log(`[CRT-09] Calling provideCT (USDC) on L1CrossTradeProxy (Sepolia)`);
+
+    // ERC20 provide: no msg.value — USDC is pulled via transferFrom
+    const tx = await l1CtContract.provideCT(
+      USDC_L1_ADDRESS,   // _l1token
+      USDC_L2_ADDRESS,   // _l2token
+      adminAddress,      // _requestor
+      adminAddress,      // _receiver
+      USDC_TRADE_AMOUNT, // _totalAmount
+      USDC_CT_AMOUNT,    // _initialctAmount
+      0n,                // _editedctAmount (no edit)
+      usdcSaleCount,     // _salecount
+      l2ChainId,         // _l2chainId
+      MIN_GAS_LIMIT,     // _minGasLimit
+      usdcHashValue,     // _hash
+      // No { value: ... } — USDC provider sends ERC20, not ETH
+    );
+    console.log('[CRT-09] TX sent:', tx.hash);
+    const receipt = await tx.wait(1);
+    expect(receipt).not.toBeNull();
+    expect(receipt!.status, 'L1 USDC provideCT tx failed').toBe(1);
+    console.log('[CRT-09] TX confirmed. Block:', receipt!.blockNumber);
+
+    // Verify ProvideCT event
+    const iface = new ethers.Interface(L1_CT_ABI);
+    let provideCTLog: ethers.LogDescription | null = null;
+
+    for (const log of receipt!.logs) {
+      try {
+        const parsed = iface.parseLog({ topics: [...log.topics], data: log.data });
+        if (parsed?.name === 'ProvideCT') {
+          provideCTLog = parsed;
+          break;
+        }
+      } catch {
+        // Different event — skip
+      }
+    }
+
+    expect(provideCTLog, 'ProvideCT event not found in USDC L1 provide receipt').not.toBeNull();
+    console.log('[CRT-09] ProvideCT event confirmed');
+    console.log(`[CRT-09]   provider: ${provideCTLog!.args._provider}`);
+    console.log(`[CRT-09]   ctAmount: ${provideCTLog!.args._ctAmount} (USDC units)`);
+
+    usdcClaimFromBlock = await l2Provider.getBlockNumber();
+    console.log('[CRT-09] L2 USDC claim search start block:', usdcClaimFromBlock);
+  });
+
+  // ── CRT-10: USDC L2→L1 Claim verified ────────────────────────────────
+  test('CRT-10: USDC L2→L1 claim — ProviderClaimCT event on L2 for USDC', async () => {
+    test.setTimeout(CLAIM_TIMEOUT_MS + 60_000);
+    expect(usdcHashValue, 'CRT-09 must succeed first').toBeTruthy();
+
+    console.log('[CRT-10] Polling for ProviderClaimCT (USDC) on L2CrossTradeProxy...');
+    console.log(`[CRT-10] Contract: ${l2CrossTradeProxy}`);
+    console.log(`[CRT-10] Hash: ${usdcHashValue}`);
+
+    const iface = new ethers.Interface(L2_CT_ABI);
+    const claimFilter = {
+      address: l2CrossTradeProxy,
+      topics: [
+        ethers.id('ProviderClaimCT(address,address,address,address,address,uint256,uint256,uint256,uint256,bytes32)'),
+      ],
+    };
+
+    const claimEvent = await pollUntil<ethers.Log>(
+      async () => {
+        const logs = await l2Provider.getLogs({
+          ...claimFilter,
+          fromBlock: usdcClaimFromBlock,
+          toBlock: 'latest',
+        });
+        const matched = logs.find((log) => {
+          try {
+            const parsed = iface.parseLog({ topics: [...log.topics], data: log.data });
+            return parsed?.args._hash === usdcHashValue;
+          } catch {
+            return false;
+          }
+        });
+        return matched ?? null;
+      },
+      'ProviderClaimCT on L2 (USDC L2→L1 flow)',
+      CLAIM_TIMEOUT_MS,
+      CLAIM_POLL_MS
+    );
+
+    const parsedClaim = iface.parseLog({ topics: [...claimEvent.topics], data: claimEvent.data })!;
+    console.log('[CRT-10] USDC ProviderClaimCT confirmed');
+    console.log(`[CRT-10]   provider:    ${parsedClaim.args._provider}`);
+    console.log(`[CRT-10]   ctAmount:    ${parsedClaim.args._ctAmount} (USDC units)`);
+    console.log(`[CRT-10]   saleCount:   ${parsedClaim.args._saleCount}`);
+    console.log(`[CRT-10]   l2token:     ${parsedClaim.args._l2token}`);
+
+    expect(parsedClaim.args._hash).toBe(usdcHashValue);
+    expect(parsedClaim.args._provider).not.toBe(ETH_ADDRESS);
+    expect((parsedClaim.args._l2token as string).toLowerCase()).toBe(USDC_L2_ADDRESS.toLowerCase());
+    console.log('[CRT-10] USDC token confirmed in ProviderClaimCT event ✓');
   });
 });
