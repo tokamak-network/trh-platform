@@ -15,7 +15,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: '**/electron-*.live.spec.ts',
+  testMatch: ['**/electron-*.live.spec.ts', '**/drb-gaming-deploy.spec.ts'],
   fullyParallel: false,   // serial — Electron app is a singleton process
   forbidOnly: !!process.env.CI,
   retries: 0,             // no retries — each run deploys real L2 contracts
