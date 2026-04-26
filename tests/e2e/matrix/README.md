@@ -45,7 +45,7 @@ npm run test:matrix
 |------|-------|-------|-----------|
 | **P0 / Tier 1** | Core chain, bridge, explorer | core-chain, bridge-health, explorer-health | All presets |
 | **P1 / Tier 2** | Module health checks | monitoring, uptime, drb, aa-health | Conditional per preset |
-| **P2 / Tier 3** | Transaction-level | bridge-tx, paymaster-smoke | Separate specs (not in matrix/) |
+| **P2 / Tier 3** | Transaction-level | bridge-tx, paymaster-smoke.live | Separate specs (not in matrix/) |
 
 ### Conditional Execution
 

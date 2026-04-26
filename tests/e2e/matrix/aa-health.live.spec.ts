@@ -1,4 +1,4 @@
-// Tier 2: Verifies AA infrastructure contracts + bundler. UserOp execution is Tier 3 (paymaster-smoke.spec.ts).
+// Tier 2: Verifies AA infrastructure contracts + bundler. UserOp execution is Tier 3 (paymaster-smoke.live.spec.ts).
 
 /**
  * Matrix Health Check — AA Paymaster (Tier 2)

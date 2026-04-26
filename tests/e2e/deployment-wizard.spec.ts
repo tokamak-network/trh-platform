@@ -23,7 +23,7 @@ const TEST_MNEMONIC = [
   'age', 'video', 'flag', 'decade', 'alert', 'potato',
   'one', 'shallow', 'neglect', 'labor', 'destroy', 'high',
 ].join(' ');
-const L1_RPC = 'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
+const L1_RPC = 'https://eth-sepolia.g.alchemy.com/v2/x4EOshikyKeyJci-23VSqFnwKIddeS7f';
 
 test.beforeEach(async ({ context }) => {
   await authenticateContext(context);

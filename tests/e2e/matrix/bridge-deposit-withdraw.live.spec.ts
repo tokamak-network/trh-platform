@@ -23,7 +23,7 @@ import { pollUntil } from '../helpers/poll';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const config = getStackConfig();
-const L1_RPC = process.env.LIVE_L1_RPC_URL ?? 'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
+const L1_RPC = process.env.LIVE_L1_RPC_URL ?? 'https://eth-sepolia.g.alchemy.com/v2/x4EOshikyKeyJci-23VSqFnwKIddeS7f';
 const ADMIN_KEY = process.env.ADMIN_KEY ?? '679d88a9fb565707c0aff9434f9c141fee0b197455c12a52868b5d94bac694f9';
 
 // L2 predeploys (fixed across all OP Stack chains)

@@ -36,7 +36,7 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) fs.mkdirSync(SCREENSHOTS_DIR, { recursive: 
 // Seed phrase and L1 RPC for filling required BasicInfoStep fields.
 // All 12 words are valid BIP39 words — paste detection fills all slots at once.
 const SEED_PHRASE = 'notable famous industry antique either story escape squeeze also session priority fresh';
-const L1_RPC_URL = 'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
+const L1_RPC_URL = 'https://eth-sepolia.g.alchemy.com/v2/x4EOshikyKeyJci-23VSqFnwKIddeS7f';
 
 // All chain-param fields subject to the overridableFields contract.
 const ALL_CHAIN_PARAM_FIELDS = [

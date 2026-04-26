@@ -7,7 +7,7 @@
  * Address constants are sourced from:
  *   - OP Stack standard predeploys (well-known 0x4200... slots)
  *   - DRB addresses: docs/prd-drb-node-auto-install.md
- *   - AA addresses: tests/e2e/matrix/aa-health.live.spec.ts, paymaster-smoke.spec.ts
+ *   - AA addresses: tests/e2e/matrix/aa-health.live.spec.ts, paymaster-smoke.live.spec.ts
  *   - DeFi Uniswap addresses: TODO — not yet confirmed from deployment config
  */
 
@@ -87,7 +87,7 @@ export const DRB_ADDRESSES = {
 
 // ---------------------------------------------------------------------------
 // AA predeploy addresses (ERC-4337 v0.8)
-// Source: tests/e2e/matrix/aa-health.live.spec.ts, tests/e2e/paymaster-smoke.spec.ts
+// Source: tests/e2e/matrix/aa-health.live.spec.ts, tests/e2e/paymaster-smoke.live.spec.ts
 // ---------------------------------------------------------------------------
 
 export const AA_ADDRESSES = {

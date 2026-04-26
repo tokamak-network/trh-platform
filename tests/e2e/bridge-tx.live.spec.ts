@@ -29,7 +29,7 @@ if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
 const LIVE_CHAIN_NAME = process.env.LIVE_CHAIN_NAME ?? null;
 
 const L1_RPC = process.env.LIVE_L1_RPC_URL
-  ?? 'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
+  ?? 'https://eth-sepolia.g.alchemy.com/v2/x4EOshikyKeyJci-23VSqFnwKIddeS7f';
 
 // Derive admin key: ADMIN_KEY env > LIVE_SEED_PHRASE (first account) > hardcoded fallback
 function resolveAdminKey(): string {

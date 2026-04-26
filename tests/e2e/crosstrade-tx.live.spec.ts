@@ -44,7 +44,7 @@ const L2L2_DEST_RPC = process.env.LIVE_L2L2_DESTINATION_RPC ?? null;
 
 const L1_RPC =
   process.env.LIVE_L1_RPC_URL ??
-  'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
+  'https://eth-sepolia.g.alchemy.com/v2/x4EOshikyKeyJci-23VSqFnwKIddeS7f';
 
 function resolveAdminKey(): string {
   if (process.env.ADMIN_KEY) return process.env.ADMIN_KEY;
