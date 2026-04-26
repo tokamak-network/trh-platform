@@ -14,3 +14,4 @@
 - helper만 있는 genesis patch는 요구사항 충족이 아니다. 실제 deploy flow에 call site를 연결하고 alloc 결과를 읽는 테스트까지 붙여야 dead code를 막을 수 있다.
 - placeholder `t.Skip(...)` 테스트를 남겨두면 검증 문서와 구현 사이의 단절을 가린다. 외부 의존성은 seam으로 잘라서라도 executable test로 바꾸는 편이 낫다.
 - Playwright Electron spec는 파일명뿐 아니라 config의 `testMatch`에도 걸린다. spec를 추가하거나 유지할 때는 수집 규칙까지 같이 검증해야 한다.
+- 여러 skill/plugin 파일을 병합할 때는 `SKILL.md` frontmatter, `plugin.json`, `marketplace.json`, `package.json` 설명 문자열을 한 번에 갱신해야 한다. 병합 후 stale description이 가장 먼저 사용자 혼란을 만든다.

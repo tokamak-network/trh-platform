@@ -59,3 +59,5 @@ docs/screenshots-demo/
 
 # Superpowers design specs (commit after implementation, not during brainstorming)
 docs/superpowers/
+REVIEW_CONTEXT.md
+CODEX_REVIEW.md

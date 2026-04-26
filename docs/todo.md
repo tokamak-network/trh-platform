@@ -52,3 +52,20 @@
 - Playwright DRB spec now drives the real Electron Platform UI wizard through the embedded WebContentsView and the Electron Playwright config now includes this spec.
 - Residual risk: `trh-sdk/pkg/stacks/thanos/drb_gaming_e2e_test.go` is still placeholder-heavy and needs a separate pass to become real executable evidence.
 - Residual risk: `go test ./pkg/services/thanos ./pkg/stacks/thanos` in `trh-backend` still fails in unrelated `funding_test.go` cases that predate this remediation.
+
+## 2026-04-18 Codex Review Skill + Plugin Document Review
+
+- [x] Review `trh-wiki` context for `trh-platform`
+- [x] Check local `RTK.md` and active skill guidance relevant to this session
+- [x] Read installed `~/.claude/skills/codex-review/SKILL.md`
+- [x] Read plugin manifests in `codex-review-skills`
+- [x] Compare merged no-arg flow against deleted `prep-review`
+- [x] Identify accuracy, clarity, completeness, and consistency findings
+- [x] Summarize review results for the user
+
+## Review
+
+- `skills/codex-review/SKILL.md` has a real implementation gap in direct file/dir mode: the mode explains content loading but never assigns `TYPE`, so Step 3 dispatch is underspecified.
+- Prerequisite and missing-file handling are documented as "stop", but the shown shell snippets only print an error and continue; this is a behavior/document mismatch.
+- The merged no-arg mode preserves the old `prep-review` context structure for the combined workflow, but it intentionally removes the old "prepare context only" checkpoint.
+- `plugin.json`, `marketplace.json`, and `package.json` still describe a two-skill plugin even though only `codex-review` remains, making description drift the clearest user-facing inconsistency.

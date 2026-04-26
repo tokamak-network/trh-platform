@@ -28,6 +28,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { _electron as electron, ElectronApplication, chromium, Page } from 'playwright';
 import { test, expect } from '@playwright/test';
+
+test.describe.configure({ mode: 'serial' });
 import { ethers } from 'ethers';
 import { loginBackend, resolveStackUrls, StackUrls } from './helpers/stack-resolver';
 import { waitForDeployed, waitForBackendReady } from './helpers/deploy-helper';
@@ -293,8 +295,10 @@ test('CT-E2E-01: deploy DeFi preset via Electron UI wizard', async () => {
   console.log(`[CT-E2E-01] Deployment initiated: stackId=${deployedStackId}`);
   expect(deployedStackId).toBeTruthy();
 
-  const mainWindow = await electronApp!.firstWindow();
-  await mainWindow.screenshot({ path: `${SCREENSHOT_DIR}/ct-e2e-01-deploy-initiated.png` });
+  const windows = electronApp!.windows();
+  if (windows.length > 0) {
+    await windows[0].screenshot({ path: `${SCREENSHOT_DIR}/ct-e2e-01-deploy-initiated.png` });
+  }
 });
 
 // ---------------------------------------------------------------------------
