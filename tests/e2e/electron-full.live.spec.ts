@@ -8,8 +8,11 @@
  *   - Genesis predeploys: OP Standard 13 + DeFi 5 + Gaming 7 = 25 total
  *   - batchSubmissionFrequency = 600s
  *
+ * Deployment method: UI wizard (same flow as real user — seed phrase auto-filled
+ *   from OS keystore in Electron; test uses DEFAULT_SEED via headless Chromium).
+ *
  * Test IDs:
- *   EFL-01 — Electron 앱 실행 및 Full preset 배포 시작
+ *   EFL-01 — Electron 앱 실행 및 Full preset UI 위저드로 배포 시작
  *   EFL-02 — 배포 완료 대기 및 6개 모듈 모두 존재 확인
  *   EFL-03 — Genesis predeploy 검증 (OP Standard + DRB + AA 총 20개 주소 확인)
  *   EFL-04 — CrossTrade dApp (localhost:3004) + AA bundler 모두 reachable
@@ -34,7 +37,8 @@ import * as fs from 'fs';
 import { _electron as electron, ElectronApplication, chromium } from 'playwright';
 import { test, expect } from '@playwright/test';
 import { loginBackend, resolveStackUrls } from './helpers/stack-resolver';
-import { deployPreset, waitForDeployed, waitForBackendReady } from './helpers/deploy-helper';
+import { waitForDeployed, waitForBackendReady } from './helpers/deploy-helper';
+import { deployPresetViaUI, resolveStackIdByChainName } from './helpers/deploy-wizard';
 import { pollUntil } from './helpers/poll';
 import {
   OP_STANDARD_ADDRESSES,
@@ -82,6 +86,7 @@ const SCREENSHOT_DIR = '/tmp/pw-screenshots/electron-full';
 // ---------------------------------------------------------------------------
 
 let electronApp: ElectronApplication | null = null;
+let platformBrowser: import('playwright').Browser | null = null;
 let deployedStackId: string | null = null;
 let l2RpcUrl: string | null = null;
 let bundlerUrl: string | null = null;
@@ -117,6 +122,10 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (platformBrowser) {
+    await platformBrowser.close();
+    platformBrowser = null;
+  }
   if (electronApp) {
     console.log('[efl] Closing Electron app');
     await electronApp.close();
@@ -124,17 +133,41 @@ test.afterAll(async () => {
   }
 });
 
+async function openPlatformPage() {
+  if (!platformBrowser) {
+    platformBrowser = await chromium.launch({ headless: true });
+  }
+  const PLATFORM_URL = 'http://localhost:3000';
+  await pollUntil(
+    async () => {
+      try {
+        const resp = await fetch(PLATFORM_URL, { signal: AbortSignal.timeout(5_000) });
+        return resp.status > 0 ? (true as const) : null;
+      } catch {
+        return null;
+      }
+    },
+    'platform UI frontend at localhost:3000',
+    3 * 60_000,
+    10_000,
+  );
+  const token = await loginBackend(BACKEND_URL);
+  const context = await platformBrowser.newContext();
+  const page = await context.newPage();
+  await context.addCookies([{ name: 'auth-token', value: token, domain: 'localhost', path: '/' }]);
+  await page.goto(PLATFORM_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  // @ts-ignore
+  await page.evaluate((t: string) => { localStorage.setItem('accessToken', t); }, token);
+  return page;
+}
+
 // ---------------------------------------------------------------------------
 // EFL-01: Full preset 배포 시작
 // ---------------------------------------------------------------------------
 
-test('EFL-01: start Full Suite preset (USDC) deployment via backend API', async () => {
-  test.setTimeout(5 * 60 * 1000);
+test('EFL-01: start Full Suite preset (USDC) deployment via UI wizard', async () => {
+  test.setTimeout(10 * 60 * 1000);
   expect(electronApp).not.toBeNull();
-
-  const mainWindow = electronApp!.windows()[0];
-  await mainWindow.waitForLoadState('domcontentloaded');
-  console.log('[EFL-01] Main window DOM ready');
 
   if (LIVE_STACK_ID) {
     deployedStackId = LIVE_STACK_ID;
@@ -146,19 +179,15 @@ test('EFL-01: start Full Suite preset (USDC) deployment via backend API', async 
   // Wait for Electron-launched backend to become ready (Docker auto-start takes time)
   await waitForBackendReady(5 * 60 * 1000);
 
-  console.log('[EFL-01] Initiating Full Suite preset deployment via API...');
-  const result = await deployPreset({
-    preset: PRESET,
-    feeToken: FEE_TOKEN,
-    chainName: CHAIN_NAME,
-  });
-
-  deployedStackId = result.stackId;
+  console.log('[EFL-01] Deploying Full Suite preset via UI wizard (includes seed phrase entry)...');
+  const platformView = await openPlatformPage();
+  await deployPresetViaUI(platformView, { preset: PRESET, feeToken: FEE_TOKEN, chainName: CHAIN_NAME });
+  deployedStackId = await resolveStackIdByChainName(CHAIN_NAME, BACKEND_URL, 60_000);
   console.log(`[EFL-01] Deployment initiated: stackId=${deployedStackId}`);
   expect(deployedStackId).toBeTruthy();
-  expect(result.deploymentId).toBeTruthy();
 
   // Screenshot: deployment initiated state
+  const mainWindow = await electronApp!.firstWindow();
   const screenshotPath = `${SCREENSHOT_DIR}/efl-01-deployment-initiated.png`;
   await mainWindow.screenshot({ path: screenshotPath, fullPage: false });
   console.log(`[EFL-01] Screenshot saved: ${screenshotPath}`);

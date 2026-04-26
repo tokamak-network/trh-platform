@@ -28,7 +28,7 @@ const DEFAULT_SEED =
 
 const DEFAULT_L1_RPC =
   process.env.LIVE_L1_RPC_URL ??
-  'https://eth-sepolia.g.alchemy.com/v2/zPJeUK2LKGg4LjvHPGXYl1Ef4FJ_u7Gn';
+  'https://eth-sepolia.g.alchemy.com/v2/x4EOshikyKeyJci-23VSqFnwKIddeS7f';
 
 const PLATFORM_BASE = 'http://localhost:3000';
 
