@@ -46,7 +46,7 @@ const electronAPI = {
     prune: (): Promise<void> => ipcRenderer.invoke('docker:prune'),
     isTrhStackRunning: (): Promise<boolean> => ipcRenderer.invoke('docker:is-trh-stack-running'),
     checkUpdates: (): Promise<boolean> => ipcRenderer.invoke('docker:check-updates'),
-    restartWithUpdates: (config?: { adminEmail?: string; adminPassword?: string }): Promise<void> => ipcRenderer.invoke('docker:restart-with-updates', config),
+    restartWithUpdates: (config?: { adminEmail?: string; adminPassword?: string }): Promise<boolean> => ipcRenderer.invoke('docker:restart-with-updates', config),
     pullImages: (): Promise<void> => ipcRenderer.invoke('docker:pull-images'),
     start: (config?: { adminEmail?: string; adminPassword?: string }): Promise<void> => ipcRenderer.invoke('docker:start', config),
     stop: (): Promise<void> => ipcRenderer.invoke('docker:stop'),
@@ -96,6 +96,11 @@ const electronAPI = {
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:open-external', url),
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
     relaunch: (): Promise<void> => ipcRenderer.invoke('app:relaunch'),
+    onShowNotifications: (callback: () => void): (() => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('app:show-notifications', handler);
+      return () => ipcRenderer.removeListener('app:show-notifications', handler);
+    },
     onMenuUninstall: (callback: () => void): (() => void) => {
       const handler = () => callback();
       ipcRenderer.on('menu:uninstall', handler);
@@ -108,7 +113,7 @@ const electronAPI = {
     markRead: (id: string): Promise<void> => ipcRenderer.invoke('notifications:mark-read', id),
     markAllRead: (): Promise<void> => ipcRenderer.invoke('notifications:mark-all-read'),
     dismiss: (id: string): Promise<void> => ipcRenderer.invoke('notifications:dismiss', id),
-    executeAction: (id: string): Promise<void> => ipcRenderer.invoke('notifications:execute-action', id),
+    executeAction: (id: string): Promise<boolean> => ipcRenderer.invoke('notifications:execute-action', id),
     getUnreadCount: (): Promise<number> => ipcRenderer.invoke('notifications:get-unread-count'),
     onChanged: (callback: () => void): (() => void) => {
       const handler = () => callback();

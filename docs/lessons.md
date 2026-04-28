@@ -15,3 +15,9 @@
 - placeholder `t.Skip(...)` 테스트를 남겨두면 검증 문서와 구현 사이의 단절을 가린다. 외부 의존성은 seam으로 잘라서라도 executable test로 바꾸는 편이 낫다.
 - Playwright Electron spec는 파일명뿐 아니라 config의 `testMatch`에도 걸린다. spec를 추가하거나 유지할 때는 수집 규칙까지 같이 검증해야 한다.
 - 여러 skill/plugin 파일을 병합할 때는 `SKILL.md` frontmatter, `plugin.json`, `marketplace.json`, `package.json` 설명 문자열을 한 번에 갱신해야 한다. 병합 후 stale description이 가장 먼저 사용자 혼란을 만든다.
+
+## 2026-04-28
+
+- OS desktop notification은 표시만으로 끝내지 말고 클릭 동작을 명시적으로 테스트해야 한다. Electron main helper로 분리하면 `Notification` 생성자와 click 이벤트를 단위 테스트할 수 있다.
+- 컨테이너 재시작을 동반하는 업데이트 액션은 모든 진입점(tray, banner, notification action)이 같은 confirmation helper를 거쳐야 경고 누락을 막을 수 있다.
+- 사용자가 위험 작업을 취소할 수 있는 IPC는 `void`보다 `boolean` 결과를 반환해야 renderer가 배너/완료 상태를 잘못 숨기지 않는다.

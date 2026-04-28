@@ -80,8 +80,10 @@ export default function ReadyPage({ updateAvailable, onUpdate }: ReadyPageProps)
     if (updating || loading) return;
     setUpdating(true);
     setError(null);
+    let updated = false;
     try {
-      await api.docker.restartWithUpdates();
+      updated = await api.docker.restartWithUpdates();
+      if (!updated) return;
       // Wait for services to become healthy
       const healthy = await api.docker.waitHealthy(180000);
       if (!healthy) {
@@ -91,7 +93,7 @@ export default function ReadyPage({ updateAvailable, onUpdate }: ReadyPageProps)
       setError(err.message || 'Update failed. Try restarting the app.');
     } finally {
       setUpdating(false);
-      onUpdate?.();
+      if (updated) onUpdate?.();
     }
   };
 

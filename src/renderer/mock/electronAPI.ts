@@ -127,6 +127,7 @@ export const mockElectronAPI: ElectronAPI = {
       await delay(1500);
       emit(logListeners, 'Restarting containers...');
       await delay(1000);
+      return true;
     },
 
     pullImages: async () => {
@@ -205,6 +206,7 @@ export const mockElectronAPI: ElectronAPI = {
     openExternal: async (url) => { window.open(url, '_blank'); },
     getVersion: async () => '1.1.4-mock',
     relaunch: async () => { console.log('[mock] App relaunch requested'); },
+    onShowNotifications: () => () => {},
   },
 
   webview: {
@@ -237,7 +239,7 @@ export const mockElectronAPI: ElectronAPI = {
       if (idx >= 0) mockNotifications.splice(idx, 1);
       emit(notifChangedListeners, undefined as unknown as void);
     },
-    executeAction: async (id) => { emit(logListeners, `[mock] executeAction: ${id}`); },
+    executeAction: async (id) => { emit(logListeners, `[mock] executeAction: ${id}`); return true; },
     getUnreadCount: async () => mockNotifications.filter((n) => !n.read).length,
     onChanged: (cb) => { notifChangedListeners.push(cb); return () => notifChangedListeners.splice(notifChangedListeners.indexOf(cb), 1); },
   },

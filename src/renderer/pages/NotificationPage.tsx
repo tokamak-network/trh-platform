@@ -26,7 +26,7 @@ function getTypeIcon(type: AppNotification['type']): string {
 interface NotificationCardProps {
   notification: AppNotification;
   onDismiss: (id: string) => void;
-  onAction: (id: string) => Promise<void>;
+  onAction: (id: string) => Promise<boolean>;
 }
 
 function NotificationCard({ notification, onDismiss, onAction }: NotificationCardProps) {
@@ -36,8 +36,8 @@ function NotificationCard({ notification, onDismiss, onAction }: NotificationCar
   const handleAction = async () => {
     setExecuting(true);
     try {
-      await onAction(notification.id);
-      setDone(true);
+      const updated = await onAction(notification.id);
+      if (updated) setDone(true);
     } catch (err) {
       console.error('Action failed:', err);
     } finally {
@@ -113,8 +113,8 @@ export default function NotificationPage({ onBack }: Props) {
     await api.notifications.dismiss(id);
   };
 
-  const handleAction = async (id: string) => {
-    await api.notifications.executeAction(id);
+  const handleAction = async (id: string): Promise<boolean> => {
+    return await api.notifications.executeAction(id);
   };
 
   const handleMarkAllRead = async () => {

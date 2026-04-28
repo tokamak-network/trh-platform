@@ -65,6 +65,10 @@ import {
   setCredentialEventCallback as setAwsCredentialEventCallback,
 } from './aws-auth';
 import { DeploymentWatcher } from './deployment-watcher';
+import {
+  confirmContainerUpdate,
+  showUpdateDesktopNotification,
+} from './update-notification-safety';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -80,6 +84,18 @@ const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const PLATFORM_UI_URL = 'http://localhost:3000';
 const VITE_DEV_URL = 'http://localhost:5173';
 const isDev = !app.isPackaged && process.env.ELECTRON_USE_BUILD !== '1';
+
+async function restartWithUpdateConfirmation(config?: { adminEmail?: string; adminPassword?: string }): Promise<boolean> {
+  const confirmed = await confirmContainerUpdate(dialog, mainWindow);
+  if (!confirmed) return false;
+
+  await restartWithUpdates(config);
+  updateAvailable = false;
+  tray?.setContextMenu(buildTrayMenu());
+  tray?.setToolTip('TRH Desktop');
+  mainWindow?.webContents.send('docker:update-available', false);
+  return true;
+}
 
 function getRendererPath(): string {
   if (app.isPackaged) {
@@ -213,11 +229,7 @@ function buildTrayMenu(): Electron.Menu {
         }
         dockerOperationInProgress = true;
         try {
-          await restartWithUpdates();
-          updateAvailable = false;
-          tray?.setContextMenu(buildTrayMenu());
-          tray?.setToolTip('TRH Desktop');
-          mainWindow?.webContents.send('docker:update-available', false);
+          await restartWithUpdateConfirmation();
         } catch (error) {
           dialog.showErrorBox(
             'Update Failed',
@@ -413,13 +425,7 @@ function startUpdateChecker(): void {
         mainWindow.webContents.send('docker:update-available', true);
       }
 
-      // macOS system notification
-      if (Notification.isSupported()) {
-        new Notification({
-          title: 'TRH Desktop Update Available',
-          body: 'New platform images are available. Open TRH Desktop to update.',
-        }).show();
-      }
+      showUpdateDesktopNotification(Notification, mainWindow);
     } catch {
       // Silently ignore background check failures
     }
@@ -488,13 +494,13 @@ function setupIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle('docker:restart-with-updates', async (_event, config?: { adminEmail?: string; adminPassword?: string }) => {
+  ipcMain.handle('docker:restart-with-updates', async (_event, config?: { adminEmail?: string; adminPassword?: string }): Promise<boolean> => {
     if (dockerOperationInProgress) {
       throw new Error('Docker operation already in progress');
     }
     dockerOperationInProgress = true;
     try {
-      await restartWithUpdates(config);
+      return await restartWithUpdateConfirmation(config);
     } finally {
       dockerOperationInProgress = false;
     }
@@ -627,7 +633,7 @@ function setupIpcHandlers(): void {
   ipcMain.handle('notifications:mark-all-read', () => NotificationStore.markAllRead());
   ipcMain.handle('notifications:dismiss', (_event, id: string) => NotificationStore.dismiss(id));
   ipcMain.handle('notifications:get-unread-count', () => NotificationStore.getUnreadCount());
-  ipcMain.handle('notifications:execute-action', async (_event, id: string) => {
+  ipcMain.handle('notifications:execute-action', async (_event, id: string): Promise<boolean> => {
     const all = NotificationStore.getAll();
     const notification = all.find(n => n.id === id);
     if (!notification) throw new Error('Notification not found');
@@ -636,16 +642,14 @@ function setupIpcHandlers(): void {
       if (dockerOperationInProgress) throw new Error('Docker operation already in progress');
       dockerOperationInProgress = true;
       try {
-        await restartWithUpdates();
-        updateAvailable = false;
-        tray?.setContextMenu(buildTrayMenu());
-        tray?.setToolTip('TRH Desktop');
-        mainWindow?.webContents.send('docker:update-available', false);
-        NotificationStore.dismiss(id);
+        const updated = await restartWithUpdateConfirmation();
+        if (updated) NotificationStore.dismiss(id);
+        return updated;
       } finally {
         dockerOperationInProgress = false;
       }
     }
+    return false;
   });
 
   // Keystore IPC handlers

@@ -39,8 +39,15 @@ export default function App() {
     const cleanupUpdate = api.docker.onUpdateAvailable((available) => {
       setUpdateAvailable(available);
     });
+    const cleanupShowNotifications = api.app.onShowNotifications(() => {
+      api.webview.hide();
+      setViewMode('notifications');
+    });
 
-    return () => cleanupUpdate();
+    return () => {
+      cleanupUpdate();
+      cleanupShowNotifications();
+    };
   }, []);
 
   // Intercept webview navigation to /notification → show NotificationPage
@@ -93,7 +100,12 @@ export default function App() {
           {updateAvailable && (
             <div className="update-banner-global">
               New platform update available —{' '}
-              <button onClick={() => api.docker.restartWithUpdates().then(() => setUpdateAvailable(false))}>
+              <button
+                onClick={async () => {
+                  const updated = await api.docker.restartWithUpdates();
+                  if (updated) setUpdateAvailable(false);
+                }}
+              >
                 Update Now
               </button>
             </div>

@@ -1,5 +1,22 @@
 # TODO
 
+## 2026-04-28 Desktop Update Notification Safety
+
+- [x] Review `trh-wiki` context for `trh-platform`
+- [x] Add failing tests for OS notification click routing and update warning confirmation
+- [x] Implement OS desktop notification click routing to the in-app notification page
+- [x] Add a user warning confirmation before Docker image pull and container restart
+- [x] Run targeted unit tests, type check, and review diff
+- [x] Update `docs/lessons.md` with the notification/update safety lesson
+
+## Review
+
+- OS desktop update notifications now focus the app and route the renderer to the in-app notification page through `app:show-notifications`.
+- Docker image update execution now goes through a shared warning confirmation before image pull and container restart.
+- Update IPC/action results return `boolean` so canceled updates do not hide banners or show "Updated" state.
+- Targeted verification passed: `npm test -- tests/unit/update-notification-safety.test.ts`, `npm test -- tests/unit/ipc-channels.test.ts`, `npm run build:main`, `npm run build:renderer`.
+- Full `npm test` still has two unrelated existing failures: `CrossTrade` label expectation mismatch and missing `ec2/main.tf`.
+
 ## 2026-04-16 Disable NotebookLM MCP
 
 - [x] Review `trh-wiki` context for `trh-platform`

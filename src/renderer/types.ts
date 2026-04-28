@@ -114,7 +114,7 @@ export interface ElectronAPI {
     prune: () => Promise<void>;
     isTrhStackRunning: () => Promise<boolean>;
     checkUpdates: () => Promise<boolean>;
-    restartWithUpdates: (config?: { adminEmail?: string; adminPassword?: string }) => Promise<void>;
+    restartWithUpdates: (config?: { adminEmail?: string; adminPassword?: string }) => Promise<boolean>;
     pullImages: () => Promise<void>;
     start: (config?: { adminEmail?: string; adminPassword?: string }) => Promise<void>;
     stop: () => Promise<void>;
@@ -136,6 +136,7 @@ export interface ElectronAPI {
     openExternal: (url: string) => Promise<void>;
     getVersion: () => Promise<string>;
     relaunch: () => Promise<void>;
+    onShowNotifications: (callback: () => void) => () => void;
   };
   webview: {
     goBack: () => void;
@@ -155,7 +156,7 @@ export interface ElectronAPI {
     markRead: (id: string) => Promise<void>;
     markAllRead: () => Promise<void>;
     dismiss: (id: string) => Promise<void>;
-    executeAction: (id: string) => Promise<void>;
+    executeAction: (id: string) => Promise<boolean>;
     getUnreadCount: () => Promise<number>;
     onChanged: (callback: () => void) => () => void;
   };
