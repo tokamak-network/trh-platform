@@ -51,6 +51,10 @@ export interface WizardOptions {
   chainName: string;
   l1RpcUrl?: string;
   seedPhrase?: string;
+  infraProvider?: 'local' | 'aws';
+  awsAccessKey?: string;
+  awsSecretKey?: string;
+  awsRegion?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +77,7 @@ export async function selectPreset(page: Page, preset: PresetKey): Promise<void>
 
 /**
  * Fill Step 2: infrastructure provider, chain name, fee token, L1 RPC, seed phrase.
+ * Supports both Local Docker and AWS Cloud (Electron DesktopAwsKeyInput form).
  */
 export async function fillStep2(
   page: Page,
@@ -81,12 +86,43 @@ export async function fillStep2(
     feeToken: 'ETH' | 'USDT' | 'USDC';
     l1RpcUrl?: string;
     seedPhrase?: string;
+    infraProvider?: 'local' | 'aws';
+    awsAccessKey?: string;
+    awsSecretKey?: string;
+    awsRegion?: string;
   },
 ): Promise<void> {
   await page.waitForSelector('text=Infrastructure Provider', { timeout: 10_000 });
 
-  // Select Local Docker provider
-  await page.getByRole('button', { name: /Local Docker/ }).click();
+  const provider = opts.infraProvider ?? 'local';
+
+  if (provider === 'aws') {
+    // Select AWS Cloud provider
+    await page.getByText('AWS Cloud', { exact: true }).click();
+
+    // DesktopAwsKeyInput has no id attrs — target by placeholder
+    await page.getByPlaceholder('AKIA...').fill(
+      opts.awsAccessKey ?? process.env.E2E_AWS_ACCESS_KEY ?? '',
+    );
+    await page.getByPlaceholder('Enter secret key').fill(
+      opts.awsSecretKey ?? process.env.E2E_AWS_SECRET_KEY ?? '',
+    );
+
+    // Region select — click combobox, then select the target region item
+    const targetRegion = opts.awsRegion ?? process.env.E2E_AWS_REGION ?? 'ap-northeast-2';
+    await page.getByRole('combobox').click();
+    await page.getByRole('option', { name: targetRegion, exact: true }).click();
+
+    // Submit AWS credentials
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+    // Wait for success confirmation
+    await page.waitForSelector('text=AWS credentials configured', { timeout: 10_000 });
+    console.log(`[deploy-wizard] AWS credentials configured (region: ${targetRegion})`);
+  } else {
+    // Select Local Docker provider
+    await page.getByRole('button', { name: /Local Docker/ }).click();
+  }
 
   // Chain name
   await page.locator('#chainName').fill(opts.chainName);
@@ -142,7 +178,16 @@ export async function deployPresetViaUI(page: Page, opts: WizardOptions): Promis
     `[deploy-wizard] Starting wizard: preset=${opts.preset}, feeToken=${opts.feeToken}, chainName=${opts.chainName}`,
   );
   await selectPreset(page, opts.preset);
-  await fillStep2(page, opts);
+  await fillStep2(page, {
+    chainName: opts.chainName,
+    feeToken: opts.feeToken,
+    l1RpcUrl: opts.l1RpcUrl,
+    seedPhrase: opts.seedPhrase,
+    infraProvider: opts.infraProvider,
+    awsAccessKey: opts.awsAccessKey,
+    awsSecretKey: opts.awsSecretKey,
+    awsRegion: opts.awsRegion,
+  });
   await proceedToReview(page);
   await clickDeployAndAssertInitiated(page);
   console.log('[deploy-wizard] Wizard complete');

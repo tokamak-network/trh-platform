@@ -91,6 +91,8 @@ export async function resolveContractAddresses(stackId: string, token?: string):
   optimismPortalProxy: string;
   disputeGameFactoryProxy: string;
   l1UsdcBridgeProxy: string;
+  anchorStateRegistryProxy: string;
+  delayedWethProxy: string;
 }> {
   const backendUrl = getBackendUrl();
   const jwt = token ?? await loginBackend(backendUrl);
@@ -127,6 +129,8 @@ export async function resolveContractAddresses(stackId: string, token?: string):
       optimismPortalProxy: deployJson.OptimismPortalProxy ?? '',
       disputeGameFactoryProxy: deployJson.DisputeGameFactoryProxy ?? '',
       l1UsdcBridgeProxy: deployJson.L1UsdcBridgeProxy ?? '',
+      anchorStateRegistryProxy: deployJson.AnchorStateRegistryProxy ?? '',
+      delayedWethProxy: deployJson.DelayedWETHProxy ?? '',
     };
   } catch (err) {
     throw new Error(
