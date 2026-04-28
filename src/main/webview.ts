@@ -124,28 +124,30 @@ export async function showPlatformView(win: BrowserWindow): Promise<void> {
     callback(false);
   });
 
-  // Navigation events — forward to renderer for UI updates
-  platformView.webContents.on('did-navigate', (_event, navigationUrl) => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('webview:did-navigate', {
-        url: navigationUrl,
-        canGoBack: platformView?.webContents.navigationHistory.canGoBack() ?? false,
-        canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
-      });
+  // Navigation events — intercept /notification before it renders; forward others to renderer
+  const handleNavigation = (navigationUrl: string) => {
+    if (!win || win.isDestroyed()) return;
+    if (navigationUrl.includes('/notification')) {
+      hidePlatformView(win);
+      win.webContents.send('app:show-notifications');
+      return;
     }
+    win.webContents.send('webview:did-navigate', {
+      url: navigationUrl,
+      canGoBack: platformView?.webContents.navigationHistory.canGoBack() ?? false,
+      canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
+    });
+  };
+
+  platformView.webContents.on('did-navigate', (_event, navigationUrl) => {
+    handleNavigation(navigationUrl);
     injectKeystoreAccounts();
     injectAwsCredentials();
     void injectTokenToView();
   });
 
   platformView.webContents.on('did-navigate-in-page', (_event, navigationUrl) => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('webview:did-navigate', {
-        url: navigationUrl,
-        canGoBack: platformView?.webContents.navigationHistory.canGoBack() ?? false,
-        canGoForward: platformView?.webContents.navigationHistory.canGoForward() ?? false
-      });
-    }
+    handleNavigation(navigationUrl);
     injectKeystoreAccounts();
     injectAwsCredentials();
     void injectTokenToView();

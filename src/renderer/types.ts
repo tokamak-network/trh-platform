@@ -20,6 +20,12 @@ export interface BackendDependencies {
   allInstalled: boolean;
 }
 
+export interface ImageVersion {
+  service: string;
+  image: string;
+  shortId: string;
+}
+
 export interface PortConflict {
   port: number;
   pid: number;
@@ -129,6 +135,7 @@ export interface ElectronAPI {
     onLog: (callback: (line: string) => void) => () => void;
     onUpdateAvailable: (callback: (available: boolean) => void) => () => void;
     cleanPlatform: () => Promise<void>;
+    getImageVersions: () => Promise<ImageVersion[]>;
     removeAllListeners: () => void;
   };
   app: {

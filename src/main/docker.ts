@@ -72,6 +72,12 @@ export interface BackendDependencies {
   allInstalled: boolean;
 }
 
+export interface ImageVersion {
+  service: string;
+  image: string;
+  shortId: string;
+}
+
 function getComposePath(): string {
   const composePath = app.isPackaged
     ? path.join(process.resourcesPath, 'resources', 'docker-compose.yml')
@@ -955,6 +961,28 @@ export async function installBackendDependencies(onProgress?: (status: string) =
 
     install.on('error', reject);
   });
+}
+
+export async function getImageVersions(): Promise<ImageVersion[]> {
+  const targets = [
+    { name: 'trh-backend', service: 'backend' },
+    { name: 'trh-platform-ui', service: 'platform-ui' },
+  ];
+
+  const results: ImageVersion[] = [];
+  for (const { name, service } of targets) {
+    try {
+      const [rawId, image] = await Promise.all([
+        execPromise(`"${DOCKER_BIN}" inspect ${name} --format "{{.Image}}"`, 5000),
+        execPromise(`"${DOCKER_BIN}" inspect ${name} --format "{{.Config.Image}}"`, 5000),
+      ]);
+      const shortId = rawId.replace('sha256:', '').substring(0, 12);
+      results.push({ service, image: image.trim(), shortId });
+    } catch {
+      results.push({ service, image: 'unknown', shortId: 'unknown' });
+    }
+  }
+  return results;
 }
 
 export async function cleanPlatform(): Promise<void> {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import SetupPage from './pages/SetupPage';
 import NotificationPage from './pages/NotificationPage';
+import type { ImageVersion } from './types';
 
 type ViewMode = 'setup' | 'webapp' | 'notifications';
 
@@ -11,6 +12,7 @@ export default function App() {
   const api = window.electronAPI;
   const [viewMode, setViewMode] = useState<ViewMode>('setup');
   const [version, setVersion] = useState('');
+  const [imageVersions, setImageVersions] = useState<ImageVersion[]>([]);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [uninstallOpen, setUninstallOpen] = useState(false);
   const [uninstallInput, setUninstallInput] = useState('');
@@ -30,6 +32,12 @@ export default function App() {
         if (status.healthy) {
           await api.app.loadPlatform({ adminEmail: ADMIN_EMAIL, adminPassword: ADMIN_PASSWORD });
           setViewMode('webapp');
+          try {
+            const versions = await api.docker.getImageVersions();
+            setImageVersions(versions);
+          } catch {
+            // non-critical
+          }
         }
       } catch {
         // Docker not available — stay on setup page
@@ -50,17 +58,12 @@ export default function App() {
     };
   }, []);
 
-  // Intercept webview navigation to /notification → show NotificationPage
+  // When webview navigates away from /notification, restore webapp view
   useEffect(() => {
-    if (viewMode !== 'webapp' && viewMode !== 'notifications') return;
+    if (viewMode !== 'notifications') return;
 
-    const cleanup = api.webview.onDidNavigate((info) => {
-      if (info.url.includes('/notification')) {
-        api.webview.hide();
-        setViewMode('notifications');
-      } else if (viewMode === 'notifications') {
-        setViewMode('webapp');
-      }
+    const cleanup = api.webview.onDidNavigate(() => {
+      setViewMode('webapp');
     });
 
     return cleanup;
@@ -69,6 +72,12 @@ export default function App() {
   const handleSetupDone = async () => {
     await api.app.loadPlatform({ adminEmail: ADMIN_EMAIL, adminPassword: ADMIN_PASSWORD });
     setViewMode('webapp');
+    try {
+      const versions = await api.docker.getImageVersions();
+      setImageVersions(versions);
+    } catch {
+      // non-critical
+    }
   };
 
   const handleBackToWebapp = () => {
@@ -110,7 +119,12 @@ export default function App() {
               </button>
             </div>
           )}
-          {version && <div className="version">v{version}</div>}
+          <div className="version-info">
+            {version && <span>v{version}</span>}
+            {imageVersions.map(v => (
+              <span key={v.service} className="version-image">{v.service}: {v.shortId}</span>
+            ))}
+          </div>
 
           {/* Uninstall confirmation modal */}
           {uninstallOpen && (

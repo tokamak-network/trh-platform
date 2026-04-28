@@ -34,6 +34,12 @@ export interface BackendDependencies {
   allInstalled: boolean;
 }
 
+export interface ImageVersion {
+  service: string;
+  image: string;
+  shortId: string;
+}
+
 const electronAPI = {
   docker: {
     checkInstalled: (): Promise<boolean> => ipcRenderer.invoke('docker:check-installed'),
@@ -56,6 +62,7 @@ const electronAPI = {
     checkBackendDeps: (): Promise<BackendDependencies> => ipcRenderer.invoke('docker:check-backend-deps'),
     installBackendDeps: (): Promise<void> => ipcRenderer.invoke('docker:install-backend-deps'),
     cleanPlatform: (): Promise<void> => ipcRenderer.invoke('docker:clean-platform'),
+    getImageVersions: (): Promise<ImageVersion[]> => ipcRenderer.invoke('docker:get-image-versions'),
 
     onPullProgress: (callback: (progress: PullProgress) => void): (() => void) => {
       const handler = (_event: Electron.IpcRendererEvent, progress: PullProgress) => callback(progress);

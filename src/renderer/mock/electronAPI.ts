@@ -11,7 +11,7 @@
  * Default: fresh install flow
  */
 
-import type { ElectronAPI, DockerStatus, BackendDependencies, PortCheckResult, AppNotification } from '../types';
+import type { ElectronAPI, DockerStatus, BackendDependencies, PortCheckResult, AppNotification, ImageVersion } from '../types';
 
 const params = new URLSearchParams(window.location.search);
 const SCENARIO = params.get('scenario') ?? 'fresh';
@@ -179,6 +179,13 @@ export const mockElectronAPI: ElectronAPI = {
     },
 
     cleanPlatform: async () => { await delay(500); },
+
+    isTrhStackRunning: async () => SCENARIO === 'healthy' || SCENARIO === 'healthy-update',
+
+    getImageVersions: async (): Promise<ImageVersion[]> => [
+      { service: 'backend', image: 'tokamaknetwork/trh-backend:latest', shortId: 'abc123def456' },
+      { service: 'platform-ui', image: 'tokamaknetwork/trh-platform-ui:latest', shortId: '789xyz012abc' },
+    ],
 
     onPullProgress: (cb) => { pullListeners.push(cb); return () => pullListeners.splice(pullListeners.indexOf(cb), 1); },
     onStatusUpdate: (cb) => { statusListeners.push(cb); return () => statusListeners.splice(statusListeners.indexOf(cb), 1); },

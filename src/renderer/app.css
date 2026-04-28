@@ -68,6 +68,24 @@ body {
   color: var(--gray-400);
 }
 
+.version-info {
+  position: fixed;
+  bottom: 16px;
+  right: 20px;
+  font-size: 11px;
+  color: var(--gray-400);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.4;
+}
+
+.version-image {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 10px;
+}
+
 /* ── Uninstall modal ──────────────────────────────────── */
 .uninstall-overlay {
   position: fixed;
