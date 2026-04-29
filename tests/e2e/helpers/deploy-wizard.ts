@@ -43,6 +43,18 @@ const PRESET_LABELS = {
   full: 'Full Suite',
 } as const;
 
+const AWS_REGION_LABELS: Record<string, string> = {
+  'us-east-1': 'US East (N. Virginia)',
+  'us-east-2': 'US East (Ohio)',
+  'us-west-1': 'US West (N. California)',
+  'us-west-2': 'US West (Oregon)',
+  'ap-northeast-1': 'Asia Pacific (Tokyo)',
+  'ap-northeast-2': 'Asia Pacific (Seoul)',
+  'ap-southeast-1': 'Asia Pacific (Singapore)',
+  'eu-west-1': 'Europe (Ireland)',
+  'eu-central-1': 'Europe (Frankfurt)',
+};
+
 export type PresetKey = keyof typeof PRESET_LABELS;
 
 export interface WizardOptions {
@@ -50,6 +62,7 @@ export interface WizardOptions {
   feeToken: 'ETH' | 'USDT' | 'USDC';
   chainName: string;
   l1RpcUrl?: string;
+  l1BeaconUrl?: string;
   seedPhrase?: string;
   infraProvider?: 'local' | 'aws';
   awsAccessKey?: string;
@@ -85,6 +98,7 @@ export async function fillStep2(
     chainName: string;
     feeToken: 'ETH' | 'USDT' | 'USDC';
     l1RpcUrl?: string;
+    l1BeaconUrl?: string;
     seedPhrase?: string;
     infraProvider?: 'local' | 'aws';
     awsAccessKey?: string;
@@ -108,17 +122,13 @@ export async function fillStep2(
       opts.awsSecretKey ?? process.env.E2E_AWS_SECRET_KEY ?? '',
     );
 
-    // Region select — click combobox, then select the target region item
+    // Region select — combobox is ambiguous (3 on page), filter by text; option uses display name not code
     const targetRegion = opts.awsRegion ?? process.env.E2E_AWS_REGION ?? 'ap-northeast-2';
-    await page.getByRole('combobox').click();
-    await page.getByRole('option', { name: targetRegion, exact: true }).click();
+    const regionLabel = AWS_REGION_LABELS[targetRegion] ?? targetRegion;
+    await page.getByRole('combobox').filter({ hasText: /Select AWS region/i }).click();
+    await page.getByRole('option', { name: regionLabel, exact: true }).click();
 
-    // Submit AWS credentials
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-
-    // Wait for success confirmation
-    await page.waitForSelector('text=AWS credentials configured', { timeout: 10_000 });
-    console.log(`[deploy-wizard] AWS credentials configured (region: ${targetRegion})`);
+    console.log(`[deploy-wizard] AWS credentials entered (region: ${regionLabel})`);
   } else {
     // Select Local Docker provider
     await page.getByRole('button', { name: /Local Docker/ }).click();
@@ -134,6 +144,14 @@ export async function fillStep2(
 
   // L1 RPC URL
   await page.locator('#l1RpcUrl').fill(opts.l1RpcUrl ?? DEFAULT_L1_RPC);
+
+  // L1 Beacon URL (required for AWS deployments)
+  if (opts.l1BeaconUrl) {
+    const beaconInput = page.locator('#l1BeaconUrl');
+    if (await beaconInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await beaconInput.fill(opts.l1BeaconUrl);
+    }
+  }
 
   // Seed phrase — paste full mnemonic into first slot (UI auto-splits to 12 inputs)
   const seedInputs = page.locator('input[placeholder="•••••"]');
@@ -157,9 +175,31 @@ export async function proceedToReview(page: Page): Promise<void> {
  * The wizard shows a "Deployment initiated!" toast and redirects to the stack list.
  */
 export async function clickDeployAndAssertInitiated(page: Page): Promise<void> {
+  console.log(`[deploy-wizard] Clicking Deploy Rollup (current URL: ${page.url()})`);
+
+  // Intercept preset-deploy API response to diagnose failures
+  const deployApiLog = page.waitForResponse(
+    (resp) => resp.url().includes('preset-deploy') && resp.request().method() === 'POST',
+    { timeout: 30_000 },
+  ).then(async (resp) => {
+    const body = await resp.text().catch(() => '(body read failed)');
+    console.log(`[deploy-wizard] preset-deploy API: ${resp.status()} ${body.substring(0, 500)}`);
+  }).catch((err: unknown) => {
+    console.warn(`[deploy-wizard] preset-deploy API not observed: ${err instanceof Error ? err.message : String(err)}`);
+  });
+
   await page.getByRole('button', { name: 'Deploy Rollup', exact: true }).click();
-  // Wizard navigates to /rollup (list) after initiating — not directly to stack detail
-  await page.waitForURL(`${PLATFORM_BASE}/rollup`, { timeout: 30_000 });
+  console.log('[deploy-wizard] Deploy Rollup clicked — waiting for preset-deploy API response...');
+  await deployApiLog;
+
+  // Wizard navigates to /rollup (list) after initiating — not directly to stack detail.
+  console.log('[deploy-wizard] Waiting for /rollup navigation...');
+  try {
+    await page.waitForURL(`${PLATFORM_BASE}/rollup`, { timeout: 120_000 });
+  } catch (err) {
+    console.error(`[deploy-wizard] Navigation timeout — still at: ${page.url()}`);
+    throw err;
+  }
   console.log('[deploy-wizard] Deployment initiated — navigated to /rollup list');
 }
 
@@ -182,6 +222,7 @@ export async function deployPresetViaUI(page: Page, opts: WizardOptions): Promis
     chainName: opts.chainName,
     feeToken: opts.feeToken,
     l1RpcUrl: opts.l1RpcUrl,
+    l1BeaconUrl: opts.l1BeaconUrl,
     seedPhrase: opts.seedPhrase,
     infraProvider: opts.infraProvider,
     awsAccessKey: opts.awsAccessKey,

@@ -70,7 +70,8 @@ import { ethers } from 'ethers';
 
 const PRESET = 'full' as const;
 const FEE_TOKEN = 'USDC' as const;
-const CHAIN_NAME = 'efa-full-usdc';
+const CHAIN_NAME = 'efafull7';
+const LIVE_L1_BEACON_URL = process.env.LIVE_L1_BEACON_URL ?? 'https://ethereum-sepolia-beacon-api.publicnode.com';
 const ELECTRON_APP_PATH = path.resolve('dist/main/index.js');
 const BACKEND_URL = process.env.LIVE_BACKEND_URL ?? 'http://localhost:8000';
 const LIVE_STACK_ID = process.env.LIVE_STACK_ID ?? null;
@@ -210,6 +211,7 @@ test('EFA-01: start Full Suite preset (USDC) deployment via AWS wizard', async (
     preset: PRESET,
     feeToken: FEE_TOKEN,
     chainName: CHAIN_NAME,
+    l1BeaconUrl: LIVE_L1_BEACON_URL,
     infraProvider: 'aws',
     awsAccessKey: accessKey,
     awsSecretKey: secretKey,
