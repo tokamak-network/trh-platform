@@ -80,7 +80,7 @@ const LIVE_L1_RPC_URL = process.env.LIVE_L1_RPC_URL ?? '';
 const LIVE_L1_BEACON_URL = process.env.LIVE_L1_BEACON_URL ?? 'https://ethereum-sepolia-beacon-api.publicnode.com';
 const E2E_AWS_REGION = process.env.E2E_AWS_REGION ?? 'ap-northeast-2';
 
-const DEPLOY_TIMEOUT_MS = 150 * 60 * 1000;
+const DEPLOY_TIMEOUT_MS = 180 * 60 * 1000;
 const CROSSTRADE_INSTALL_TIMEOUT_MS = 30 * 60 * 1000;
 const CROSSTRADE_POLL_INTERVAL_MS = 15_000;
 const CLAIM_TIMEOUT_MS = 20 * 60 * 1000;
