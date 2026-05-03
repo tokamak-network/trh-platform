@@ -270,11 +270,19 @@ export async function resolveStackIdByChainName(
       const data = (body.data ?? body) as Record<string, unknown>;
       const stacks = (data.stacks as Record<string, unknown>[]) ?? [];
 
-      const match = stacks.find(
-        (s) =>
-          ((s.config as Record<string, unknown>)?.chainName as string) === chainName &&
-          (s.status as string) !== 'Terminated',
-      );
+      const TERMINAL_STATUSES = new Set(['Terminated', 'FailedToDeploy']);
+      const active = stacks
+        .filter(
+          (s) =>
+            ((s.config as Record<string, unknown>)?.chainName as string) === chainName &&
+            !TERMINAL_STATUSES.has(s.status as string),
+        )
+        .sort((a, b) => {
+          const ta = new Date((a.createdAt ?? a.created_at ?? 0) as string).getTime();
+          const tb = new Date((b.createdAt ?? b.created_at ?? 0) as string).getTime();
+          return tb - ta;
+        });
+      const match = active[0];
 
       if (match) {
         console.log(`[deploy-wizard] Found stackId=${match.id as string}`);

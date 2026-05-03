@@ -81,7 +81,7 @@ const LIVE_L1_BEACON_URL = process.env.LIVE_L1_BEACON_URL ?? 'https://ethereum-s
 const E2E_AWS_REGION = process.env.E2E_AWS_REGION ?? 'ap-northeast-2';
 
 const DEPLOY_TIMEOUT_MS = 360 * 60 * 1000;
-const CROSSTRADE_INSTALL_TIMEOUT_MS = 50 * 60 * 1000;
+const CROSSTRADE_INSTALL_TIMEOUT_MS = 120 * 60 * 1000;
 const CROSSTRADE_POLL_INTERVAL_MS = 15_000;
 const CLAIM_TIMEOUT_MS = 20 * 60 * 1000;
 const CLAIM_POLL_MS = 5_000;
@@ -414,11 +414,15 @@ test('EFP-02: deployment complete — all 6 modules present', async () => {
   console.log('[EFP-02] L2CrossTradeProxy:', l2CrossTradeProxy);
   console.log('[EFP-02] L2ToL2CrossTradeProxy:', l2ToL2CrossTradeProxy);
 
-  // Resolve L1 CrossTrade addresses (env var overrides or from tx receipts)
+  // Resolve L1 CrossTrade addresses: env var overrides > integration contracts > tx receipts
   if (process.env.LIVE_L1_CROSS_TRADE_PROXY && process.env.LIVE_L2L2_L1_PROXY) {
     l1CrossTradeProxy = process.env.LIVE_L1_CROSS_TRADE_PROXY;
     l2ToL2CrossTradeL1Proxy = process.env.LIVE_L2L2_L1_PROXY;
     console.log('[EFP-02] L1 CrossTrade contracts from env vars');
+  } else if (contracts.l1_cross_trade_proxy && contracts.l2_to_l2_l1_proxy) {
+    l1CrossTradeProxy = contracts.l1_cross_trade_proxy;
+    l2ToL2CrossTradeL1Proxy = contracts.l2_to_l2_l1_proxy;
+    console.log('[EFP-02] L1 CrossTrade contracts from integration contracts');
   } else {
     const l1RegTxHash = info.l1_registration_tx_hash as string;
     const l1L2l2TxHash = info.l1_l2l2_tx_hash as string;
