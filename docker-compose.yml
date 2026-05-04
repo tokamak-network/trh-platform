@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    image: trh-backend-slim:1800retry
+    image: tokamaknetwork/trh-backend:latest
     ports:
       - "8000:8000"
     env_file:
