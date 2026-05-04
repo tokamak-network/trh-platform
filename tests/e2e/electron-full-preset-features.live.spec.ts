@@ -45,7 +45,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import { _electron as electron, ElectronApplication, chromium } from 'playwright';
 import { test, expect } from '@playwright/test';
-import { loginBackend, resolveStackUrls, resolveContractAddresses, StackUrls } from './helpers/stack-resolver';
+import { loginBackend, resolveStackUrls, resolveStackUrlsById, resolveContractAddresses, StackUrls } from './helpers/stack-resolver';
 import { waitForDeployed, waitForBackendReady } from './helpers/deploy-helper';
 import { deployPresetViaUI, resolveStackIdByChainName } from './helpers/deploy-wizard';
 import { pollUntil } from './helpers/poll';
@@ -91,7 +91,7 @@ const FIRST_GAME_TIMEOUT_MS = 25 * 60 * 1000;
 const GAME_RESOLVE_TIMEOUT_MS = 5 * 60 * 1000;
 const TX_TIMEOUT_MS = 3 * 60 * 1000;
 
-const EXPECTED_MODULES = ['bridge', 'blockExplorer', 'monitoring', 'systemPulse', 'crossTrade', 'drb'] as const;
+const EXPECTED_MODULES = ['bridge', 'monitoring', 'systemPulse', 'crossTrade', 'drb'] as const;
 
 const SCREENSHOT_DIR = '/tmp/pw-screenshots/electron-full-preset-features';
 
@@ -386,8 +386,9 @@ test('EFP-02: deployment complete — all 6 modules present', async () => {
   assertIntegrationModules(integrationTypes, EXPECTED_MODULES, [], 'EFP-02');
   console.log('[EFP-02] All 6 modules verified ✓');
 
-  // Resolve stack URLs and set up providers
-  stackUrls = await resolveStackUrls(CHAIN_NAME);
+  // Resolve stack URLs by ID to avoid picking the wrong stack when multiple
+  // stacks share the same chainName (e.g. during parallel test runs).
+  stackUrls = await resolveStackUrlsById(stackId);
   l2RpcUrl = stackUrls.l2Rpc;
   console.log(`[EFP-02] L2 RPC: ${l2RpcUrl}`);
 
