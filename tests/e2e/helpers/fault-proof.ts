@@ -28,7 +28,8 @@ const ANCHOR_STATE_REGISTRY_ABI = [
 
 const FAULT_DISPUTE_GAME_ABI = [
   'function status() external view returns (uint8)',
-  'function resolve() external',
+  'function resolve() external returns (uint8)',
+  'function resolveClaim(uint256 _claimIndex, uint256 _numToResolve) external',
   'function createdAt() external view returns (uint64)',
 ];
 
@@ -162,12 +163,15 @@ export async function waitForGameResolution(
   dgfAddress: string,
   gameIndex: number,
   timeoutMs = 5 * 60 * 1000,
+  signer?: ethers.Signer,
 ): Promise<{ gameAddress: string; status: number }> {
   console.log(`[fault-proof] Resolving game at index ${gameIndex}...`);
 
   const dgf = new ethers.Contract(dgfAddress, DISPUTE_GAME_FACTORY_ABI, provider);
   const [, , gameAddress] = await dgf.gameAtIndex(gameIndex);
-  const game = new ethers.Contract(gameAddress as string, FAULT_DISPUTE_GAME_ABI, provider);
+  const gameAddr = gameAddress as string;
+  const game = new ethers.Contract(gameAddr, FAULT_DISPUTE_GAME_ABI, provider);
+  const gameWritable = signer ? new ethers.Contract(gameAddr, FAULT_DISPUTE_GAME_ABI, signer) : null;
 
   console.log(`[fault-proof] Game proxy address: ${gameAddress as string}`);
 
@@ -178,13 +182,32 @@ export async function waitForGameResolution(
       if (status === GameStatus.DEFENDER_WINS || status === GameStatus.CHALLENGER_WINS) {
         return { gameAddress: gameAddress as string, status };
       }
+
+      if (gameWritable) {
+        try {
+          await gameWritable.resolveClaim(0, 512);
+          console.log('[fault-proof] resolveClaim(0, 512) sent');
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.log(`[fault-proof] resolveClaim not ready: ${msg.slice(0, 100)}`);
+        }
+        try {
+          await gameWritable.resolve();
+          console.log('[fault-proof] resolve() sent');
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.log(`[fault-proof] resolve() not ready: ${msg.slice(0, 100)}`);
+        }
+      }
+
       return null;
     },
-    `game ${gameAddress as string} to resolve`,
+    `game ${gameAddr} to resolve`,
     timeoutMs,
-    10_000,
+    30_000,
   );
 }
+
 
 /**
  * Check AnchorStateRegistry.anchors(0) has been updated after game resolution.

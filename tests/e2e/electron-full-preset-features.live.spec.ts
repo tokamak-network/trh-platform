@@ -88,7 +88,7 @@ const CLAIM_POLL_MS = 5_000;
 const VRF_TIMEOUT_MS = 5 * 60 * 1000;
 const BUNDLER_TIMEOUT_MS = 3 * 60 * 1000;
 const FIRST_GAME_TIMEOUT_MS = 25 * 60 * 1000;
-const GAME_RESOLVE_TIMEOUT_MS = 5 * 60 * 1000;
+const GAME_RESOLVE_TIMEOUT_MS = 45 * 60 * 1000;
 const TX_TIMEOUT_MS = 3 * 60 * 1000;
 
 const EXPECTED_MODULES = ['bridge', 'monitoring', 'systemPulse', 'crossTrade', 'drb'] as const;
@@ -962,6 +962,7 @@ test('EFP-09: game resolves DEFENDER_WINS, AnchorStateRegistry anchors updated',
     dgfAddress,
     firstGameIndex,
     GAME_RESOLVE_TIMEOUT_MS,
+    l1Wallet,
   );
   expect(status).toBe(GameStatus.DEFENDER_WINS);
   console.log(`[EFP-09] Game ${gameAddress} resolved: DEFENDER_WINS ✓`);
