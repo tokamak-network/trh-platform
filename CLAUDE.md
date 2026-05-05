@@ -79,26 +79,12 @@ Must be available locally before running:
 - Branches: `feature/xxx`, `fix/xxx`, `test/xxx`
 - `main` = production release branch
 
-## Workflow
-
-- **Planning needed**: `/gsd:discuss-phase`
-- **Bug fix**: `/gsd:debug`
-- **Feature implementation**: `/gsd:execute-phase`
-- **Before marking done**: `/gsd:verify-work`
-
-### Wiki Update Conditions
+## Wiki Update Conditions
 
 New component/concept/interface, design decision (Why), troubleshooting solution, or conflict with existing wiki → ingest to `trh-wiki`:
 1. Create/update `wiki/` page
 2. Add entry to `wiki/log.md`
 3. commit + push
-
-## GSD Workflow Rules
-
-Start with a GSD command before modifying files:
-- `/gsd:quick` — small fixes, docs
-- `/gsd:debug` — bug investigation
-- `/gsd:execute-phase` — planned phase work
 
 ## Reference Docs
 
