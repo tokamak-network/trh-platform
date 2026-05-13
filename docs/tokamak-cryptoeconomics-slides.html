@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokamak Network Cryptoeconomics</title>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    background: #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* ── Deck ── */
+  #deck {
+    position: relative;
+    width: 960px;
+    height: 540px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* ── Slide base ── */
+  .slide {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  /* ── Slide header ── */
+  .slide-header {
+    display: flex;
+    align-items: center;
+    padding: 18px 28px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+  }
+  .slide-header .bar {
+    width: 3px;
+    height: 22px;
+    border-radius: 2px;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .slide-header h2 {
+    font-size: 19px;
+    font-weight: 700;
+    color: #111827;
+    flex: 1;
+    line-height: 1.25;
+  }
+  .slide-header .page-num {
+    font-size: 11px;
+    color: #9ca3af;
+    flex-shrink: 0;
+  }
+
+  /* ── Slide body ── */
+  .slide-body {
+    flex: 1;
+    padding: 18px 28px 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* ── Color tokens ── */
+  .c-orange { background: #f97316; }
+  .c-blue   { background: #3b82f6; }
+  .c-purple { background: #8b5cf6; }
+  .c-gray   { background: #9ca3af; }
+  .t-orange { color: #f97316; }
+  .t-blue   { color: #3b82f6; }
+  .t-purple { color: #8b5cf6; }
+  .t-gray   { color: #6b7280; }
+
+  /* ── Stat cards ── */
+  .stat-card {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-card .num { font-size: 28px; font-weight: 800; color: #f97316; line-height: 1; }
+  .stat-card .unit { font-size: 11px; color: #9a3412; margin-top: 4px; }
+
+  /* ── Data table ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table thead tr { background: #f9fafb; }
+  .data-table th {
+    padding: 9px 12px;
+    text-align: left;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .data-table td { padding: 9px 12px; color: #374151; border-top: 1px solid #f3f4f6; vertical-align: middle; }
+  .data-table .highlight-row td { background: #faf5ff; color: #5b21b6; font-weight: 600; }
+
+  /* ── Callouts ── */
+  .callout {
+    border-left: 3px solid #8b5cf6;
+    background: #faf5ff;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #5b21b6;
+    font-weight: 500;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .callout.orange { border-color: #f97316; background: #fff7ed; color: #9a3412; }
+  .callout.blue   { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+  .callout.green  { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+
+  /* ── Flow steps ── */
+  .flow-steps { display: flex; align-items: stretch; gap: 0; }
+  .flow-step {
+    flex: 1;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.4;
+  }
+  .flow-step .step-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: #3b82f6;
+    display: block;
+    margin-bottom: 5px;
+  }
+  .flow-arrow { font-size: 18px; color: #9ca3af; padding: 0 6px; display: flex; align-items: center; flex-shrink: 0; }
+
+  /* ── Grid layouts ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+
+  /* ── Cards ── */
+  .card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .card h4 { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 5px; }
+  .card p  { font-size: 11px; color: #6b7280; line-height: 1.55; }
+  .card.accent-orange { border-color: #f97316; background: #fff7ed; }
+  .card.accent-blue   { border-color: #3b82f6; background: #eff6ff; }
+  .card.accent-purple { border-color: #8b5cf6; background: #faf5ff; }
+  .card.accent-green  { border-color: #10b981; background: #ecfdf5; }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #9ca3af;
+    margin-bottom: 10px;
+  }
+
+  /* ── Formula block ── */
+  .formula-block {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 11px 14px;
+    margin: 5px 0;
+  }
+  .formula-block .flabel { font-size: 11px; color: #6b7280; margin-bottom: 3px; }
+
+  /* ── Tag badge ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-orange { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .badge-blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .badge-purple { background: #faf5ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: #f3f4f6; margin: 10px 0; }
+
+  /* ── Navigation ── */
+  #nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    width: 960px;
+  }
+  #nav button {
+    background: #111827;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  #nav button:hover { opacity: 0.75; }
+  #nav button:disabled { opacity: 0.25; cursor: not-allowed; }
+  #progress-bar {
+    flex: 1;
+    height: 3px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #progress-fill {
+    height: 100%;
+    background: #f97316;
+    border-radius: 2px;
+    transition: width 0.2s ease;
+  }
+  #slide-counter { font-size: 12px; color: #6b7280; min-width: 44px; text-align: right; }
+
+  /* ── Small text helpers ── */
+  .text-xs  { font-size: 11px; color: #6b7280; line-height: 1.5; }
+  .text-sm  { font-size: 12px; color: #374151; line-height: 1.5; }
+  .mono     { font-family: 'SFMono-Regular', Consolas, monospace; }
+
+  /* ── Utility ── */
+  .mb-2 { margin-bottom: 8px; }
+  .mb-3 { margin-bottom: 12px; }
+  .mb-4 { margin-bottom: 16px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .font-bold { font-weight: 700; }
+  .font-semibold { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 01 — Cover
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide active" id="s01">
+    <div style="display:flex;height:100%;">
+      <!-- Left content area -->
+      <div style="flex:1;padding:40px 44px;display:flex;flex-direction:column;justify-content:center;">
+        <div style="color:#9ca3af;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px;">
+          Tokamak Network &nbsp;·&nbsp; v1.1
+        </div>
+        <div style="color:#111827;font-size:34px;font-weight:800;line-height:1.15;margin-bottom:8px;">
+          Cryptoeconomics
+        </div>
+        <div style="width:44px;height:3px;background:#f97316;margin-bottom:18px;border-radius:2px;"></div>
+        <div style="color:#6b7280;font-size:13px;line-height:1.75;">
+          TON 시뇨리지 &nbsp;·&nbsp; 스테이킹 &nbsp;·&nbsp; 챌린지 메커니즘<br>
+          검증자의 딜레마 해결 &nbsp;·&nbsp; 빠른 출금
+        </div>
+        <div style="margin-top:28px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-orange">Optimistic Rollup</span>
+          <span class="badge badge-blue">개발자 &amp; 내부팀</span>
+          <span class="badge" style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;">2026</span>
+        </div>
+      </div>
+      <!-- Right accent bar -->
+      <div style="width:9px;background:linear-gradient(180deg,#f97316 0%,#fb923c 50%,#fde68a 100%);"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 02 — L2 수수료 토큰 딜레마
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s02">
+    <div class="slide-header">
+      <div class="bar c-gray"></div>
+      <h2>L2 수수료 토큰 딜레마</h2>
+      <span class="page-num">02 / 17</span>
+    </div>
+    <div class="slide-body">
+      <p class="text-xs mb-3" style="color:#6b7280;">L2 운영자가 수수료 토큰 선택 시 직면하는 구조적 문제</p>
+      <div class="grid-3 mb-3">
+        <div class="card" style="border-top:3px solid #6b7280;">
+          <h4 style="color:#374151;">ETH</h4>
+          <p>이더리움 의존성<br>L1 가스비에 직결<br><br>
+          <span style="color:#ef4444;font-size:11px;">✗ 독립적 토큰 경제 불가</span></p>
+        </div>
+        <div class="card" style="border-top:3px solid #6b7280;">
+          <h4 style="color:#374151;">자체 토큰</h4>
+          <p>가격 변동성 리스크<br>낮은 수용성<br>부트스트랩 비용↑<br>
+          <span style="color:#ef4444;font-size:11px;">✗ 유동성 확보 어려움</span></p>
+        </div>
+        <div class="card accent-orange" style="border-top:3px solid #f97316;">
+          <h4 class="t-orange">TON ★</h4>
+          <p>시뇨리지로 운영 비용 흡수<br>기존 TON 생태계 활용<br><br>
+          <span style="color:#16a34a;font-size:11px;">✓ 실질적 딜레마 완화</span></p>
+        </div>
+      </div>
+      <div class="callout orange">
+        <strong>핵심:</strong> TON 시뇨리지가 L2 운영자의 수수료 부담을 흡수 → L2 수수료를 TON으로 운영해도 경쟁력 확보 가능
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 03 — 검증자의 딜레마 (도입)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s03">
+    <div class="slide-header">
+      <div class="bar c-gray"></div>
+      <h2>검증자의 딜레마 — 왜 검증을 포기하는가?</h2>
+      <span class="page-num">03 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">문제 구조</div>
+          <div class="card mb-3" style="border-left:3px solid #ef4444;border-radius:0 8px 8px 0;background:#fef2f2;">
+            <h4 style="color:#b91c1c;">VC &gt; VR 일 때 →</h4>
+            <p style="color:#7f1d1d;">검증 비용이 검증 보상보다 크면<br>합리적 행위자는 검증을 포기한다.</p>
+          </div>
+          <div class="text-sm mb-2"><span class="font-semibold">결과:</span> 아무도 검증 안 함 → 부정직 시퀀서 무방비</div>
+          <div class="text-sm"><span class="font-semibold">게임이론:</span> 개인 최적 ≠ 시스템 최적</div>
+        </div>
+        <div>
+          <div class="section-label">핵심 기호</div>
+          <table class="data-table">
+            <thead><tr><th>기호</th><th>의미</th></tr></thead>
+            <tbody>
+              <tr><td class="mono" style="font-weight:700;">X</td><td>시퀀서가 부정직할 확률</td></tr>
+              <tr><td class="mono">C</td><td>부정직 적발 보상</td></tr>
+              <tr><td class="mono">VC</td><td>검증 비용</td></tr>
+              <tr><td class="mono">VR</td><td>비검증 시 기대 보상</td></tr>
+              <tr><td class="mono">L</td><td>부정직 적발 시 시퀀서 손실</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="callout mt-3" style="border-color:#ef4444;background:#fef2f2;color:#991b1b;">
+        이 딜레마를 어떻게 해결할까? → TON <strong>스테이킹</strong>과 <strong>빠른 출금</strong> 메커니즘이 핵심 해법
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 04 — 핵심 용어 정의
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s04">
+    <div class="slide-header">
+      <div class="bar c-orange"></div>
+      <h2>핵심 용어 정의</h2>
+      <span class="page-num">04 / 17</span>
+    </div>
+    <div class="slide-body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:130px;">용어</th>
+            <th>설명</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-bold t-orange">스테이킹</td>
+            <td>TON을 락업해 네트워크 역할(시퀀서 등) 수행 권한 획득</td>
+          </tr>
+          <tr>
+            <td class="font-bold t-orange">시뇨리지</td>
+            <td>인플레이션 보상. 블록당 3.92 TON, 연간 약 1,030만 TON (The Merge 이후 12초 블록타임 기준)</td>
+          </tr>
+          <tr>
+            <td class="font-bold t-orange">시퀀서</td>
+            <td>L2 트랜잭션을 수집·배치·L1에 제출하는 주체. TON 스테이킹 필요</td>
+          </tr>
+          <tr>
+            <td class="font-bold t-blue">챌린지 (DTD)</td>
+            <td>출력 루트의 부정확성을 이의제기하는 절차. Dispute Time Delay 7~14일</td>
+          </tr>
+          <tr>
+            <td class="font-bold t-blue">빠른 출금</td>
+            <td>DTD 없이 즉시 L1 자산 수령 — 스테이커가 TON으로 유동성 미리 제공</td>
+          </tr>
+          <tr>
+            <td class="font-bold t-gray">사기/유효성 증명</td>
+            <td>Optimistic Rollup 검증 방식. 현재: 사기 증명 → 미래(ZK): 유효성 증명</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 05 — 시뇨리지 발행 구조
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s05">
+    <div class="slide-header">
+      <div class="bar c-orange"></div>
+      <h2>시뇨리지 발행 구조</h2>
+      <span class="page-num">05 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <!-- Left: stat cards -->
+        <div>
+          <div class="section-label">발행량 (The Merge 이후)</div>
+          <div class="grid-2 mb-3">
+            <div class="stat-card">
+              <div class="num">3.92</div>
+              <div class="unit">TON / 블록</div>
+            </div>
+            <div class="stat-card">
+              <div class="num">10.3M</div>
+              <div class="unit">TON / 년</div>
+            </div>
+          </div>
+          <div class="card mb-2">
+            <p class="text-xs">블록타임 12초 기준 계산<br>
+            1년 = 2,628,000 블록 × 3.92 TON ≈ <strong>10,301,760 TON</strong></p>
+          </div>
+          <div class="callout orange" style="margin-top:8px;">
+            <strong>수치 예시:</strong> 스테이크 1,000 TON / 전체 10,000 TON<br>
+            → 지분 10% → <strong>0.392 TON/블록</strong> 보상
+          </div>
+        </div>
+        <!-- Right: V1 vs V2 -->
+        <div>
+          <div class="section-label">분배 수신자</div>
+          <div class="card mb-2" style="border-left:3px solid #9ca3af;border-radius:0 8px 8px 0;">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;">Staking V1</span>
+            </div>
+            <div class="text-xs">스테이커 &nbsp;+&nbsp; DAO &nbsp;+&nbsp; sTOS holders<br>
+            (PowerTON 지분 비율에 따라 분배)</div>
+          </div>
+          <div class="card accent-orange" style="border-left:3px solid #f97316;border-radius:0 8px 8px 0;background:#fff7ed;">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge badge-orange">Staking V2</span>
+              <span style="font-size:10px;color:#9ca3af;">L2 연동</span>
+            </div>
+            <div class="text-xs" style="color:#7c2d12;">V1 수신자 &nbsp;+&nbsp; <strong>L2 시퀀서</strong><br>
+            시퀀서 몫 = TVL 비율에 비례 → L2 간 경쟁 유도<br>
+            → TON 유통 생태계 확장</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 06 — Staking V1 분배
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s06">
+    <div class="slide-header">
+      <div class="bar c-orange"></div>
+      <h2>Staking V1 — 분배 구조</h2>
+      <span class="page-num">06 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="section-label mb-3">수신자 3그룹과 분배 원리</div>
+      <div class="grid-3 mb-3">
+        <div class="card accent-orange">
+          <h4 class="t-orange">스테이커</h4>
+          <p>TON을 프로토콜에 락업한 참여자<br><br>
+          PowerTON 지분 비율에 비례하여 시뇨리지 수령</p>
+        </div>
+        <div class="card" style="border-color:#6d28d9;background:#faf5ff;">
+          <h4 style="color:#6d28d9;">DAO</h4>
+          <p>프로토콜 거버넌스 풀<br><br>
+          생태계 개발·운영 비용에 사용</p>
+        </div>
+        <div class="card" style="border-color:#0891b2;background:#ecfeff;">
+          <h4 style="color:#0e7490;">sTOS Holders</h4>
+          <p>TOS를 스테이킹한 장기 홀더<br><br>
+          TON 생태계 충성도 보상</p>
+        </div>
+      </div>
+      <div class="card mb-3">
+        <h4 class="mb-2">PowerTON 기반 분배</h4>
+        <p class="text-sm">스테이커는 스테이킹 양과 기간에 비례한 <strong>PowerTON</strong>을 부여받고,<br>
+        총 PowerTON 대비 개인 PowerTON 비율만큼 시뇨리지를 수령한다.</p>
+      </div>
+      <div class="callout orange">
+        V1은 TON 생태계 내부 참여자 중심 분배. L2 연동 인센티브는 V2에서 추가됨.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 07 — Staking V2 (L2 연동)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s07">
+    <div class="slide-header">
+      <div class="bar c-orange"></div>
+      <h2>Staking V2 — L2 연동 인센티브</h2>
+      <span class="page-num">07 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">V2에서 추가되는 것</div>
+          <div class="card accent-orange mb-3">
+            <h4 class="t-orange">L2 시퀀서 몫 추가</h4>
+            <p>시뇨리지 = <strong>V1 수신자</strong> + <span class="t-orange font-bold">L2 시퀀서</span><br><br>
+            시퀀서가 받는 시뇨리지 비율 =<br>해당 L2의 TVL / 전체 L2 TVL 합산</p>
+          </div>
+          <div class="card mb-2">
+            <h4>수치 예시</h4>
+            <p class="text-xs">L2-A TVL 600, L2-B TVL 400<br>
+            총 TVL 1,000 → A 시퀀서 60%, B 시퀀서 40%<br>
+            블록당 시뇨리지 중 시퀀서 몫 × 비율 수령</p>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">선순환 구조</div>
+          <div class="flow-steps mb-3" style="flex-direction:column;gap:8px;">
+            <div class="flow-step" style="text-align:left;padding:10px 14px;">
+              <span class="step-num" style="font-size:14px;display:inline;margin-right:8px;">1</span>
+              시퀀서 → TON 스테이킹 + L2 운영
+            </div>
+            <div class="flow-step" style="text-align:left;padding:10px 14px;">
+              <span class="step-num" style="font-size:14px;display:inline;margin-right:8px;">2</span>
+              TVL 성장 → 더 많은 시뇨리지 수령
+            </div>
+            <div class="flow-step" style="text-align:left;padding:10px 14px;">
+              <span class="step-num" style="font-size:14px;display:inline;margin-right:8px;">3</span>
+              더 많은 TON이 L2 생태계로 유입
+            </div>
+            <div class="flow-step accent-orange" style="text-align:left;padding:10px 14px;">
+              <span class="step-num" style="font-size:14px;display:inline;margin-right:8px;color:#f97316;">4</span>
+              <strong>L2 간 경쟁 → TON 유통 생태계 확장</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 08 — 수수료 딜레마 해소
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s08">
+    <div class="slide-header">
+      <div class="bar c-orange"></div>
+      <h2>시뇨리지로 수수료 딜레마 해소</h2>
+      <span class="page-num">08 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">딜레마 구조 복기</div>
+          <div class="card mb-2" style="border-left:3px solid #ef4444;border-radius:0 8px 8px 0;background:#fef2f2;">
+            <h4 style="color:#b91c1c;">TON 수수료의 문제</h4>
+            <p style="color:#7f1d1d;font-size:11px;">L2가 TON을 수수료로 요구하면:<br>
+            ① 사용자가 TON을 보유해야 함<br>
+            ② TON 가격 변동 → 예측 불가한 수수료<br>
+            ③ 생태계 초기 단계에서 수용성 낮음</p>
+          </div>
+          <div class="card accent-orange">
+            <h4 class="t-orange">시뇨리지 보조로 해결</h4>
+            <p style="font-size:11px;color:#7c2d12;">시퀀서가 시뇨리지 수입으로 실질 운영 비용 충당<br>
+            → TON 수수료를 낮게 유지해도 운영 가능<br>
+            → 사용자 부담 감소, 채택 장벽 완화</p>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">경제 순환</div>
+          <div style="display:flex;flex-direction:column;gap:0;position:relative;">
+            <div class="card mb-2" style="border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-orange">시뇨리지 수입</span>
+              </div>
+              <p class="text-xs mt-2">ETH 블록 생성 → TON 발행 → 시퀀서에게 TVL 비율로 분배</p>
+            </div>
+            <div style="text-align:center;color:#9ca3af;font-size:18px;line-height:1;">↓</div>
+            <div class="card mb-2" style="border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-blue">운영 비용 흡수</span>
+              </div>
+              <p class="text-xs mt-2">L2 인프라 비용 일부를 시뇨리지로 커버</p>
+            </div>
+            <div style="text-align:center;color:#9ca3af;font-size:18px;line-height:1;">↓</div>
+            <div class="card" style="border-left:3px solid #10b981;border-radius:0 8px 8px 0;background:#ecfdf5;">
+              <div class="flex items-center gap-2">
+                <span class="badge" style="background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;">TON 수수료 경쟁력</span>
+              </div>
+              <p class="text-xs mt-2" style="color:#065f46;">낮은 TON 수수료 유지 가능 → L2 성장 촉진</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 09 — 챌린지 메커니즘
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s09">
+    <div class="slide-header">
+      <div class="bar c-blue"></div>
+      <h2>챌린지 메커니즘 (DTD)</h2>
+      <span class="page-num">09 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">챌린지 절차 (4단계)</div>
+          <div class="flow-steps" style="flex-direction:column;gap:6px;">
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;">
+              <strong style="color:#3b82f6;">1.</strong> 시퀀서가 L2 출력 루트 제출 <span class="badge badge-blue" style="float:right;">스테이킹 필요</span>
+            </div>
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;">
+              <strong style="color:#3b82f6;">2.</strong> 챌린저가 <strong>MinChal</strong> TON 담보 예치 후 이의제기
+            </div>
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;">
+              <strong style="color:#3b82f6;">3.</strong> DTD <strong>7~14일</strong> 동안 <strong>그룹 챌린지</strong> 허용
+            </div>
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;">
+              <strong style="color:#3b82f6;">4.</strong> 검증 결과에 따라 보상/슬래싱 처리
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">결과 분기</div>
+          <div class="card mb-2" style="border-left:3px solid #ef4444;border-radius:0 8px 8px 0;background:#fef2f2;">
+            <h4 style="color:#b91c1c;">시퀀서 잘못 시</h4>
+            <p style="font-size:11px;color:#7f1d1d;">시퀀서 스테이킹 <strong>슬래싱</strong> → 챌린저에게 분배<br>
+            예: 스테이킹 1,000 TON, 슬래싱 10% → 100 TON 손실</p>
+          </div>
+          <div class="card mb-3" style="border-left:3px solid #6b7280;border-radius:0 8px 8px 0;background:#f9fafb;">
+            <h4>챌린저 잘못 시</h4>
+            <p style="font-size:11px;">MinChal 몰수 → 시퀀서에게<br>
+            예: MinChal 10 TON → 챌린지 실패 시 10 TON 손실</p>
+          </div>
+          <div class="callout blue">
+            <strong>그룹 챌린지:</strong> 복수의 챌린저가 동일 출력 루트에 이의제기 가능 → 챌린지 경제성 향상
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 10 — 빠른 출금 (Fast Withdrawal)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s10">
+    <div class="slide-header">
+      <div class="bar c-blue"></div>
+      <h2>빠른 출금 (Fast Withdrawal)</h2>
+      <span class="page-num">10 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">표준 vs 빠른 출금</div>
+          <div class="card mb-2" style="border-left:3px solid #9ca3af;border-radius:0 8px 8px 0;">
+            <h4>표준 출금</h4>
+            <p class="text-xs">DTD 대기 필요 (최소 7일)<br>
+            사용자는 7~14일 후 L1 자산 수령<br>
+            <span style="color:#ef4444;">→ 사용성 저하</span></p>
+          </div>
+          <div class="card accent-blue" style="border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;background:#eff6ff;">
+            <h4 class="t-blue">빠른 출금</h4>
+            <p class="text-xs" style="color:#1e40af;">스테이커가 TON으로 L1 유동성 미리 제공<br>
+            사용자는 <strong>즉시</strong> L1 자산 수령<br>
+            사용자는 소액 수수료 지불<br>
+            <span style="color:#16a34a;">→ DTD 없이 즉시 완료</span></p>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">메커니즘 흐름</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;">
+              <strong style="color:#3b82f6;">1.</strong> 사용자가 L2→L1 출금 요청
+            </div>
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;background:#eff6ff;border-color:#bfdbfe;">
+              <strong style="color:#3b82f6;">2.</strong> 스테이커가 L1에서 사용자에게 즉시 TON 지급
+            </div>
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;">
+              <strong style="color:#3b82f6;">3.</strong> 사용자는 수수료 지불 (소액)
+            </div>
+            <div class="flow-step" style="text-align:left;padding:9px 12px;font-size:11px;background:#eff6ff;border-color:#bfdbfe;">
+              <strong style="color:#3b82f6;">4.</strong> 스테이커는 DTD 완료 후 L2 출금 자산 수령
+            </div>
+          </div>
+          <div class="callout blue mt-2">
+            스테이커 = 유동성 공급자 → TON 스테이킹 수요 증가 선순환
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 11 — TON 스테이킹 수요 창출
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s11">
+    <div class="slide-header">
+      <div class="bar c-blue"></div>
+      <h2>TON 스테이킹 수요 창출 — 선순환</h2>
+      <span class="page-num">11 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="section-label mb-3">스테이킹 유인의 3가지 원천</div>
+      <div class="grid-3 mb-3">
+        <div class="card accent-orange">
+          <h4 class="t-orange">시뇨리지 보상</h4>
+          <p>스테이킹 지분 비율에 따라<br>블록당 TON 보상 수령<br><br>
+          <strong>PowerTON</strong> 기반 분배</p>
+        </div>
+        <div class="card accent-blue">
+          <h4 class="t-blue">빠른 출금 수수료</h4>
+          <p>유동성 제공 대가로<br>사용자로부터 수수료 수령<br><br>
+          즉각적 현금흐름</p>
+        </div>
+        <div class="card accent-purple">
+          <h4 class="t-purple">챌린지 보상</h4>
+          <p>부정직 시퀀서 적발 시<br>슬래싱분 + 추가 보상 수령<br><br>
+          보안 기여 인센티브</p>
+        </div>
+      </div>
+      <div class="card" style="border-color:#10b981;background:#ecfdf5;">
+        <h4 style="color:#065f46;" class="mb-2">선순환 구조</h4>
+        <div class="flex items-center gap-3" style="flex-wrap:wrap;">
+          <span class="text-xs" style="color:#065f46;">TON 스테이킹 ↑</span>
+          <span style="color:#9ca3af;">→</span>
+          <span class="text-xs" style="color:#065f46;">유동성 공급 ↑</span>
+          <span style="color:#9ca3af;">→</span>
+          <span class="text-xs" style="color:#065f46;">빠른 출금 가용성 ↑</span>
+          <span style="color:#9ca3af;">→</span>
+          <span class="text-xs" style="color:#065f46;">L2 UX 개선</span>
+          <span style="color:#9ca3af;">→</span>
+          <span class="text-xs" style="color:#065f46;">L2 TVL ↑</span>
+          <span style="color:#9ca3af;">→</span>
+          <span class="text-xs font-bold" style="color:#059669;">시뇨리지 보상 ↑</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 12 — 기본 검증 모델
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s12">
+    <div class="slide-header">
+      <div class="bar c-purple"></div>
+      <h2>기본 검증 모델</h2>
+      <span class="page-num">12 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">기대 보수 비교</div>
+          <div class="formula-block mb-2">
+            <div class="flabel">검증 시 기대 보수</div>
+            <div>$X \cdot C + VR - VC$</div>
+          </div>
+          <div class="formula-block mb-3">
+            <div class="flabel">비검증 시 기대 보수</div>
+            <div>$-X \cdot L + (1-X) \cdot VR$</div>
+          </div>
+          <div class="card mb-2">
+            <h4>딜레마 임계값 도출</h4>
+            <p class="text-xs">검증 ≥ 비검증 조건에서 X를 구하면:<br><br>
+            $X \cdot C + VR - VC \geq -X \cdot L + (1-X) \cdot VR$<br><br>
+            정리 → $X \leq \dfrac{VC - VR}{C + L + VR}$</p>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">수치 예시</div>
+          <table class="data-table mb-3">
+            <thead><tr><th>파라미터</th><th>값</th></tr></thead>
+            <tbody>
+              <tr><td>C (적발 보상)</td><td class="mono">10 TON</td></tr>
+              <tr><td>L (시퀀서 손실)</td><td class="mono">10 TON</td></tr>
+              <tr><td>VC (검증 비용)</td><td class="mono">20 TON</td></tr>
+              <tr><td>VR (비검증 보상)</td><td class="mono">10 TON</td></tr>
+            </tbody>
+          </table>
+          <div class="callout">
+            <strong>딜레마 임계값:</strong> $X \leq \dfrac{1}{2}$<br>
+            시퀀서가 50% 이상 부정직해야 검증이 합리적
+          </div>
+        </div>
+      </div>
+      <div class="callout" style="border-color:#9ca3af;background:#f9fafb;color:#6b7280;margin-top:8px;">
+        한계: $L = $ 외부 파라미터로 조정 어려움. 실질적 보안 개선 수단이 없음.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 13 — 스테이킹 검증 모델
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s13">
+    <div class="slide-header">
+      <div class="bar c-purple"></div>
+      <h2>스테이킹 검증 모델</h2>
+      <span class="page-num">13 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">기대 보수 비교</div>
+          <div class="formula-block mb-2">
+            <div class="flabel">검증 시 기대 보수 (기본과 동일)</div>
+            <div>$X \cdot C + VR - VC$</div>
+          </div>
+          <div class="formula-block mb-3">
+            <div class="flabel">비검증 시 기대 보수 (변경)</div>
+            <div>$-X \cdot A \cdot S + (1-X) \cdot VR$</div>
+          </div>
+          <div class="card accent-purple mb-2">
+            <h4 class="t-purple">핵심 변화</h4>
+            <p class="text-xs">$L = A \cdot S$ (슬래싱이 손실 결정)<br>
+            <strong>A</strong> = 슬래싱 비율 (거버넌스로 조정 가능)<br>
+            <strong>S</strong> = 스테이킹 TON 수량</p>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">기본 모델 대비 개선점</div>
+          <div class="card mb-2">
+            <h4>수치 예시</h4>
+            <p class="text-xs">S = 1,000 TON, A = 10% → L = 100 TON<br>
+            A = 50% → L = 500 TON (더 높은 억제력)</p>
+          </div>
+          <div class="card mb-2" style="border-color:#10b981;background:#ecfdf5;">
+            <h4 style="color:#065f46;">개선: A 파라미터 조정 가능</h4>
+            <p class="text-xs" style="color:#065f46;">거버넌스로 슬래싱 비율 A를 조정해<br>
+            손실 L을 원하는 수준으로 제어 가능</p>
+          </div>
+          <div class="callout">
+            <strong>딜레마 임계값:</strong> $X \leq \dfrac{1}{2}$ (기본 모델과 동일)<br>
+            임계값 자체는 변하지 않지만 A 조정으로 유연성 확보
+          </div>
+        </div>
+      </div>
+      <div class="callout" style="border-color:#9ca3af;background:#f9fafb;color:#6b7280;margin-top:8px;">
+        한계: 임계 X = 1/2로 기본 모델과 동일. 더 낮은 임계값을 위해 추가 메커니즘 필요.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 14 — 스테이킹 + FW 모델
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s14">
+    <div class="slide-header">
+      <div class="bar c-purple"></div>
+      <h2>스테이킹 + 빠른 출금 검증 모델</h2>
+      <span class="page-num">14 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label">기대 보수 비교</div>
+          <div class="formula-block mb-2">
+            <div class="flabel">검증 시 기대 보수 (동일)</div>
+            <div>$X \cdot C + VR - VC$</div>
+          </div>
+          <div class="formula-block mb-3">
+            <div class="flabel">비검증 시 기대 보수 (FW 추가)</div>
+            <div>$-X \cdot (A \cdot S + FW) + (1-X) \cdot VR$</div>
+          </div>
+          <div class="card accent-purple mb-2">
+            <h4 class="t-purple">FW의 역할</h4>
+            <p class="text-xs">빠른 출금에 제공한 TON = <strong>FW</strong><br>
+            부정직 시퀀서 적발 시 FW도 위험에 처함<br>
+            → 손실 = $A \cdot S + FW$ (더 큼)</p>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">임계값 계산 (수치 예시)</div>
+          <table class="data-table mb-3">
+            <thead><tr><th>파라미터</th><th>값</th></tr></thead>
+            <tbody>
+              <tr><td>C (적발 보상)</td><td class="mono">10</td></tr>
+              <tr><td>A·S (슬래싱 손실)</td><td class="mono">10</td></tr>
+              <tr><td>FW (빠른 출금 TON)</td><td class="mono">100</td></tr>
+              <tr><td>VC (검증 비용)</td><td class="mono">20</td></tr>
+              <tr><td>VR (비검증 보상)</td><td class="mono">10</td></tr>
+            </tbody>
+          </table>
+          <div class="callout" style="border-color:#8b5cf6;background:#faf5ff;color:#5b21b6;">
+            <strong>딜레마 임계값:</strong> $X \leq \dfrac{2}{13} \approx 0.154$<br><br>
+            기본/스테이킹 모델(0.5) 대비 <strong>3.25배 더 낮음</strong><br>
+            FW가 클수록 임계값은 더 낮아짐 → 더 안전
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 15 — 3모델 비교표
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s15">
+    <div class="slide-header">
+      <div class="bar c-purple"></div>
+      <h2>검증 모델 비교 — 3모델 요약</h2>
+      <span class="page-num">15 / 17</span>
+    </div>
+    <div class="slide-body">
+      <table class="data-table mb-3">
+        <thead>
+          <tr>
+            <th style="width:200px;">모델</th>
+            <th style="text-align:center;width:120px;">딜레마 임계 X</th>
+            <th>손실 구조</th>
+            <th>특징</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-semibold">기본 검증</td>
+            <td style="text-align:center;" class="mono">$1/2 = 0.5$</td>
+            <td class="text-xs">$L$ = 외부 고정값</td>
+            <td class="text-xs">파라미터 조정 어려움</td>
+          </tr>
+          <tr>
+            <td class="font-semibold">스테이킹 검증</td>
+            <td style="text-align:center;" class="mono">$1/2 = 0.5$</td>
+            <td class="text-xs">$L = A \cdot S$</td>
+            <td class="text-xs">A 슬래싱 비율 거버넌스 조정 가능</td>
+          </tr>
+          <tr class="highlight-row">
+            <td style="font-weight:700;color:#6d28d9;">스테이킹 + 빠른 출금 ★</td>
+            <td style="text-align:center;font-weight:700;color:#7c3aed;" class="mono">$2/13 \approx 0.15$</td>
+            <td class="text-xs" style="color:#5b21b6;">$L = A \cdot S + FW$</td>
+            <td class="text-xs" style="color:#5b21b6;">가장 안전 &nbsp;·&nbsp; FW 클수록 개선</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>결론:</strong> 스테이킹 + 빠른 출금 조합이 검증자 딜레마 해결에 가장 효과적.<br>
+        FW 규모가 클수록 임계값이 낮아져 더 낮은 확률의 부정직도 억제 가능.
+      </div>
+      <div class="grid-3 mt-3">
+        <div class="card" style="text-align:center;padding:10px;">
+          <div style="font-size:22px;font-weight:800;color:#9ca3af;">0.50</div>
+          <div class="text-xs">기본 / 스테이킹</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;font-size:20px;color:#9ca3af;">→</div>
+        <div class="card accent-purple" style="text-align:center;padding:10px;">
+          <div style="font-size:22px;font-weight:800;color:#7c3aed;">0.15</div>
+          <div class="text-xs" style="color:#5b21b6;">스테이킹 + FW <strong>★</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 16 — TON 유틸리티 요약
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s16">
+    <div class="slide-header">
+      <div class="bar c-gray"></div>
+      <h2>TON 유틸리티 요약</h2>
+      <span class="page-num">16 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="section-label mb-3">TON이 시스템 전반에서 하는 역할</div>
+      <div class="grid-2">
+        <div class="card accent-orange mb-3">
+          <h4 class="t-orange">L2 지속 성장</h4>
+          <p>시뇨리지로 시퀀서에게 경제적 인센티브<br>
+          → L2 운영 비용 완화<br>
+          → TON 수수료 L2 경쟁력 확보</p>
+        </div>
+        <div class="card accent-blue mb-3">
+          <h4 class="t-blue">L2 보안 강화</h4>
+          <p>TON 스테이킹 슬래싱 + 빠른 출금 조합<br>
+          → 검증자 딜레마 해결<br>
+          → 임계 X = 0.15로 낮춤</p>
+        </div>
+        <div class="card mb-3" style="border-color:#0891b2;background:#ecfeff;">
+          <h4 style="color:#0e7490;">L2 수수료 유연성</h4>
+          <p>시뇨리지 보조로 TON 수수료 운영 부담 경감<br>
+          → 사용자 채택 장벽 완화</p>
+        </div>
+        <div class="card mb-3" style="border-color:#10b981;background:#ecfdf5;">
+          <h4 style="color:#065f46;">유동성 공급</h4>
+          <p>스테이커가 빠른 출금 유동성 공급<br>
+          → 스테이킹 수요 창출<br>
+          → L2 UX 개선 선순환</p>
+        </div>
+      </div>
+      <div class="callout green" style="border-color:#10b981;background:#ecfdf5;color:#065f46;">
+        <strong>핵심:</strong> TON은 단순 거버넌스 토큰이 아니라 L2 인프라 전체의 경제적 기반. 시뇨리지·보안·유동성·수수료가 TON으로 연결된 통합 시스템.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE 17 — ZK 도입 시 변화
+  ══════════════════════════════════════════════════════════ -->
+  <div class="slide" id="s17">
+    <div class="slide-header">
+      <div class="bar c-gray"></div>
+      <h2>ZK 도입 시 변화 — 미래 전망</h2>
+      <span class="page-num">17 / 17</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div>
+          <div class="section-label mb-3">현재 (Optimistic Rollup)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="card accent-blue">
+              <h4 class="t-blue">챌린지 + DTD 필수</h4>
+              <p class="text-xs">7~14일 Dispute Time Delay<br>빠른 출금으로 UX 개선</p>
+            </div>
+            <div class="card accent-orange">
+              <h4 class="t-orange">빠른 출금 역할 ↑</h4>
+              <p class="text-xs">스테이커 유동성 공급 핵심 역할<br>스테이킹 수요 주요 원천</p>
+            </div>
+            <div class="card accent-purple">
+              <h4 class="t-purple">스테이킹 + FW 조합</h4>
+              <p class="text-xs">검증자 딜레마 해결 최적 수단<br>임계 X = 0.15</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label mb-3">ZK 전환 후</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="card" style="border-color:#9ca3af;opacity:0.7;">
+              <h4 style="color:#6b7280;text-decoration:line-through;">DTD 소멸</h4>
+              <p class="text-xs">ZK Proof로 즉시 검증 → DTD 불필요<br>챌린지 기간 개념 사라짐</p>
+            </div>
+            <div class="card" style="border-color:#9ca3af;opacity:0.7;">
+              <h4 style="color:#6b7280;text-decoration:line-through;">빠른 출금 필요성 소멸</h4>
+              <p class="text-xs">DTD 없이 즉시 출금 가능<br>스테이커 유동성 공급 역할 축소</p>
+            </div>
+            <div class="card accent-blue">
+              <h4 class="t-blue">챌린지 스테이킹 유지</h4>
+              <p class="text-xs">ZK Proof 생성 비용 담보로<br>스테이킹 메커니즘 존속</p>
+            </div>
+          </div>
+          <div class="callout blue mt-2">
+            ZK 전환 시 빠른 출금은 불필요해지지만, TON 스테이킹 기반 보안 구조는 유지됨
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#deck -->
+
+<!-- Navigation -->
+<div id="nav">
+  <button id="btn-prev" onclick="prevSlide()" disabled>← Prev</button>
+  <div id="progress-bar"><div id="progress-fill" style="width:5.88%;"></div></div>
+  <span id="slide-counter">1 / 17</span>
+  <button id="btn-next" onclick="nextSlide()">Next →</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, total - 1));
+    slides[current].classList.add('active');
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progress-fill').style.width = ((current + 1) / total * 100) + '%';
+    document.getElementById('btn-prev').disabled = current === 0;
+    document.getElementById('btn-next').disabled = current === total - 1;
+    if (window.MathJax) MathJax.typesetPromise([slides[current]]);
+  }
+
+  function nextSlide() { if (current < total - 1) showSlide(current + 1); }
+  function prevSlide() { if (current > 0) showSlide(current - 1); }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      nextSlide();
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      prevSlide();
+    }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End')  { e.preventDefault(); showSlide(total - 1); }
+  });
+</script>
+
+</body>
+</html>
