@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRH Platform — AWS L2 테스트넷 지원</title>
+<style>
+  :root {
+    --bg: #080d18;
+    --surface: #0f1929;
+    --surface2: #162035;
+    --border: #1e3050;
+    --blue: #38bdf8;
+    --blue-dim: #1e6fa8;
+    --purple: #a78bfa;
+    --green: #34d399;
+    --orange: #fb923c;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Progress Bar ── */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    transition: width 0.4s ease;
+    z-index: 100;
+  }
+
+  /* ── Slide Container ── */
+  #slides {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 44px 70px 36px 60px;
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+
+  .slide.exit-left {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+
+  /* ── Nav ── */
+  #nav {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 100;
+  }
+
+  .nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted2);
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  #counter {
+    color: var(--muted);
+    font-size: 13px;
+    min-width: 50px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Dot Indicators ── */
+  #dots {
+    position: fixed;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dot.active { background: var(--blue); height: 20px; border-radius: 3px; }
+  .dot:hover { background: var(--muted); }
+
+  /* ── Slide 0: Title ── */
+  .slide-title {
+    text-align: center;
+    position: relative;
+  }
+
+  .glow-bg {
+    position: absolute;
+    inset: -120px;
+    background: radial-gradient(ellipse at center, rgba(56,189,248,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.3);
+    color: var(--blue);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 32px;
+  }
+
+  .title-main {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #e2e8f0 0%, var(--blue) 60%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .title-sub {
+    font-size: 20px;
+    color: var(--muted2);
+    margin-bottom: 48px;
+  }
+
+  .title-meta {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .title-meta span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot-sep {
+    width: 4px; height: 4px;
+    background: var(--border);
+    border-radius: 50%;
+    align-self: center;
+  }
+
+  /* ── Slide: Feature ── */
+  .slide-feature {
+    width: 100%;
+    max-width: 1100px;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .feature-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .feature-num {
+    font-size: 12px;
+    color: var(--blue);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.2);
+    padding: 4px 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .feature-title {
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .feature-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+  }
+
+  .feature-body.single-col {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-body.three-col {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .card.accent-blue { border-color: rgba(56,189,248,0.3); }
+  .card.accent-purple { border-color: rgba(167,139,250,0.3); }
+  .card.accent-green { border-color: rgba(52,211,153,0.3); }
+  .card.accent-orange { border-color: rgba(251,146,60,0.3); }
+
+  .card-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .card-label.blue { color: var(--blue); }
+  .card-label.green { color: var(--green); }
+  .card-label.purple { color: var(--purple); }
+  .card-label.orange { color: var(--orange); }
+
+  /* ── Before / After ── */
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    gap: 0;
+    align-items: center;
+  }
+
+  .before-box, .after-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .before-box { border-color: rgba(248,113,113,0.25); }
+  .after-box { border-color: rgba(52,211,153,0.25); }
+
+  .ba-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .ba-label.before { color: var(--red); }
+  .ba-label.after { color: var(--green); }
+
+  .ba-content {
+    font-size: 14px;
+    color: var(--muted2);
+    line-height: 1.7;
+  }
+
+  .ba-arrow {
+    text-align: center;
+    color: var(--blue);
+    font-size: 20px;
+  }
+
+  /* ── Bullet List ── */
+  .bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--muted2);
+    line-height: 1.6;
+  }
+
+  .bullet-list li::before {
+    content: '▸';
+    color: var(--blue);
+    font-size: 12px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .bullet-list li strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ── Metric / Highlight ── */
+  .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 48px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .metric-label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── Tag ── */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .tag-blue { background: rgba(56,189,248,0.12); color: var(--blue); border: 1px solid rgba(56,189,248,0.3); }
+  .tag-purple { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+  .tag-green { background: rgba(52,211,153,0.12); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+  .tag-orange { background: rgba(251,146,60,0.12); color: var(--orange); border: 1px solid rgba(251,146,60,0.3); }
+
+  /* ── Table ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    color: var(--muted);
+    font-weight: 500;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .data-table td {
+    padding: 10px 12px;
+    color: var(--muted2);
+    border-bottom: 1px solid rgba(30,48,80,0.5);
+    line-height: 1.5;
+  }
+
+  .data-table td:first-child { color: var(--text); font-weight: 500; }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  /* ── Preset Grid ── */
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+  }
+
+  .preset-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 16px;
+  }
+
+  .preset-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .preset-modules {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .module-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted2);
+  }
+
+  .check { color: var(--green); font-size: 11px; }
+  .cross { color: var(--border); font-size: 11px; }
+
+  /* ── Stage Diagram ── */
+  .stage-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+  }
+
+  .stage-box {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .stage-box.a { border-color: rgba(56,189,248,0.3); }
+  .stage-box.b { border-color: rgba(167,139,250,0.3); }
+
+  .stage-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .stage-label.a { color: var(--blue); }
+  .stage-label.b { color: var(--purple); }
+
+  .stage-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .stage-arrow {
+    padding: 0 16px;
+    color: var(--muted);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ── Optimization Table ── */
+  .opt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(30,48,80,0.5);
+  }
+
+  .opt-row:last-child { border-bottom: none; }
+
+  .opt-label { flex: 1; font-size: 13px; color: var(--muted2); }
+  .opt-label strong { color: var(--text); display: block; font-size: 14px; }
+
+  .opt-saving {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: right;
+  }
+
+  /* ── UI Screenshot Mockup ── */
+  .mockup {
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 12px;
+  }
+
+  .mockup-bar {
+    background: var(--surface2);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mockup-dot.r { background: #f87171; }
+  .mockup-dot.y { background: #fbbf24; }
+  .mockup-dot.g { background: #34d399; }
+
+  .mockup-title {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+
+  .mockup-body { padding: 16px; }
+
+  .progress-bar-mock {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+  }
+
+  .step-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.2);
+    color: var(--blue);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin: 3px 3px 3px 0;
+  }
+
+  .step-pill .pill-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--blue);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .log-line {
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 10px;
+    padding: 2px 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .log-time { color: var(--muted); }
+  .log-level-info { color: var(--blue); }
+  .log-level-warn { color: var(--yellow); }
+  .log-level-error { color: var(--red); }
+  .log-msg { color: var(--muted2); }
+
+  /* ── Effect Highlight ── */
+  .effect-box {
+    background: rgba(52,211,153,0.06);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 8px;
+  }
+
+  .effect-label {
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .effect-text {
+    font-size: 14px;
+    color: var(--muted2);
+    line-height: 1.6;
+  }
+
+  .effect-text strong { color: var(--text); }
+
+  /* ── Wide card ── */
+  .wide-card {
+    grid-column: 1 / -1;
+  }
+
+  /* ── Notification Mockup ── */
+  .notif-mockup {
+    background: rgba(15,25,41,0.95);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .notif-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .notif-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .notif-body { font-size: 12px; color: var(--muted2); line-height: 1.5; }
+  .notif-time { font-size: 10px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="slides">
+
+  <!-- ── Slide 0: Title ── -->
+  <div class="slide slide-title active" data-index="0">
+    <div class="glow-bg"></div>
+    <div class="badge">TRH Platform Update · May 2026</div>
+    <div class="title-main">AWS L2 테스트넷 지원</div>
+    <div class="title-sub">원클릭 클라우드 L2 롤업 배포 — 30분 안에 완성</div>
+    <div style="display: flex; gap: 20px; margin-top: 32px;">
+      <div style="text-align: left; background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2); border-radius: 10px; padding: 18px 24px; min-width: 280px;">
+        <div style="font-size: 10px; color: var(--blue); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px;">AWS L2 기능 · 10가지</div>
+        <div style="font-size: 12px; color: var(--muted2); line-height: 2.0; display: flex; flex-direction: column; gap: 0;">
+          <span>▸ 4개 프리셋 원클릭 배포</span>
+          <span>▸ Fault Proof 기본 활성화</span>
+          <span>▸ Stage A / B 분리 아키텍처</span>
+          <span>▸ L1 컨트랙트 + 인프라 병렬화</span>
+          <span>▸ CrossTrade · DRB · Block Explorer</span>
+          <span>▸ 실시간 배포 UI · OS 알림</span>
+        </div>
+      </div>
+      <div style="text-align: left; background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.2); border-radius: 10px; padding: 18px 24px; min-width: 240px;">
+        <div style="font-size: 10px; color: var(--purple); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px;">TRH Desktop · 3가지</div>
+        <div style="font-size: 12px; color: var(--muted2); line-height: 2.0; display: flex; flex-direction: column; gap: 0;">
+          <span>▸ 배포 완료 / 실패 OS 알림</span>
+          <span>▸ Configuration JSON 가져오기</span>
+          <span>▸ 앱 & 이미지 자동 업데이트 감지</span>
+        </div>
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(167,139,250,0.15);">
+          <span style="font-size: 22px; font-weight: 700; color: var(--green);">41분 → ~30분</span>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">배포 시간 단축</div>
+        </div>
+      </div>
+    </div>
+    <div class="title-meta" style="margin-top: 24px;">
+      <span>4개 프리셋 지원</span>
+      <div class="dot-sep"></div>
+      <span>Fault Proof ON</span>
+      <div class="dot-sep"></div>
+      <span>병렬 배포 아키텍처</span>
+    </div>
+  </div>
+
+  <!-- ── Slide 1: 프리셋 원클릭 AWS 배포 ── -->
+  <div class="slide slide-feature" data-index="1">
+    <div class="feature-header">
+      <div class="feature-num">Feature 01</div>
+      <div class="feature-title">프리셋 기반 원클릭 AWS 배포</div>
+    </div>
+    <div class="feature-body">
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-label blue">지원 프리셋</div>
+        <div class="preset-grid">
+          <div class="preset-card">
+            <div class="preset-name">General</div>
+            <div class="preset-modules">
+              <div class="module-row"><span class="check">✓</span> OP Stack + TON</div>
+              <div class="module-row"><span class="check">✓</span> Bridge</div>
+              <div class="module-row"><span class="check">✓</span> Block Explorer</div>
+              <div class="module-row"><span class="cross">–</span> CrossTrade</div>
+              <div class="module-row"><span class="cross">–</span> DRB / AA</div>
+            </div>
+          </div>
+          <div class="preset-card">
+            <div class="preset-name">DeFi</div>
+            <div class="preset-modules">
+              <div class="module-row"><span class="check">✓</span> General 전체</div>
+              <div class="module-row"><span class="check">✓</span> Uniswap V3</div>
+              <div class="module-row"><span class="check">✓</span> USDC Bridge</div>
+              <div class="module-row"><span class="check">✓</span> CrossTrade</div>
+              <div class="module-row"><span class="check">✓</span> Monitoring</div>
+            </div>
+          </div>
+          <div class="preset-card">
+            <div class="preset-name">Gaming</div>
+            <div class="preset-modules">
+              <div class="module-row"><span class="check">✓</span> General 전체</div>
+              <div class="module-row"><span class="check">✓</span> DRB VRF</div>
+              <div class="module-row"><span class="check">✓</span> AA Paymaster</div>
+              <div class="module-row"><span class="check">✓</span> Monitoring</div>
+              <div class="module-row"><span class="cross">–</span> CrossTrade</div>
+            </div>
+          </div>
+          <div class="preset-card" style="border-color: rgba(56,189,248,0.3);">
+            <div class="preset-name" style="color: var(--blue);">Full ★</div>
+            <div class="preset-modules">
+              <div class="module-row"><span class="check">✓</span> DeFi 전체</div>
+              <div class="module-row"><span class="check">✓</span> Gaming 전체</div>
+              <div class="module-row"><span class="check">✓</span> CrossTrade</div>
+              <div class="module-row"><span class="check">✓</span> DRB + AA</div>
+              <div class="module-row"><span class="check">✓</span> Backup & Recovery</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="effect-box wide-card">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">이전에는 <strong>로컬 Docker Compose만 지원</strong>. 이제 <strong>AWS Key 2개 + 프리셋 선택</strong>만으로 프로덕션급 클라우드 L2 배포 완료. 사용자 입력 26개 → <strong>5개 이하</strong>로 축소.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 2: Fault Proof ── -->
+  <div class="slide slide-feature" data-index="2">
+    <div class="feature-header">
+      <div class="feature-num">Feature 02</div>
+      <div class="feature-title">Fault Proof 기본 활성화</div>
+    </div>
+    <div class="feature-body">
+      <div class="before-after wide-card">
+        <div class="before-box">
+          <div class="ba-label before">이전</div>
+          <div class="ba-content">
+            L2OutputOracle 방식만 지원<br>
+            오라클 주소가 상태 루트 제출<br>
+            챌린지 메커니즘 없음<br><br>
+            <span class="tag tag-blue">L2OutputOracle</span>
+          </div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="after-box">
+          <div class="ba-label after">이후</div>
+          <div class="ba-content">
+            모든 프리셋에 자동 배포<br>
+            <strong>DisputeGameFactory</strong> — 분쟁 등록<br>
+            <strong>AnchorStateRegistry</strong> — 앵커 상태 관리<br><br>
+            <span class="tag tag-green">Fault Proof ON</span>
+          </div>
+        </div>
+      </div>
+      <div class="effect-box wide-card">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">L2 출력 루트의 <strong>온체인 챌린지 가능</strong>. 별도 설정 없이 프로덕션급 분쟁 해결 메커니즘 기본 탑재.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 3: Stage A/B ── -->
+  <div class="slide slide-feature" data-index="3">
+    <div class="feature-header">
+      <div class="feature-num">Feature 03</div>
+      <div class="feature-title">Stage A / B 분리 + 병렬 배포 아키텍처</div>
+    </div>
+    <div class="feature-body">
+      <!-- 병렬 흐름 다이어그램 -->
+      <div class="card wide-card" style="padding: 24px 28px;">
+        <div class="card-label">배포 파이프라인 — 분리의 이유: 병렬화</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 40px 1fr; align-items: start; gap: 12px; margin-top: 14px;">
+          <!-- Stage A -->
+          <div style="background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 14px 16px;">
+            <div style="font-size: 10px; color: var(--blue); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;">Stage A — L1 독립</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 8px;">인프라 프로비저닝</div>
+            <ul class="bullet-list" style="margin: 0;">
+              <li>EKS 클러스터 생성</li>
+              <li>EFS, NLB, ALB</li>
+              <li>Helm 차트 초기 설치</li>
+              <li>DNS / TLS 구성</li>
+            </ul>
+          </div>
+          <!-- L1 컨트랙트 -->
+          <div style="background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.25); border-radius: 8px; padding: 14px 16px;">
+            <div style="font-size: 10px; color: var(--green); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;">L1 컨트랙트 — L2 RPC 불필요</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 8px;">컨트랙트 배포</div>
+            <ul class="bullet-list" style="margin: 0;">
+              <li>Deploy.s.sol 실행</li>
+              <li>DGF / OptimismPortal</li>
+              <li>DelayedWETH 등 초기화</li>
+              <li>주소 수집</li>
+            </ul>
+          </div>
+          <!-- 화살표 -->
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 6px; padding-top: 28px;">
+            <div style="font-size: 18px; color: var(--green);">→</div>
+            <div style="font-size: 9px; color: var(--green); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;">errgroup</div>
+          </div>
+          <!-- Stage B -->
+          <div style="background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 14px 16px;">
+            <div style="font-size: 10px; color: var(--purple); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;">Stage B — L1 주소 필요</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 8px;">체인 노드 기동</div>
+            <ul class="bullet-list" style="margin: 0;">
+              <li>컨트랙트 주소 주입</li>
+              <li>Genesis 생성 + 동기화</li>
+              <li>op-geth / op-node 기동</li>
+              <li>Anchor State 제출</li>
+            </ul>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
+          <span style="font-size: 11px; color: var(--muted);">Stage A + L1 컨트랙트 동시 실행</span>
+          <span style="font-size: 11px; color: var(--muted);">·</span>
+          <span style="font-size: 11px; color: var(--muted);">Stage B는 양쪽 완료 후 순차 진행</span>
+          <span style="margin-left: auto; font-size: 13px; font-weight: 700; color: var(--green);">~6분 단축</span>
+        </div>
+      </div>
+      <!-- 효과 두 칸 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="effect-box" style="margin-top: 0;">
+          <div class="effect-label">병렬화 효과</div>
+          <div class="effect-text">L1 init 함수가 <strong>L2 RPC에 의존하지 않음</strong> — 코드 레벨 검증. Nonce 충돌 없음. errgroup 동시 실행으로 약 6분 단축.</div>
+        </div>
+        <div class="effect-box" style="margin-top: 0;">
+          <div class="effect-label">분리의 또 다른 효과</div>
+          <div class="effect-text">실패 시 <strong>Stage B만 재시작</strong> 가능. EKS 프로비저닝(Stage A) 재실행 불필요. 디버깅 비용 대폭 감소.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 4: L1 컨트랙트 배포 방식 변경 ── -->
+  <div class="slide slide-feature" data-index="4">
+    <div class="feature-header">
+      <div class="feature-num">Feature 04</div>
+      <div class="feature-title">L1 컨트랙트 배포: Foundry → tokamak-deployer</div>
+    </div>
+    <div class="feature-body">
+      <!-- Before / After 비교 -->
+      <div class="before-after wide-card">
+        <div class="before-box">
+          <div class="ba-label before">이전 — Foundry / Deploy.s.sol</div>
+          <div class="ba-content">
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--muted2);">TX마다 <code style="font-size: 11px; color: var(--red);">SuggestGasPrice</code> 호출</span>
+                <span style="font-size: 11px; color: var(--muted);">26~32회</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--muted2);">Sepolia 블록타임 변동 → 가스 drift</span>
+                <span style="font-size: 11px; color: var(--red);">재시도 반복</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--muted2);">재시도 timeout × 5회 누적</span>
+                <span style="font-size: 11px; color: var(--muted);">90s × 5</span>
+              </div>
+              <div style="margin-top: 8px; padding-top: 10px; border-top: 1px solid rgba(248,113,113,0.15); text-align: center;">
+                <span style="font-size: 28px; font-weight: 700; color: var(--red);">10~15분</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="after-box">
+          <div class="ba-label after">이후 — tokamak-deployer (Go)</div>
+          <div class="ba-content">
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--muted2);">시작 시 <strong>1회</strong> 조회 → × 200% 고정</span>
+                <span style="font-size: 11px; color: var(--green);">전 TX 재사용</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--muted2);">가스 drift 없음 → 재시도 0에 수렴</span>
+                <span style="font-size: 11px; color: var(--green);">stable</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--muted2);">기배포 impl 9개 재사용 (26 TX → 8 TX)</span>
+                <span style="font-size: 11px; color: var(--blue);">reuse</span>
+              </div>
+              <div style="margin-top: 8px; padding-top: 10px; border-top: 1px solid rgba(52,211,153,0.15); text-align: center;">
+                <span style="font-size: 28px; font-weight: 700; color: var(--green);">~5분 47초</span>
+                <span style="font-size: 12px; color: var(--muted); margin-left: 8px;">Sepolia 실측</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 기술 근거 + 효과 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="card accent-green">
+          <div class="card-label green">Gas Price 전략</div>
+          <ul class="bullet-list">
+            <li><code style="font-size: 11px;">resolveGasPrice</code> 를 Deploy() 시작 시 <strong>1회만</strong> 실행 — [1 Gwei, 100 Gwei] 클램핑</li>
+            <li>sendMaxAttempts <strong>5 → 3</strong>회, timeout <strong>90s → 180s</strong> (retry 자체가 거의 없음)</li>
+          </ul>
+        </div>
+        <div class="effect-box" style="margin-top: 0;">
+          <div class="effect-label">변경 효과</div>
+          <div class="effect-text">L1 컨트랙트 배포 단독으로 <strong>~7~10분 절약</strong>. Feature 03 병렬 실행과 결합하면 Stage B 시작 시점이 크게 앞당겨짐.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 5: 배포 시간 단축 ── -->
+  <div class="slide slide-feature" data-index="5">
+    <div class="feature-header">
+      <div class="feature-num">Feature 05</div>
+      <div class="feature-title">배포 총 소요 시간 41분 → 30분</div>
+    </div>
+    <div class="feature-body">
+      <div class="card" style="grid-column: 1; display: flex; flex-direction: column; gap: 4px; padding: 20px 24px;">
+        <div class="card-label">4종 최적화 누적 효과</div>
+        <div class="opt-row">
+          <div class="opt-label"><strong>ALB readinessProbe 튜닝</strong><br>initialDelay 60s→10s, period 30s→5s</div>
+          <div class="opt-saving">−60~90s</div>
+        </div>
+        <div class="opt-row">
+          <div class="opt-label"><strong>ALB Health Check 튜닝</strong><br>threshold 5→2회, success-codes 200-499</div>
+          <div class="opt-saving">−60~120s</div>
+        </div>
+        <div class="opt-row">
+          <div class="opt-label"><strong>ELB NS 캐시</strong><br>권위 NS 직접 쿼리 + sync.Map TTL 5분</div>
+          <div class="opt-saving">−30~60s</div>
+        </div>
+        <div class="opt-row">
+          <div class="opt-label"><strong>L1 init 병렬화 (FP 경로)</strong><br>Ingress 대기 중 L1 컨트랙트 초기화 동시 실행</div>
+          <div class="opt-saving">−5~8분</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="metric" style="flex: 1;">
+          <div style="display: flex; align-items: baseline; gap: 12px; justify-content: center;">
+            <div style="font-size: 36px; font-weight: 700; color: var(--red); text-decoration: line-through; opacity: 0.6;">41분</div>
+            <div style="color: var(--muted); font-size: 24px;">→</div>
+            <div class="metric-value" style="font-size: 48px;">~30분</div>
+          </div>
+          <div class="metric-label" style="margin-top: 8px;">Fault Proof 경로 기준</div>
+        </div>
+        <div class="effect-box" style="margin-top: 0;">
+          <div class="effect-label">변경 효과</div>
+          <div class="effect-text">배포 대기 시간 <strong>약 27% 단축</strong>. Fault Proof 경로에서 효과 최대. ALB success-codes 누락 시 <strong>target 영구 unhealthy</strong> 버그도 함께 수정.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 6: CrossTrade ── -->
+  <div class="slide slide-feature" data-index="6">
+    <div class="feature-header">
+      <div class="feature-num">Feature 06</div>
+      <div class="feature-title">CrossTrade AWS 자동 설치</div>
+      <div class="tag tag-purple" style="margin-left: auto; font-size: 12px; padding: 4px 14px;">DeFi / Full 프리셋</div>
+    </div>
+    <div class="feature-body">
+      <div class="before-after wide-card">
+        <div class="before-box">
+          <div class="ba-label before">이전</div>
+          <div class="ba-content">
+            AWS 경로 없음<br>
+            수동 Helm 배포 필요<br>
+            L2→L1 / L2→L2 릴리스 별개<br>
+            USDC 미지원
+          </div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="after-box">
+          <div class="ba-label after">이후</div>
+          <div class="ba-content">
+            <strong>Deposit-tx 방식</strong> 자동 배포<br>
+            <strong>단일 Helm 릴리스</strong> (L1+L2 동시)<br>
+            USDC 토큰 지원 추가<br>
+            설치 로그 실시간 스트리밍
+          </div>
+        </div>
+      </div>
+      <div class="card accent-blue">
+        <div class="card-label blue">기술 상세</div>
+        <ul class="bullet-list">
+          <li><strong>이중 배포 버그 수정</strong> — SDK + 백엔드 goroutine이 각각 호출하던 문제(nonce 충돌) 해결. 백엔드 state machine이 유일 소유자로 확립.</li>
+          <li><strong>deposit verification timeout</strong> 120s → 300s — sequencer_l1_confs=5 구조적 72s 대기 반영</li>
+          <li>배포 완료 시 <strong>단일 DApp URL</strong> 즉시 제공</li>
+        </ul>
+      </div>
+      <div class="effect-box">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">DeFi/Full 배포 완료 즉시 <strong>CrossTrade dApp URL이 자동 생성</strong>됨. 별도 수동 설치 불필요. L2→L1, L2→L2 모두 단일 명령으로 처리.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 7: DRB ── -->
+  <div class="slide slide-feature" data-index="7">
+    <div class="feature-header">
+      <div class="feature-num">Feature 07</div>
+      <div class="feature-title">DRB 분산 랜덤 비컨 AWS 자동 설치</div>
+      <div class="tag tag-orange" style="margin-left: auto; font-size: 12px; padding: 4px 14px;">Gaming / Full 프리셋</div>
+    </div>
+    <div class="feature-body">
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-label">4단계 자동화 파이프라인</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px;">
+          <div style="background: var(--surface2); border-radius: 8px; padding: 16px; border-left: 3px solid var(--blue);">
+            <div style="font-size: 11px; color: var(--blue); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">① Genesis 주입</div>
+            <div style="font-size: 12px; color: var(--muted2);">CommitReveal2 컨트랙트 bytecode를 genesis.json에 predeploy</div>
+          </div>
+          <div style="background: var(--surface2); border-radius: 8px; padding: 16px; border-left: 3px solid var(--purple);">
+            <div style="font-size: 11px; color: var(--purple); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">② 키 파생</div>
+            <div style="font-size: 12px; color: var(--muted2);">BIP44 결정적 파생으로 Leader + Regular 3개 peer ID 생성</div>
+          </div>
+          <div style="background: var(--surface2); border-radius: 8px; padding: 16px; border-left: 3px solid var(--green);">
+            <div style="font-size: 11px; color: var(--green); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">③ Helm 배포</div>
+            <div style="font-size: 12px; color: var(--muted2);">Terraform/EC2 제거 → Helm 멀티노드로 교체</div>
+          </div>
+          <div style="background: var(--surface2); border-radius: 8px; padding: 16px; border-left: 3px solid var(--orange);">
+            <div style="font-size: 11px; color: var(--orange); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">④ 온체인 활성화</div>
+            <div style="font-size: 12px; color: var(--muted2);">depositAndActivate() 자동 호출 → 3개 Regular 오퍼레이터 등록</div>
+          </div>
+        </div>
+      </div>
+      <div class="before-after wide-card" style="margin-top: 0;">
+        <div class="before-box">
+          <div class="ba-label before">이전</div>
+          <div class="ba-content">Terraform + EC2 수동 배포<br>AWS 경로 없음<br>다단계 수동 설정 필요</div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="after-box">
+          <div class="ba-label after">이후</div>
+          <div class="ba-content">Gaming/Full 배포 완료 시 <strong>VRF 랜덤 비컨 즉시 가동</strong><br>게임 dApp에서 바로 사용 가능</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 8: Block Explorer ── -->
+  <div class="slide slide-feature" data-index="8">
+    <div class="feature-header">
+      <div class="feature-num">Feature 08</div>
+      <div class="feature-title">Block Explorer 자동 설치 & 업데이트</div>
+      <div class="tag tag-green" style="margin-left: auto; font-size: 12px; padding: 4px 14px;">전 프리셋</div>
+    </div>
+    <div class="feature-body">
+      <div class="before-after wide-card">
+        <div class="before-box">
+          <div class="ba-label before">이전</div>
+          <div class="ba-content">배포 후 수동 설치 필요<br>설정 변경 시 재배포 필요<br>CMC/WC 키 업데이트 방법 없음</div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="after-box">
+          <div class="ba-label after">이후</div>
+          <div class="ba-content">
+            <strong>배포 완료 시 Blockscout 자동 설치</strong><br>
+            UI에서 CMC/WC API 키 즉시 업데이트<br>
+            현재 설정값 GET → UI prefill 지원
+          </div>
+        </div>
+      </div>
+      <div class="card accent-green">
+        <div class="card-label green">Update Settings UI 흐름</div>
+        <ul class="bullet-list">
+          <li>Integration 메뉴 → Block Explorer → <strong>Settings 클릭</strong></li>
+          <li>현재 CMC/WC 키값 자동 불러오기 (GET endpoint)</li>
+          <li>수정 후 저장 → <strong>helm upgrade</strong> 자동 실행 (재설치 없음)</li>
+          <li>DB 자격증명 자동 복원 — 멱등성 유지</li>
+        </ul>
+      </div>
+      <div class="effect-box">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">배포 완료 즉시 <strong>블록 익스플로러 접근 가능</strong>. CMC 가격 데이터, WalletConnect 연동을 재배포 없이 UI에서 변경 가능.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 9: 실시간 UI ── -->
+  <div class="slide slide-feature" data-index="9">
+    <div class="feature-header">
+      <div class="feature-num">Feature 09</div>
+      <div class="feature-title">실시간 배포 진행 UI</div>
+    </div>
+    <div class="feature-body">
+      <div class="mockup wide-card">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div>
+          <div class="mockup-dot y"></div>
+          <div class="mockup-dot g"></div>
+          <div class="mockup-title">TRH Platform — Rollup Overview</div>
+        </div>
+        <div class="mockup-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <div style="font-size: 10px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Core Phase</div>
+              <div class="progress-bar-mock"><div class="progress-fill" style="width: 72%;"></div></div>
+              <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 8px;">
+                <span>72%</span><span>ETA 8분 32초</span>
+              </div>
+              <div>
+                <span class="step-pill"><span class="pill-dot"></span>deploy-l1-contracts · Step 28/35</span>
+                <span class="step-pill"><span class="pill-dot"></span>deploy-aws-infra · Step 11/16</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 10px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Deployment Log</div>
+              <div style="background: var(--surface2); border-radius: 6px; padding: 10px;">
+                <div class="log-line"><span class="log-time">14:23:01</span><span class="log-level-info">[INFO]</span><span class="log-msg">step 28/35: Deploying AnchorStateRegistry</span></div>
+                <div class="log-line"><span class="log-time">14:22:58</span><span class="log-level-info">[INFO]</span><span class="log-msg">step 27/35: DisputeGameFactory init</span></div>
+                <div class="log-line"><span class="log-time">14:21:40</span><span class="log-level-warn">[WARN]</span><span class="log-msg">retrying ELB DNS lookup (attempt 2)</span></div>
+                <div class="log-line"><span class="log-time">14:21:05</span><span class="log-level-info">[INFO]</span><span class="log-msg">Stage B started — L1 contracts ready</span></div>
+              </div>
+              <div style="display: flex; gap: 6px; margin-top: 8px;">
+                <div class="tag tag-blue">ALL</div>
+                <div class="tag" style="background: rgba(248,113,113,0.08); color: var(--red); border: 1px solid rgba(248,113,113,0.2);">ERROR</div>
+                <div class="tag" style="background: rgba(251,191,36,0.08); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2);">WARN</div>
+                <div class="tag" style="background: rgba(148,163,184,0.08); color: var(--muted2); border: 1px solid rgba(148,163,184,0.2);">INFO</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="effect-box wide-card" style="margin-top: 0;">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">배포 중 <strong>"지금 뭐하고 있는지" 실시간 파악</strong> 가능. ETA와 진행률로 불안감 제거. 실패 시 로그에서 원인 즉시 확인. 기존 19분 "블랙박스 구간"이 Step 15–16으로 가시화됨.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 10: 알림 ── -->
+  <div class="slide slide-feature" data-index="10">
+    <div class="feature-header">
+      <div class="feature-num">Feature 10</div>
+      <div class="feature-title">배포 완료 OS 알림</div>
+    </div>
+    <div class="feature-body" style="align-items: center; justify-content: center;">
+      <div style="display: flex; flex-direction: column; gap: 20px; align-items: center; grid-column: 1 / -1;">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+          <div class="notif-mockup">
+            <div class="notif-icon">✅</div>
+            <div>
+              <div class="notif-title">Deployment Complete</div>
+              <div class="notif-body">full-chain-testnet is ready.<br>CrossTrade, DRB, Block Explorer installed.</div>
+              <div class="notif-time">Just now · TRH Platform</div>
+            </div>
+          </div>
+          <div class="notif-mockup" style="border-color: rgba(248,113,113,0.3);">
+            <div class="notif-icon" style="background: linear-gradient(135deg, #f87171, #ef4444);">❌</div>
+            <div>
+              <div class="notif-title">Deployment Failed</div>
+              <div class="notif-body">genesis/rollup hash mismatch detected.<br>Check logs for details.</div>
+              <div class="notif-time">2 min ago · TRH Platform</div>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 16px; margin-top: 8px;">
+          <div class="card accent-blue" style="min-width: 200px;">
+            <div class="card-label blue">알림 종류</div>
+            <ul class="bullet-list" style="margin-top: 4px;">
+              <li>OS 네이티브 알림</li>
+              <li>인앱 알림 카드</li>
+              <li>실패 원인 텍스트 포함</li>
+            </ul>
+          </div>
+          <div class="effect-box" style="flex: 1; margin-top: 0;">
+            <div class="effect-label">변경 효과</div>
+            <div class="effect-text">30분 배포 중 <strong>화면을 볼 필요 없음</strong>. 완료 즉시 OS 알림으로 인지. 실패 시 원인을 알림에서 바로 확인 — 로그 직접 확인 전에도 상황 파악 가능.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section Break: TRH Desktop 부가 기능 ── -->
+  <div class="slide slide-title" data-index="11" style="background: radial-gradient(ellipse at 60% 40%, rgba(167,139,250,0.07) 0%, transparent 60%);">
+    <div class="glow-bg" style="background: radial-gradient(ellipse at center, rgba(167,139,250,0.08) 0%, transparent 70%);"></div>
+    <div class="badge" style="background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.3); color: var(--purple);">TRH Desktop</div>
+    <div class="title-main" style="font-size: 48px;">부가 기능</div>
+    <div class="title-sub">Electron 데스크탑 앱 전용 — 3가지 업데이트</div>
+    <div class="title-meta">
+      <span>🔔 배포 알림</span>
+      <div class="dot-sep"></div>
+      <span>📂 Config Import</span>
+      <div class="dot-sep"></div>
+      <span>🔄 자동 업데이트</span>
+    </div>
+  </div>
+
+  <!-- ── Slide 12: 배포 완료/실패 알림 ── -->
+  <div class="slide slide-feature" data-index="12">
+    <div class="feature-header">
+      <div class="feature-num" style="color: var(--purple);">Desktop 01</div>
+      <div class="feature-title">배포 완료 / 실패 알림</div>
+      <div class="tag tag-purple" style="margin-left: auto; font-size: 12px; padding: 4px 14px;">Electron Notification</div>
+    </div>
+    <div class="feature-body">
+      <div style="grid-column: 1 / -1; display: flex; gap: 20px; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
+        <div class="notif-mockup">
+          <div class="notif-icon">✅</div>
+          <div>
+            <div class="notif-title">Deployment Complete</div>
+            <div class="notif-body">full-chain-testnet is ready.<br>CrossTrade · DRB · Block Explorer installed.</div>
+            <div class="notif-time">방금 · TRH Platform</div>
+          </div>
+        </div>
+        <div class="notif-mockup" style="border-color: rgba(248,113,113,0.3);">
+          <div class="notif-icon" style="background: linear-gradient(135deg, #f87171, #ef4444);">❌</div>
+          <div>
+            <div class="notif-title">Deployment Failed</div>
+            <div class="notif-body">Stage B — genesis/rollup hash mismatch.<br>Check deployment logs for details.</div>
+            <div class="notif-time">2분 전 · TRH Platform</div>
+          </div>
+        </div>
+      </div>
+      <div class="card accent-purple">
+        <div class="card-label purple">알림 채널 & 이벤트</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+          <ul class="bullet-list">
+            <li><strong>OS 네이티브 알림</strong> — macOS / Windows</li>
+            <li><strong>인앱 배너 카드</strong> — 앱 상단 슬라이드인</li>
+            <li>알림 클릭 → 해당 배포 화면 포커스</li>
+          </ul>
+          <ul class="bullet-list">
+            <li>deploy_complete / deploy_failed</li>
+            <li>destroy_complete / destroy_failed</li>
+            <li>docker_pull_complete</li>
+          </ul>
+        </div>
+      </div>
+      <div class="effect-box">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">30분 배포 중 <strong>화면을 주시할 필요 없음</strong>. 완료·실패 즉시 OS 레벨에서 인지. 실패 원인이 알림 본문에 포함되어 로그를 열기 전에도 상황 파악 가능.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 13: Configuration JSON Import ── -->
+  <div class="slide slide-feature" data-index="13">
+    <div class="feature-header">
+      <div class="feature-num" style="color: var(--purple);">Desktop 02</div>
+      <div class="feature-title">Configuration JSON 파일 가져오기</div>
+      <div class="tag tag-purple" style="margin-left: auto; font-size: 12px; padding: 4px 14px;">Import / Export</div>
+    </div>
+    <div class="feature-body">
+      <div class="before-after wide-card">
+        <div class="before-box">
+          <div class="ba-label before">이전</div>
+          <div class="ba-content">
+            배포할 때마다 항목 수동 입력<br>
+            체인 ID, RPC URL, 모듈 ON/OFF…<br>
+            팀원과 설정 공유 방법 없음<br>
+            오타 → 배포 실패
+          </div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="after-box">
+          <div class="ba-label after">이후</div>
+          <div class="ba-content">
+            <strong>"Import JSON"</strong> 버튼 클릭 → 파일 선택<br>
+            모든 필드 자동 채우기<br>
+            <strong>Export</strong>로 설정 파일 저장 · 공유<br>
+            필드 유효성 검사 + 오류 하이라이트
+          </div>
+        </div>
+      </div>
+      <div class="card accent-purple" style="font-family: 'Fira Code', monospace; font-size: 11px;">
+        <div class="card-label purple">JSON 구조 예시</div>
+        <div style="margin-top: 10px; color: var(--muted2); line-height: 1.8;">
+          <span style="color: var(--border);">{</span><br>
+          &nbsp;&nbsp;<span style="color: var(--blue);">"preset"</span><span style="color: var(--border);">:</span> <span style="color: var(--green);">"defi"</span><span style="color: var(--border);">,</span><br>
+          &nbsp;&nbsp;<span style="color: var(--blue);">"network"</span><span style="color: var(--border);">: {</span> <span style="color: var(--blue);">"chainId"</span><span style="color: var(--border);">:</span> <span style="color: var(--orange);">17001</span><span style="color: var(--border);">,</span> <span style="color: var(--blue);">"l1RpcUrl"</span><span style="color: var(--border);">:</span> <span style="color: var(--green);">"https://..."</span> <span style="color: var(--border);">},</span><br>
+          &nbsp;&nbsp;<span style="color: var(--blue);">"modules"</span><span style="color: var(--border);">: {</span> <span style="color: var(--blue);">"crossTrade"</span><span style="color: var(--border);">:</span> <span style="color: var(--purple);">true</span><span style="color: var(--border);">,</span> <span style="color: var(--blue);">"blockExplorer"</span><span style="color: var(--border);">:</span> <span style="color: var(--purple);">true</span> <span style="color: var(--border);">}</span><br>
+          <span style="color: var(--border);">}</span>
+        </div>
+      </div>
+      <div class="effect-box">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">반복 배포 시 설정 재입력 제로. JSON 파일 하나로 <strong>팀 내 동일 환경 즉시 공유</strong>. Export → Git에 커밋해 설정 이력 관리 가능.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 14: 자동 업데이트 감지 ── -->
+  <div class="slide slide-feature" data-index="14">
+    <div class="feature-header">
+      <div class="feature-num" style="color: var(--purple);">Desktop 03</div>
+      <div class="feature-title">자동 업데이트 감지</div>
+      <div class="tag tag-purple" style="margin-left: auto; font-size: 12px; padding: 4px 14px;">Background Polling</div>
+    </div>
+    <div class="feature-body">
+      <div class="card wide-card">
+        <div class="card-label">업데이트 감지 대상 2종</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+          <div style="background: var(--surface2); border-radius: 8px; padding: 16px; border-top: 3px solid var(--blue);">
+            <div style="font-size: 11px; color: var(--blue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Docker 이미지</div>
+            <ul class="bullet-list">
+              <li>trh-backend:latest</li>
+              <li>trh-platform-ui:latest</li>
+              <li>Docker Hub digest 비교</li>
+              <li>업데이트 시 원클릭 pull + 재시작</li>
+            </ul>
+          </div>
+          <div style="background: var(--surface2); border-radius: 8px; padding: 16px; border-top: 3px solid var(--purple);">
+            <div style="font-size: 11px; color: var(--purple); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">앱 바이너리</div>
+            <ul class="bullet-list">
+              <li>Electron auto-updater</li>
+              <li>GitHub Releases 기반</li>
+              <li>macOS DMG / Windows NSIS</li>
+              <li>다운로드 후 재시작 시 자동 적용</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="mockup wide-card" style="margin-top: 0;">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-title">TRH Platform — Update Available</div>
+        </div>
+        <div class="mockup-body" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px;">
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--blue); flex-shrink: 0; animation: pulse 1.5s infinite;"></div>
+          <div style="flex: 1; font-size: 12px; color: var(--muted2);"><span style="color: var(--text); font-weight: 600;">새 버전 사용 가능</span> — trh-backend v2.1.4 · 60분마다 자동 확인</div>
+          <div style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: var(--blue); font-size: 11px; padding: 5px 14px; border-radius: 5px; cursor: pointer; white-space: nowrap;">지금 업데이트</div>
+          <div style="color: var(--muted); font-size: 11px; cursor: pointer; white-space: nowrap;">나중에</div>
+        </div>
+      </div>
+      <div class="effect-box wide-card" style="margin-top: 0;">
+        <div class="effect-label">변경 효과</div>
+        <div class="effect-text">버전 확인을 위해 GitHub를 직접 방문할 필요 없음. 앱 실행 중 <strong>백그라운드에서 60분 간격으로 확인</strong>, 업데이트 발견 시 인앱 배너로 즉시 안내.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /slides -->
+
+<!-- Navigation -->
+<div id="nav">
+  <button class="nav-btn" id="btn-prev" onclick="go(-1)">←</button>
+  <div id="counter">1 / 11</div>
+  <button class="nav-btn" id="btn-next" onclick="go(1)">→</button>
+</div>
+
+<!-- Dots -->
+<div id="dots"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  // Build dots
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  function updateUI() {
+    const dots = dotsEl.querySelectorAll('.dot');
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('btn-prev').disabled = current === 0;
+    document.getElementById('btn-next').disabled = current === total - 1;
+    document.getElementById('progress-bar').style.width = ((current / (total - 1)) * 100) + '%';
+  }
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= total || idx === current) return;
+    const forward = idx > current;
+    const prev = slides[current];
+    const next = slides[idx];
+
+    prev.classList.remove('active');
+    if (forward) {
+      prev.classList.add('exit-left');
+      setTimeout(() => prev.classList.remove('exit-left'), 400);
+    }
+
+    if (!forward) {
+      next.style.transform = 'translateX(-60px)';
+      next.style.opacity = '0';
+      next.style.transition = 'none';
+      next.getBoundingClientRect();
+      next.style.transition = '';
+      next.style.transform = '';
+      next.style.opacity = '';
+    }
+
+    current = idx;
+    next.classList.add('active');
+    updateUI();
+  }
+
+  function go(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+  });
+
+  updateUI();
+</script>
+
+</body>
+</html>
