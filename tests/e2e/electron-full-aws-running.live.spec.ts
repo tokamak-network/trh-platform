@@ -635,7 +635,7 @@ const L2_CT_ABI = [
 
 const L1_CT_ABI = [
   'function provideCT(address _l1token, address _l2token, address _requestor, address _receiver, uint256 _totalAmount, uint256 _initialctAmount, uint256 _editedctAmount, uint256 _salecount, uint256 _l2chainId, uint32 _minGasLimit, bytes32 _hash) external payable',
-  'function chainData(uint256 l2chainId) external view returns (address crossDomainMessenger, address l2CrossTradeProxy, address nativeToken)',
+  'function chainData(uint256 l2chainId) external view returns (address crossDomainMessenger, address l2CrossTradeContract)',
   'event ProvideCT(address _l1token, address _l2token, address _requester, address _receiver, address _provider, uint256 _totalAmount, uint256 _ctAmount, uint256 indexed _saleCount, uint256 _l2chainId, bytes32 _hash)',
 ];
 

@@ -68,6 +68,7 @@ export interface WizardOptions {
   awsAccessKey?: string;
   awsSecretKey?: string;
   awsRegion?: string;
+  awsCredentialName?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +105,7 @@ export async function fillStep2(
     awsAccessKey?: string;
     awsSecretKey?: string;
     awsRegion?: string;
+    awsCredentialName?: string;
   },
 ): Promise<void> {
   await page.waitForSelector('text=Infrastructure Provider', { timeout: 10_000 });
@@ -114,13 +116,22 @@ export async function fillStep2(
     // Select AWS Cloud provider
     await page.getByText('AWS Cloud', { exact: true }).click();
 
-    // DesktopAwsKeyInput has no id attrs — target by placeholder
-    await page.getByPlaceholder('AKIA...').fill(
-      opts.awsAccessKey ?? process.env.E2E_AWS_ACCESS_KEY ?? '',
-    );
-    await page.getByPlaceholder('Enter secret key').fill(
-      opts.awsSecretKey ?? process.env.E2E_AWS_SECRET_KEY ?? '',
-    );
+    // UI has two variants: direct key input (AKIA... placeholder) or saved credentials combobox
+    const akiaInput = page.getByPlaceholder('AKIA...');
+    const hasDirectInput = await akiaInput.isVisible({ timeout: 3_000 }).catch(() => false);
+
+    if (hasDirectInput) {
+      await akiaInput.fill(opts.awsAccessKey ?? process.env.E2E_AWS_ACCESS_KEY ?? '');
+      await page.getByPlaceholder('Enter secret key').fill(
+        opts.awsSecretKey ?? process.env.E2E_AWS_SECRET_KEY ?? '',
+      );
+    } else {
+      // New UI: select from pre-saved credentials combobox
+      const credName = opts.awsCredentialName ?? process.env.E2E_AWS_CREDENTIAL_NAME ?? 'dev-account';
+      await page.getByRole('combobox').filter({ hasText: /Select saved credentials/i }).click();
+      await page.getByRole('option', { name: credName, exact: false }).click();
+      console.log(`[deploy-wizard] Selected saved credential: ${credName}`);
+    }
 
     // Region select — combobox is ambiguous (3 on page), filter by text; option uses display name not code
     const targetRegion = opts.awsRegion ?? process.env.E2E_AWS_REGION ?? 'ap-northeast-2';
