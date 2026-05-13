@@ -115,7 +115,7 @@ describe('DeploymentWatcher', () => {
       expect.objectContaining({ title: 'L2 Deployment Complete' }),
     );
     expect(NotificationStore.add).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'deployment', title: 'L2 Deployment Complete' }),
+      expect.objectContaining({ type: 'deployment-success', title: 'L2 Deployment Complete' }),
     );
     const addArgs = (NotificationStore.add as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as { message: string };
     expect(addArgs.message).toContain('my-chain');

@@ -144,6 +144,8 @@ export class DeploymentWatcher {
       this.fire(
         'L2 Deployment Complete',
         `"${stack.name}" is now deployed and running.`,
+        undefined,
+        'deployment-success',
       );
     } else if (stack.status === 'FailedToDeploy' || stack.status === 'FailedToUpdate') {
       const detail = await this.fetchFailureReason(stack.id, token);
@@ -166,6 +168,8 @@ export class DeploymentWatcher {
       this.fire(
         'Service Deployment Complete',
         `"${integration.type}" service is now running.`,
+        undefined,
+        'deployment-success',
       );
     } else if (integration.status === 'Failed') {
       this.fire(
@@ -240,9 +244,13 @@ export class DeploymentWatcher {
     return undefined;
   }
 
-  private fire(title: string, body: string, detail?: string): void {
-    // In-app notification (always)
-    NotificationStore.add({ type: 'deployment', title, message: body, detail });
+  private fire(
+    title: string,
+    body: string,
+    detail?: string,
+    type: 'deployment' | 'deployment-success' = 'deployment',
+  ): void {
+    NotificationStore.add({ type, title, message: body, detail });
 
     // OS desktop notification (if supported)
     if (Notification.isSupported()) {

@@ -20,6 +20,7 @@ function getTypeIcon(type: AppNotification['type']): string {
     case 'release-update': return '🚀';
     case 'system': return '⚙️';
     case 'deployment': return '❌';
+    case 'deployment-success': return '✅';
   }
 }
 

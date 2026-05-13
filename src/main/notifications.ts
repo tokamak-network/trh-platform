@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron';
 
 export interface AppNotification {
   id: string;
-  type: 'image-update' | 'release-update' | 'system' | 'deployment';
+  type: 'image-update' | 'release-update' | 'system' | 'deployment' | 'deployment-success';
   title: string;
   message: string;
   detail?: string;
