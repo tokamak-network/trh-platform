@@ -89,8 +89,9 @@ export async function checkAnchorStateRegistryInit(
   const [root, l2BlockNumber] = await asr.anchors(0);
   const blockNum = Number(l2BlockNumber);
 
-  if (blockNum === 0) {
-    throw new Error(`AnchorStateRegistry anchors(0).l2BlockNumber is 0 — initialize() was not called`);
+  // A fresh L2 chain legitimately starts at genesis (l2BlockNumber=0); check the root instead.
+  if ((root as string) === ethers.ZeroHash) {
+    throw new Error(`AnchorStateRegistry anchors(0).root is zero — initialize() was not called`);
   }
 
   return { root: root as string, l2BlockNumber: blockNum };

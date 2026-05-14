@@ -324,6 +324,56 @@ export async function waitForDeployed(
 }
 
 /**
+ * Ensure an AWS credential exists in the backend configuration.
+ * Creates it if not present; skips silently if a credential with the same name already exists.
+ *
+ * @param name           - Credential display name (used by the deploy wizard combobox)
+ * @param accessKeyId    - AWS Access Key ID (AKIA...)
+ * @param secretAccessKey - AWS Secret Access Key
+ */
+export async function ensureAwsCredential(
+  name: string,
+  accessKeyId: string,
+  secretAccessKey: string,
+): Promise<void> {
+  const backendUrl = getBackendUrl();
+  const token = await loginBackend(backendUrl);
+
+  const listResp = await fetch(`${backendUrl}/api/v1/configuration/aws-credentials`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (listResp.ok) {
+    const body = await listResp.json() as Record<string, unknown>;
+    const data = (body.data ?? body) as Record<string, unknown>;
+    const credentials = (data.credentials ?? []) as Array<Record<string, unknown>>;
+    if (credentials.some((c) => c.name === name)) {
+      console.log(`[ensureAwsCredential] Credential "${name}" already exists, skipping`);
+      return;
+    }
+  }
+
+  const createResp = await fetch(`${backendUrl}/api/v1/configuration/aws-credentials`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name, accessKeyId, secretAccessKey }),
+  });
+
+  if (!createResp.ok) {
+    const text = await createResp.text();
+    if (createResp.status === 409) {
+      console.log(`[ensureAwsCredential] Credential "${name}" already exists (409), skipping`);
+      return;
+    }
+    throw new Error(`Failed to create AWS credential "${name}": ${createResp.status} ${text}`);
+  }
+
+  console.log(`[ensureAwsCredential] Credential "${name}" created`);
+}
+
+/**
  * Terminate (destroy) a stack and wait for it to be fully terminated.
  *
  * @param stackId - Stack ID to terminate

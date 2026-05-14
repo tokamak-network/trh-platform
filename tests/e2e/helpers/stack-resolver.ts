@@ -126,7 +126,7 @@ export async function resolveContractAddresses(stackId: string, token?: string):
 
   const readJson = (path: string): Record<string, string> | null => {
     try {
-      const containerName = process.env.BACKEND_CONTAINER_NAME ?? 'trh-platform-backend-1';
+      const containerName = process.env.BACKEND_CONTAINER_NAME ?? 'trh-backend';
       const raw = execSync(`docker exec ${containerName} cat "${path}"`, { encoding: 'utf-8', timeout: 10_000 });
       return JSON.parse(raw) as Record<string, string>;
     } catch {

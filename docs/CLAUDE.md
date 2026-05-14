@@ -27,4 +27,10 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #14089 | 3:11 PM | 🔄 | E2E Preset Overridable Fields Test Rewritten for Full Wizard Navigation | ~499 |
+
+### May 13, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #15536 | 12:28 PM | 🟣 | Interactive HTML demo presentation for AWS L2 testnet features | ~659 |
 </claude-mem-context>

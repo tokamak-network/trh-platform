@@ -129,7 +129,10 @@ export async function fillStep2(
       // New UI: select from pre-saved credentials combobox
       const credName = opts.awsCredentialName ?? process.env.E2E_AWS_CREDENTIAL_NAME ?? 'dev-account';
       await page.getByRole('combobox').filter({ hasText: /Select saved credentials/i }).click();
-      await page.getByRole('option', { name: credName, exact: false }).click();
+      // Options render as a portal listbox at the page root — wait for it then scope the click inside
+      const credListbox = page.locator('[role="listbox"]');
+      await credListbox.waitFor({ state: 'visible', timeout: 10_000 });
+      await credListbox.locator('[role="option"]').filter({ hasText: credName }).click();
       console.log(`[deploy-wizard] Selected saved credential: ${credName}`);
     }
 
@@ -239,6 +242,7 @@ export async function deployPresetViaUI(page: Page, opts: WizardOptions): Promis
     awsAccessKey: opts.awsAccessKey,
     awsSecretKey: opts.awsSecretKey,
     awsRegion: opts.awsRegion,
+    awsCredentialName: opts.awsCredentialName,
   });
   await proceedToReview(page);
   await clickDeployAndAssertInitiated(page);
