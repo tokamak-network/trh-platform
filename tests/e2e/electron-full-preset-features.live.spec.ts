@@ -19,6 +19,8 @@
  *   EFP-07 — CrossTrade: L1→L2 ETH + L2→L2 ETH full cycles + Blockscout explorer verification
  *   EFP-08 — First dispute game created (polls up to 25 min)
  *   EFP-09 — Game DEFENDER_WINS + AnchorStateRegistry anchors updated
+ *   EFP-10 — Thanos Bridge: L1→L2 ETH deposit via L1StandardBridge + Blockscout deposits API
+ *   EFP-11 — Thanos Bridge: L2→L1 ETH withdrawal initiation via L2ToL1MessagePasser + Blockscout withdrawals API
  *
  * Usage:
  *   npm run build && \
@@ -151,6 +153,16 @@ const DRB_ABI = [
   'event Status(uint256 curRound, uint256 curTrialNum, uint256 curState)',
 ];
 
+const L1_BRIDGE_ABI = [
+  'function bridgeETH(uint256 _amount, uint32 _minGasLimit, bytes calldata _extraData) external payable',
+];
+
+const L2_PASSER_ABI = [
+  'function initiateWithdrawal(address _target, uint256 _gasLimit, bytes calldata _data) external payable',
+];
+
+const L2_TO_L1_PASSER = '0x4200000000000000000000000000000000000016';
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -189,6 +201,11 @@ let l2l2SaleCount: bigint;
 let l2l2HashValue: string;
 let l2l2ClaimFromBlock: number;
 let l2l2ClaimTxHash: string;
+
+// Bridge state
+let l1StandardBridgeAddress: string;
+let bridgeDepositTxHash: string;
+let bridgeWithdrawTxHash: string;
 
 // ---------------------------------------------------------------------------
 // Setup / Teardown
@@ -1003,4 +1020,144 @@ test('EFP-09: game resolves DEFENDER_WINS, AnchorStateRegistry anchors updated',
   const mainWindow = await electronApp!.firstWindow();
   await mainWindow.screenshot({ path: `${SCREENSHOT_DIR}/efp-09-fp-complete.png`, fullPage: false });
   console.log('[EFP-09] Fault proof E2E complete ✓');
+});
+
+// ---------------------------------------------------------------------------
+// EFP-10: Thanos Bridge — L1→L2 ETH deposit via L1StandardBridge
+// ---------------------------------------------------------------------------
+
+test('EFP-10: Thanos Bridge — L1→L2 ETH deposit via L1StandardBridge + Blockscout deposits API', async () => {
+  test.setTimeout(TX_TIMEOUT_MS + 5 * 60_000);
+  expect(deployedStackId).not.toBeNull();
+  expect(stackUrls).not.toBeNull();
+
+  // Resolve L1StandardBridge address from deployment JSON
+  const addresses = await resolveContractAddresses(deployedStackId!);
+  l1StandardBridgeAddress = addresses.l1StandardBridgeProxy;
+  expect(l1StandardBridgeAddress, 'l1StandardBridgeProxy must be in deployment JSON').toBeTruthy();
+  console.log(`[EFP-10] L1StandardBridge: ${l1StandardBridgeAddress}`);
+
+  // Send L1→L2 ETH deposit
+  const depositValue = ethers.parseEther('0.001');
+  const l1Bridge = new ethers.Contract(l1StandardBridgeAddress, L1_BRIDGE_ABI, l1Wallet);
+
+  console.log(`[EFP-10] Calling bridgeETH with ${ethers.formatEther(depositValue)} ETH...`);
+  const depositTx = await l1Bridge.bridgeETH(depositValue, 200_000, '0x', {
+    value: depositValue,
+    gasLimit: 750_000,
+  });
+  bridgeDepositTxHash = depositTx.hash;
+  console.log(`[EFP-10] Deposit TX: ${bridgeDepositTxHash}`);
+
+  const receipt = await depositTx.wait(1);
+  expect(receipt).not.toBeNull();
+  expect(receipt!.status, 'bridgeETH tx failed').toBe(1);
+  console.log(`[EFP-10] bridgeETH confirmed in block ${receipt!.blockNumber} ✓`);
+
+  // Blockscout deposits API verification (optional — skip if block-explorer not deployed)
+  const explorerApiUrl = stackUrls!.explorerApiUrl;
+  let explorerAvailable = false;
+  try {
+    const probe = await fetch(`${explorerApiUrl}/optimism/deposits?limit=1`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    explorerAvailable = probe.ok;
+  } catch { /* not deployed */ }
+
+  if (explorerAvailable) {
+    await pollUntil<Record<string, unknown>>(
+      async () => {
+        try {
+          const resp = await fetch(`${explorerApiUrl}/optimism/deposits?limit=20`, {
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (!resp.ok) return null;
+          const data = await resp.json() as { items: Array<Record<string, unknown>> };
+          const found = data.items?.find(
+            (d) => (d.l1_transaction_hash as string | undefined)?.toLowerCase() === bridgeDepositTxHash.toLowerCase(),
+          );
+          return found ?? null;
+        } catch {
+          return null;
+        }
+      },
+      'Blockscout deposits API to include bridge deposit',
+      5 * 60_000,
+      10_000,
+    );
+    console.log(`[EFP-10] Blockscout deposits API verified ✓`);
+  } else {
+    console.warn(`[EFP-10] Blockscout not available at ${explorerApiUrl} — skipping deposits API verification (block-explorer not deployed)`);
+  }
+
+  const mainWindow = await electronApp!.firstWindow();
+  await mainWindow.screenshot({ path: `${SCREENSHOT_DIR}/efp-10-bridge-deposit.png`, fullPage: false });
+  console.log('[EFP-10] L1→L2 ETH bridge deposit complete ✓');
+});
+
+// ---------------------------------------------------------------------------
+// EFP-11: Thanos Bridge — L2→L1 ETH withdrawal initiation via L2ToL1MessagePasser
+// ---------------------------------------------------------------------------
+
+test('EFP-11: Thanos Bridge — L2→L1 ETH withdrawal initiation via L2ToL1MessagePasser + Blockscout withdrawals API', async () => {
+  test.setTimeout(TX_TIMEOUT_MS + 5 * 60_000);
+  expect(stackUrls).not.toBeNull();
+  expect(l2Wallet).toBeDefined();
+
+  // Initiate L2→L1 ETH withdrawal
+  const withdrawValue = ethers.parseEther('0.0001');
+  const l2Passer = new ethers.Contract(L2_TO_L1_PASSER, L2_PASSER_ABI, l2Wallet);
+
+  console.log(`[EFP-11] Calling initiateWithdrawal for ${ethers.formatEther(withdrawValue)} ETH to ${adminAddress}...`);
+  const withdrawTx = await l2Passer.initiateWithdrawal(adminAddress, 100_000, '0x', {
+    value: withdrawValue,
+    gasLimit: 300_000,
+  });
+  bridgeWithdrawTxHash = withdrawTx.hash;
+  console.log(`[EFP-11] Withdrawal TX: ${bridgeWithdrawTxHash}`);
+
+  const receipt = await withdrawTx.wait(1);
+  expect(receipt).not.toBeNull();
+  expect(receipt!.status, 'initiateWithdrawal tx failed').toBe(1);
+  console.log(`[EFP-11] initiateWithdrawal confirmed in block ${receipt!.blockNumber} ✓`);
+
+  // Blockscout withdrawals API verification (optional — skip if block-explorer not deployed)
+  const explorerApiUrl = stackUrls!.explorerApiUrl;
+  let explorerAvailable = false;
+  try {
+    const probe = await fetch(`${explorerApiUrl}/optimism/withdrawals?limit=1`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    explorerAvailable = probe.ok;
+  } catch { /* not deployed */ }
+
+  if (explorerAvailable) {
+    await pollUntil<Record<string, unknown>>(
+      async () => {
+        try {
+          const resp = await fetch(`${explorerApiUrl}/optimism/withdrawals?limit=20`, {
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (!resp.ok) return null;
+          const data = await resp.json() as { items: Array<Record<string, unknown>> };
+          const found = data.items?.find(
+            (d) => (d.l2_transaction_hash as string | undefined)?.toLowerCase() === bridgeWithdrawTxHash.toLowerCase(),
+          );
+          return found ?? null;
+        } catch {
+          return null;
+        }
+      },
+      'Blockscout withdrawals API to include bridge withdrawal',
+      5 * 60_000,
+      10_000,
+    );
+    console.log(`[EFP-11] Blockscout withdrawals API verified ✓`);
+  } else {
+    console.warn(`[EFP-11] Blockscout not available at ${explorerApiUrl} — skipping withdrawals API verification (block-explorer not deployed)`);
+  }
+
+  const mainWindow = await electronApp!.firstWindow();
+  await mainWindow.screenshot({ path: `${SCREENSHOT_DIR}/efp-11-bridge-withdraw.png`, fullPage: false });
+  console.log('[EFP-11] L2→L1 ETH withdrawal initiation complete ✓');
 });
