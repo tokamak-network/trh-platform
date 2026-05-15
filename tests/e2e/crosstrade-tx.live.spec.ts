@@ -181,6 +181,36 @@ async function connectDAppWallet(page: Page): Promise<void> {
   const chainIdDecimal = Number(l2ChainId);
   const l2RpcUrl = stackUrls.l2Rpc ?? 'http://localhost:8545';
 
+  // Expose Node.js signing into browser sandbox — must register before addInitScript.
+  // L2-only: all eth_sendTransaction calls are signed with l2Wallet on L2.
+  // Call once per page; Playwright throws if the function name is re-registered.
+  await page.exposeFunction('__signAndSend', async (txData: Record<string, unknown>): Promise<string> => {
+    const tx: ethers.TransactionRequest = {
+      to: txData.to as string | undefined,
+      data: txData.data as string | undefined,
+      value: txData.value ? BigInt(txData.value as string) : undefined,
+      gasLimit: txData.gas ? BigInt(txData.gas as string) : undefined,
+    };
+    const response = await l2Wallet.sendTransaction(tx);
+    return response.hash;
+  });
+
+  await page.exposeFunction('__personalSign', async (hexMessage: string): Promise<string> => {
+    const payload = ethers.isHexString(hexMessage) ? ethers.getBytes(hexMessage) : hexMessage;
+    return l2Wallet.signMessage(payload);
+  });
+
+  await page.exposeFunction('__signTypedData', async (typedDataJson: string): Promise<string> => {
+    const { domain, types, message } = JSON.parse(typedDataJson) as {
+      domain: ethers.TypedDataDomain;
+      types: Record<string, ethers.TypedDataField[]>;
+      message: Record<string, unknown>;
+    };
+    const filteredTypes = { ...types };
+    delete filteredTypes['EIP712Domain'];
+    return l2Wallet.signTypedData(domain, filteredTypes, message);
+  });
+
   await page.addInitScript(
     ({ address, chainId, chainIdNum, rpcUrl }: { address: string; chainId: string; chainIdNum: number; rpcUrl: string }) => {
       const handlers: Record<string, ((...args: unknown[]) => void)[]> = {};
@@ -203,6 +233,24 @@ async function connectDAppWallet(page: Page): Promise<void> {
               return null;
             case 'eth_getBalance':
               return '0x8AC7230489E80000'; // 10 ETH in wei (mock balance)
+            case 'eth_sendTransaction': {
+              const txData = ((params as unknown[])?.[0] ?? {}) as Record<string, unknown>;
+              const w = window as unknown as { __signAndSend?: (tx: unknown) => Promise<string> };
+              if (!w.__signAndSend) throw new Error('__signAndSend bridge not ready');
+              return w.__signAndSend(txData);
+            }
+            case 'personal_sign': {
+              const hexMsg = ((params as unknown[])?.[0] ?? '') as string;
+              const w = window as unknown as { __personalSign?: (msg: string) => Promise<string> };
+              if (!w.__personalSign) throw new Error('__personalSign bridge not ready');
+              return w.__personalSign(hexMsg);
+            }
+            case 'eth_signTypedData_v4': {
+              const typedDataStr = ((params as unknown[])?.[1] ?? '{}') as string;
+              const w = window as unknown as { __signTypedData?: (data: string) => Promise<string> };
+              if (!w.__signTypedData) throw new Error('__signTypedData bridge not ready');
+              return w.__signTypedData(typedDataStr);
+            }
             default: {
               // Proxy all other RPC calls (eth_getLogs, eth_call, eth_blockNumber, etc.)
               // to the actual L2 node so dApp data loads correctly

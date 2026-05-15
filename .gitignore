@@ -46,6 +46,7 @@ id_ed25519*
 test-results/
 playwright-report/
 playwright-report-*/
+tests/e2e/results/
 
 # claude-mem auto-generated context files
 **/CLAUDE.md
