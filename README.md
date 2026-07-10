@@ -1,5 +1,9 @@
 # TRH Platform
 
+> **⚠️ ARCHIVED**: This project is currently archived. If resuming work, read these two documents **first**:
+> - [`docs/trh-l2-deploy-guide.md`](docs/trh-l2-deploy-guide.md) — human-facing deployment guide
+> - [`docs/trh-l2-deploy-agent-runbook.md`](docs/trh-l2-deploy-agent-runbook.md) — agent-facing execution runbook
+
 One-click desktop application for [Tokamak Rollup Hub](https://github.com/tokamak-network). Deploy L2 rollups without touching the command line.
 
 ## Features
